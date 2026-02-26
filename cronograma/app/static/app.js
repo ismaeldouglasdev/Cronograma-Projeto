@@ -2,6 +2,15 @@ const API = "";
 
 let cachedAreas = null;
 
+function getToken() {
+  return localStorage.getItem("cronograma_token");
+}
+
+function getAuthHeader() {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 function getSubcategorias() {
   try {
     return JSON.parse(localStorage.getItem("subcategorias") || "[]");
@@ -28,7 +37,7 @@ function populateSubcategoriasDatalist() {
 }
 
 async function get(url) {
-  const r = await fetch(API + url);
+  const r = await fetch(API + url, { headers: getAuthHeader() });
   if (!r.ok) throw new Error(r.statusText);
   return r.json();
 }
@@ -36,7 +45,7 @@ async function get(url) {
 async function post(url, body) {
   const r = await fetch(API + url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
     body: JSON.stringify(body),
   });
   if (!r.ok) throw new Error(r.statusText);
@@ -46,7 +55,7 @@ async function post(url, body) {
 async function patch(url, body) {
   const r = await fetch(API + url, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
     body: JSON.stringify(body),
   });
   if (!r.ok) throw new Error(r.statusText);
@@ -54,7 +63,7 @@ async function patch(url, body) {
 }
 
 async function delReq(url) {
-  const r = await fetch(API + url, { method: "DELETE" });
+  const r = await fetch(API + url, { method: "DELETE", headers: getAuthHeader() });
   if (!r.ok) throw new Error(r.statusText);
 }
 
@@ -847,4 +856,12 @@ async function init() {
   }
 }
 
-init().catch((err) => alert("Erro: " + err.message));
+async function initApp() {
+  return init();
+}
+
+window.initApp = initApp;
+
+document.addEventListener("DOMContentLoaded", () => {
+  // A inicialização será feita pelo Auth após login
+});
