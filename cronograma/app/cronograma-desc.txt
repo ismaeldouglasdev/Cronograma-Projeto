@@ -1,0 +1,417 @@
+# Cronograma - Sistema de Gerenciamento de Estudos
+
+## Visão Geral
+
+O Cronograma é um sistema web completo para gerenciamento de estudos, desenvolvido com FastAPI (backend) e Vanilla JS (frontend). O aplicativo permite gerenciar áreas de estudo, tarefas com prioridades, quadro de horários presenciais, sessões de estudo e um timer Pomodoro integrado.
+
+---
+
+## Aparência Visual
+
+### Tema Escuro (Dark Theme)
+
+O sistema utiliza um tema escuro moderno com as seguintes cores:
+
+| Variável CSS | Cor | Uso |
+|--------------|-----|-----|
+| `--bg` | `#0f0f12` | Fundo principal da página |
+| `--bg-card` | `#1a1a20` | Fundo de cards e elementos elevados |
+| `--text` | `#e8e6e3` | Texto principal |
+| `--text-muted` | `#9b9a97` | Texto secundário/legendas |
+| `--accent` | `#f59e0b` | Cor de destaque (laranja) |
+| `--accent-hover` | `#fbbf24` | Cor de hover do acento |
+| `--border` | `#2d2d35` | Bordas de elementos |
+| `--done` | `#22c55e` | Cor verde para concluído |
+| `--radius` | `12px` | Raio de borda padrão |
+
+### Tipografia
+
+- **Fonte principal**: "Segoe UI", system-ui, sans-serif
+- **Títulos h1**: 1.5rem, negrito
+- **Títulos h2**: 1.1rem
+- **Texto**: 1rem com line-height 1.5
+- **Inputs**: 1rem com padding generoso
+
+---
+
+## Estrutura de Layout
+
+### 1. Header (Cabeçalho)
+
+```
+┌─────────────────────────────────────────────┐
+│  🍅 Pomodoro                           [X] │
+│  ════════════════════════════════════════ │
+│              25:00                        │
+│  ┌─────────────────────────────────────┐  │
+│  │ Selecione a área                    ▼│  │
+│  └─────────────────────────────────────┘  │
+│  ┌──────────┐  ☐ Descanso automático     │
+│  │25 min   │   ┌─────────┐                │
+│  └──────────┘  │5 min    │                │
+│  [▶ Iniciar] [🔄 Reset]                   │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│              Cronograma                     │
+│         Organize seus estudos                │
+└─────────────────────────────────────────────┘
+```
+
+- Título "Cronograma" centralizado
+- Subtítulo "Organize seus estudos"
+- Widget Pomodoro integrado no header
+
+### 2. Navegação por Abas (Tabs)
+
+```
+┌──────────┬────────────┬────────┬─────────┬───────┐
+│ Áreas    │Quadro Hor. │Tarefas │Sessões  │Resumo │
+└──────────┴────────────┴────────┴─────────┴───────┘
+```
+
+- 5 abas: Áreas, Quadro de Horários, Tarefas, Sessões, Resumo
+- Aba ativa destacada em laranja
+- Scroll horizontal em mobile
+
+---
+
+## Funcionalidades Detalhadas
+
+### 1. Áreas / Matérias
+
+**Formulário de Criação:**
+```
+┌─────────────────────────────────────────────┐
+│ Nome: [Matemática                    ][■] │
+│ Categoria: [________________________]       │
+│ Tipo:  ( ) Online  (•) Presencial          │
+│ ┌─────────────────────────────────────┐   │
+│ │ Dia: [Selecione        ▼]           │   │
+│ │ Horário: [19:00 - 20:40         ]   │   │
+│ │ Sala: [206                    ]      │   │
+│ │ Bloco: [E                     ]      │   │
+│ │ Professor: [Andre             ]       │   │
+│ └─────────────────────────────────────┘   │
+│              [Adicionar]                   │
+└─────────────────────────────────────────────┘
+```
+
+**Grid de Áreas (4 colunas):**
+```
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│    📚    │ │    📚    │ │    📚    │ │    📚    │
+│  Matemat │ │ Física   │ │  Química │ │ Português│
+│ Cálculo  │ │ Mecânica │ │  Orgânica│ │ Literatura│
+│ Presenc. │ │ Online   │ │ Presenc. │ │  Online  │
+│    ×     │ │    ×     │ │    ×     │ │    ×     │
+└──────────┘ └──────────┘ └──────────┘ └──────────┘
+```
+
+**Funcionalidades:**
+- Cada card mostra: ícone, nome, categoria, tipo (Online/Presencial), informações de aula
+- Cor customizável por área (escolher cor)
+- Subcategorias (ex: "Cálculo", "Mecânica")
+- Campos adicionais para aulas presenciais: dia, horário, sala, bloco, professor
+- Busca por nome
+- Filtro por categoria
+- Cards clicáveis para editar
+- Botão × para excluir
+
+### 2. Quadro de Horários
+
+```
+┌─────────────────────────────────────────────┐
+│          Quadro de Horários                 │
+│   Seus horários de aulas presenciais        │
+├─────────────────────────────────────────────┤
+│ SEGUNDA-FEIRA                              │
+│ ┌─────────────────────────────────────────┐ │
+│ │ ● Física     19:00-20:40 · Sala 206   │ │
+│ └─────────────────────────────────────────┘ │
+│ TERÇA-FEIRA                                │
+│ ┌─────────────────────────────────────────┐ │
+│ │ ● Química    14:00-15:40 · Sala 305 (B)│ │
+│ └─────────────────────────────────────────┘ │
+│ ...                                         │
+└─────────────────────────────────────────────┘
+```
+
+- Lista por dia da semana
+- Exibe apenas áreas presenciais com dia definido
+- Mostra: nome, horário, sala, bloco, professor
+
+### 3. Tarefas / Entregas
+
+**Ordenação:**
+- Por Prioridade (padrão)
+- Por Data
+
+**Formulário de Criação:**
+```
+┌─────────────────────────────────────────────┐
+│ Área:      [Selecione a área           ▼] │
+│ Título:    [_________________________]     │
+│ Prioridade:[Sem prioridade             ▼]  │
+│            (Sem prioridade / Alta / Média)│
+│ Descrição:[                        ]       │
+│            [                        ]       │
+│ Data:      [____/__/____]                 │
+│              [Adicionar]                   │
+└─────────────────────────────────────────────┘
+```
+
+**Lista de Tarefas:**
+```
+┌─────────────────────────────────────────────┐
+│ ● Lista 1  Matematica · 15/02/2026    [✓][×]│
+│ ● Lista 2  Física · 20/02/2026       [✓][×]│ ← Alta prioridade (borda vermelha)
+│ ● Lista 3  Química · 22/02/2026       [✓][×]│ ← Média prioridade (borda amarela)
+│ ● Lista 4  Português · 25/02/2026     [✓][×]│ ← Baixa prioridade (borda verde)
+│ ● Lista 5  História · concluída       [✓][×]│ ← Riscada (concluída)
+└─────────────────────────────────────────────┘
+```
+
+**Indicadores de Prioridade:**
+- Alta: borda esquerda vermelha (`#ef4444`)
+- Média: borda esquerda amarela (`#eab308`)
+- Baixa: borda esquerda verde (`#22c55e`)
+- Sem prioridade: sem borda colorida
+
+**Funcionalidades:**
+- Selectionar área, título, prioridade, descrição, data
+- Checkbox para marcar como concluída
+- Ao concluir, pede duração em minutos (cria sessão automaticamente)
+- Clicar na tarefa abre modal de edição
+- Ordenação: por prioridade (maior primeiro) ou por data
+
+### 4. Sessões de Estudo
+
+**Registro Manual:**
+```
+┌─────────────────────────────────────────────┐
+│ Área:        [Selecione a área         ▼] │
+│ Minutos:     [30                      ]   │
+│ Data:        [____/__/____] (opcional)    │
+│                [Registrar]                │
+└─────────────────────────────────────────────┘
+```
+
+**Lista de Sessões:**
+```
+┌─────────────────────────────────────────────┐
+│ ● Matemática     25 min     17/02/2026  [×]│
+│ ● Física         45 min     17/02/2026  [×]│
+│ ● Química        30 min     16/02/2026  [×]│
+└─────────────────────────────────────────────┘
+```
+
+### 5. Resumo / Gráfico
+
+```
+┌─────────────────────────────────────────────┐
+│         Horas de estudo por área            │
+│  ┌─────────────────────────────────────┐   │
+│  │     [Gráfico de Rosca]              │   │
+│  │         (Chart.js)                  │   │
+│  └─────────────────────────────────────┘   │
+│                                             │
+│  Matemática     ████████████   12.5h       │
+│  Física         ███████       7.0h        │
+│  Química        █████         5.0h         │
+│  Português      ██            2.5h         │
+└─────────────────────────────────────────────┘
+```
+
+- Gráfico de rosca ( Doughnut Chart)
+- Lista com barras de progresso
+- Total de horas por área
+
+---
+
+## Timer Pomodoro
+
+**Widget no Header:**
+```
+┌─────────────────────────────────────────────┐
+│  🍅 Pomodoro                                │
+│  ════════════════════════════════════════  │
+│              25:00                         │
+│  ┌─────────────────────────────────────┐    │
+│  │ Selecione a área                    ▼│    │
+│  └─────────────────────────────────────┘    │
+│  [25] min                                  │
+│  ☐ Descanso automático                     │
+│  [5] min descanso                          │
+│                                             │
+│  [▶ Iniciar]  [🔄 Reset]                   │
+└─────────────────────────────────────────────┘
+```
+
+**Estados do Timer:**
+- **Idle**: Timer em 25:00 (ou valor customizado)
+- **Running**: Contagem regressiva
+- **Paused**: Timer pausado
+- **Break**: Modo descanso (timer verde)
+
+**Características:**
+- Tempo customizável: 5-90 minutos
+- Descanso automático: opção para iniciar descanso após pomodoro
+- Tempo de descanso customizável: 1-30 minutos
+- Feedback visual: pisca amarelo (últimos 30s), vermelho (últimos 10s)
+- Som de notificação breve ao terminar
+- Ao completar: salva sessão automaticamente na área selecionada
+- Atualiza resumo e lista de sessões em tempo real
+
+---
+
+## Modais de Edição
+
+### Editar Tarefa
+```
+┌─────────────────────────────────────────────┐
+│ ×                                               │
+│            Editar Tarefa                      │
+│  Área:        [Selecione a área         ▼]   │
+│  Título:      [_________________________]     │
+│  Descrição:   [_________________________]     │
+│  Data:        [____/__/____]                  │
+│  Status:      ( ) Pendente  ( ) Concluída     │
+│  Prioridade:  [Selecione                 ▼]   │
+│              [Salvar]                         │
+└─────────────────────────────────────────────┘
+```
+
+### Editar Área
+```
+┌─────────────────────────────────────────────┐
+│ ×                                               │
+│            Editar Área                         │
+│  Nome:      [_________________________][■]    │
+│  Categoria: [_________________________]       │
+│  Tipo:      ( ) Online  ( ) Presencial        │
+│  [Campos presenciais condicionais...]          │
+│              [Salvar]                         │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+## Tecnologias Utilizadas
+
+### Backend
+- **FastAPI**: Framework web Python
+- **SQLAlchemy**: ORM para SQLite
+- **Pydantic**: Validação de dados
+- **SQLite**: Banco de dados
+
+### Frontend
+- **Vanilla JS**: Sem frameworks
+- **Chart.js**: Gráficos
+- **CSS3**: Estilização com variáveis CSS
+
+---
+
+## Endpoints da API
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/areas` | Lista todas as áreas |
+| POST | `/areas` | Cria nova área |
+| PATCH | `/areas/{id}` | Atualiza área |
+| DELETE | `/areas/{id}` | Exclui área |
+| GET | `/tasks` | Lista todas as tarefas |
+| POST | `/tasks` | Cria nova tarefa |
+| PATCH | `/tasks/{id}` | Atualiza tarefa |
+| DELETE | `/tasks/{id}` | Exclui tarefa |
+| GET | `/sessoes` | Lista sessões |
+| POST | `/sessoes` | Cria sessão manual |
+| PATCH | `/sessoes/{id}` | Atualiza sessão |
+| DELETE | `/sessoes/{id}` | Exclui sessão |
+| GET | `/sessoes/resumo` | Resumo de horas por área |
+| POST | `/pomodoro/completar` | Salva pomodoro como sessão |
+
+---
+
+## Estrutura do Banco de Dados
+
+### Tabela: areas
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| id | INTEGER | PK |
+| nome | VARCHAR | Nome da área |
+| cor | VARCHAR | Cor hex (#6366f1) |
+| tipo | VARCHAR | "online" ou "presencial" |
+| dia_semana | VARCHAR | Dia da semana |
+| horario | VARCHAR | Horário |
+| sala | VARCHAR | Número da sala |
+| bloco | VARCHAR | Bloco |
+| professor | VARCHAR | Nome do professor |
+| subcategoria | VARCHAR | Categoria |
+
+### Tabela: tasks
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| id | INTEGER | PK |
+| area_id | INTEGER | FK → areas |
+| titulo | VARCHAR | Título da tarefa |
+| descricao | VARCHAR | Descrição |
+| data_entrega | DATE | Data de entrega |
+| concluida | BOOLEAN | Status |
+| duracao_minutos | INTEGER | Tempo dedicado |
+| prioridade | INTEGER | 1=baixa, 2=média, 3=alta |
+
+### Tabela: sessoes
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| id | INTEGER | PK |
+| area_id | INTEGER | FK → areas |
+| duracao_minutos | INTEGER | Minutos estudados |
+| data | DATE | Data da sessão |
+| task_id | INTEGER | FK → tasks (opcional) |
+
+---
+
+## Como Executar
+
+```bash
+# Instalação de dependências
+pip install fastapi uvicorn sqlalchemy pydantic
+
+# Iniciar servidor
+cd cronograma/app
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+# Acessar
+# Local: http://localhost:8000
+# Rede: http://192.168.15.6:8000
+```
+
+---
+
+## Detalhes de Implementação
+
+### Ordenação de Tarefas
+```
+Por Prioridade:
+1. Primeiro: tarefas não concluídas com prioridade (alta → baixa)
+2. Segundo: tarefas sem prioridade
+3. Terceiro: tarefas concluídas (por data)
+
+Por Data:
+1. Primeiro: tarefas não concluídas (data mais próxima)
+2. Segundo: tarefas concluídas
+```
+
+### Grid Responsivo de Áreas
+- Desktop (>900px): 4 colunas
+- Tablet (600-900px): 3 colunas
+- Mobile (<600px): 2 colunas
+
+### Pomodoro Automático
+1. Usuário seleciona área e tempo
+2. Clica "Iniciar"
+3. Timer conta regressiva
+4. Ao zerar: toca som breve → salva sessão → pergunta se inicia descanso
+5. Se descanso automático: inicia timer de descanso
+6. Ao final do descanso: notifica usuário
