@@ -1,14 +1,62 @@
 :root {
+  /* Dark theme (default) */
   --bg: #0f0f12;
   --bg-card: #1a1a20;
+  --bg-input: #252530;
   --text: #e8e6e3;
   --text-muted: #9b9a97;
+  --text-inverse: #000000;
   --accent: #f59e0b;
   --accent-hover: #fbbf24;
+  --accent-subtle: rgba(245, 158, 11, 0.15);
   --border: #2d2d35;
+  --border-light: #3d3d45;
   --done: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --overlay: rgba(0, 0, 0, 0.5);
   --radius: 12px;
+  --radius-sm: 8px;
   --touch: 44px;
+}
+
+[data-theme="light"] {
+  --bg: #f5f5f7;
+  --bg-card: #ffffff;
+  --bg-input: #f0f0f2;
+  --text: #1d1d1f;
+  --text-muted: #6e6e73;
+  --text-inverse: #ffffff;
+  --accent: #007aff;
+  --accent-hover: #0056b3;
+  --accent-subtle: rgba(0, 122, 255, 0.1);
+  --border: #d2d2d7;
+  --border-light: #e5e5ea;
+  --done: #34c759;
+  --danger: #ff3b30;
+  --warning: #ff9500;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --overlay: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="ocean"] {
+  --bg: #0a1628;
+  --bg-card: #112240;
+  --bg-input: #1a3154;
+  --text: #ccd6f2;
+  --text-muted: #8892b0;
+  --text-inverse: #0a1628;
+  --accent: #64ffda;
+  --accent-hover: #92ffea;
+  --accent-subtle: rgba(100, 255, 218, 0.15);
+  --border: #233554;
+  --border-light: #2d4a6f;
+  --done: #57d5a7;
+  --danger: #ff6b6b;
+  --warning: #ffd93d;
+  --shadow: rgba(0, 0, 0, 0.4);
+  --overlay: rgba(0, 10, 30, 0.7);
 }
 
 .sr-only {
@@ -1337,3 +1385,305 @@ main {
   font-size: 0.9rem;
   color: var(--accent);
 }
+
+/* Login Screen */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.login-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  width: 100%;
+  max-width: 400px;
+  margin: 1rem;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.login-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.login-header p {
+  color: var(--text-muted);
+  margin: 0.25rem 0 0;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.auth-form h2 {
+  margin: 0 0 0.5rem;
+  text-align: center;
+  font-size: 1.25rem;
+}
+
+.auth-form input {
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.auth-form button {
+  padding: 0.875rem;
+  background: var(--accent);
+  color: var(--text-inverse);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.auth-form button:hover {
+  background: var(--accent-hover);
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 1.5rem;
+  color: var(--text-muted);
+}
+
+.auth-switch a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+.verify-info {
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.verify-info-small {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+#verify-email-container .auth-form input {
+  margin-bottom: 1rem;
+}
+
+#verify-email-container .auth-form button {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+/* Header Controls */
+.header-controls {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.theme-select {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.theme-select:hover {
+  border-color: var(--accent);
+}
+
+.theme-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.logout-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Gamification */
+.gami-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.gami-level-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.gami-level-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gami-level-num {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.gami-level-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.gami-xp-info {
+  flex: 1;
+  min-width: 150px;
+}
+
+.gami-xp-bar {
+  height: 12px;
+  background: var(--bg-input);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.gami-xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.gami-xp-text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.gami-streak {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.gami-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.gami-stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  text-align: center;
+}
+
+.gami-stat-num {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.gami-stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.gami-badges h3 {
+  margin: 0 0 1rem;
+}
+
+.gami-badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+}
+
+.gami-badge {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.gami-badge.locked {
+  opacity: 0.4;
+}
+
+.gami-badge-icon {
+  font-size: 1.5rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.gami-badge.locked .gami-badge-icon {
+  filter: grayscale(1);
+}
+
+.gami-badge-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.gami-badge.locked .gami-badge-name {
+  color: var(--text-muted);
+}
+

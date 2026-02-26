@@ -1,10 +1,14 @@
-from datetime import date
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Optional, List
-from fastapi import Depends, FastAPI, HTTPException
+import os
+import re
+
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response, JSONResponse
-from pydantic import BaseModel
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel, EmailStr
 from sqlalchemy import (
     Column,
     Integer,
@@ -17,6 +21,85 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
+import jwt
+import hashlib
+import secrets
+import uuid
+
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./cronograma.db")
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
+)
+
+Base = declarative_base()
+
+# JWT Settings
+SECRET_KEY = os.environ.get("JWT_SECRET", secrets.token_urlsafe(32))
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_HOURS = 24
+
+security = HTTPBearer(auto_error=False)
+
+
+def validate_email(email: str) -> bool:
+    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    return bool(re.match(pattern, email))
+
+
+def validate_password(password: str) -> tuple[bool, str]:
+    if len(password) < 8:
+        return False, "Senha deve ter pelo menos 8 caracteres"
+    if not re.search(r"[a-zA-Z]", password):
+        return False, "Senha deve conter pelo menos uma letra"
+    if not re.search(r"[0-9]", password):
+        return False, "Senha deve conter pelo menos um número"
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return False, "Senha deve conter pelo menos um caractere especial"
+    return True, ""
+
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return hash_password(plain_password) == hashed_password
+
+
+def generate_verification_token() -> str:
+    return str(uuid.uuid4())
+
+
+def sendVerificationEmail(user, token: str):
+    print(f"[DEBUG AUTH] ============================================")
+    print(f"[DEBUG AUTH] 📧 Verification email for: {user.email}")
+    print(f"[DEBUG AUTH] 🎫 Token: {token}")
+    print(f"[DEBUG AUTH] 🔗 Link: http://localhost:8000/verify.html?token={token}")
+    print(f"[DEBUG AUTH] ============================================")
+    return True
+
+
+# --- Auth Schemas ---
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+
+class UserRegister(BaseModel):
+    email: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str
+
 
 engine = create_engine(
     "sqlite:///./cronograma.db",
@@ -166,6 +249,17 @@ class HorasPorArea(BaseModel):
     total_horas: float
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String(255), unique=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    created_at = Column(String(20), nullable=True)
+    is_verified = Column(Boolean, default=False, nullable=True)
+    verification_token = Column(String(255), nullable=True)
+
+
 class Areas(Base):
     __tablename__ = "areas"
 
@@ -211,6 +305,28 @@ Base.metadata.create_all(engine)
 
 # Migrações
 with engine.connect() as conn:
+    # Tabela de usuários
+    try:
+        conn.execute(
+            text(
+                "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, email VARCHAR(255) UNIQUE NOT NULL, password_hash VARCHAR(255) NOT NULL, created_at VARCHAR(20), is_verified BOOLEAN DEFAULT 0, verification_token VARCHAR(255))"
+            )
+        )
+        conn.commit()
+    except Exception:
+        pass
+    try:
+        conn.execute(text("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 0"))
+        conn.commit()
+    except Exception:
+        pass
+    try:
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN verification_token VARCHAR(255)")
+        )
+        conn.commit()
+    except Exception:
+        pass
     try:
         conn.execute(text("ALTER TABLE tasks ADD COLUMN duracao_minutos INTEGER"))
         conn.commit()
@@ -292,11 +408,132 @@ def get_db():
         db.close()
 
 
+# Funções de autenticação (definidas aqui para usar get_db)
+def create_access_token(user_id: int) -> str:
+    expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+    payload = {"sub": str(user_id), "exp": expire}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
+) -> int:
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return user_id
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
 app = FastAPI()
 
 STATIC_DIR = Path(__file__).parent / "static"
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+# --- Auth Endpoints ---
+@app.post("/auth/register", response_model=TokenResponse)
+def register(body: UserRegister, db: Session = Depends(get_db)):
+    if not validate_email(body.email):
+        raise HTTPException(status_code=400, detail="Email inválido")
+
+    senha_valida, msg_erro = validate_password(body.password)
+    if not senha_valida:
+        raise HTTPException(status_code=400, detail=msg_erro)
+
+    existing = db.query(User).filter(User.email == body.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email já cadastrado")
+
+    verification_token = generate_verification_token()
+
+    user = User(
+        email=body.email,
+        password_hash=hash_password(body.password),
+        created_at=datetime.utcnow().isoformat(),
+        is_verified=False,
+        verification_token=verification_token,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    print(f"[DEBUG AUTH] User created: {user.email} (id={user.id})")
+
+    sendVerificationEmail(user, verification_token)
+
+    token = create_access_token(user.id)
+    return TokenResponse(access_token=token)
+
+
+@app.post("/auth/login", response_model=TokenResponse)
+def login(body: UserLogin, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == body.email).first()
+    if not user or not verify_password(body.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+
+    if user.is_verified is False:
+        print(f"[DEBUG AUTH] Login blocked (not verified): {user.email}")
+        raise HTTPException(
+            status_code=403, detail="Conta não verificada. Verifique seu email."
+        )
+
+    print(f"[DEBUG AUTH] Login success: {user.email}")
+    token = create_access_token(user.id)
+    return TokenResponse(access_token=token)
+
+
+@app.get("/auth/check")
+def check_auth(user_id: int = Depends(get_current_user)):
+    return {"user_id": user_id, "authenticated": True}
+
+
+@app.get("/auth/verify-email")
+def verify_email_get(token: str, db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.verification_token == token).first()
+        if not user:
+            return {"success": False, "message": "Token inválido ou expirado"}
+
+        user.is_verified = True
+        user.verification_token = None
+        db.commit()
+
+        print(f"[DEBUG AUTH] User verified via link: {user.email}")
+        return {"success": True, "message": "Email verificado com sucesso!"}
+
+    except Exception as e:
+        print(f"[DEBUG AUTH] Verify error: {e}")
+        return {"success": False, "message": "Erro ao verificar email"}
+
+
+@app.post("/auth/verify-email")
+def verify_email_post(body: VerifyEmailRequest, db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.verification_token == body.token).first()
+        if not user:
+            return {"success": False, "message": "Token inválido ou expirado"}
+
+        user.is_verified = True
+        user.verification_token = None
+        db.commit()
+
+        print(f"[DEBUG AUTH] User verified via manual token: {user.email}")
+        return {"success": True, "message": "Email verificado com sucesso!"}
+
+    except Exception as e:
+        print(f"[DEBUG AUTH] Verify error: {e}")
+        return {"success": False, "message": "Erro ao verificar email"}
 
 
 @app.get("/")

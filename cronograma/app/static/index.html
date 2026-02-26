@@ -1,21 +1,88 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cronograma - Meus Estudos</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
   <link rel="stylesheet" href="/static/style.css">
+  <script>
+    (function() {
+      var themes = ['dark', 'light', 'ocean'];
+      var theme = 'dark';
+      try {
+        theme = localStorage.getItem('app_theme') || 'dark';
+      } catch(e) {}
+      if (themes.indexOf(theme) === -1) theme = 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      window.__initialTheme = theme;
+    })();
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+  <!-- Login Screen -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-container">
+      <div class="login-header">
+        <span class="login-icon">📚</span>
+        <h1>Cronograma</h1>
+        <p>Organize seus estudos</p>
+      </div>
+
+      <div id="login-form-container">
+        <form id="login-form" class="auth-form">
+          <h2>Entrar</h2>
+          <input type="email" name="email" placeholder="Email" required>
+          <input type="password" name="password" placeholder="Senha" required>
+          <button type="submit">Entrar</button>
+          <p class="auth-switch">Não tem conta? <a href="#" id="show-register">Cadastrar</a></p>
+        </form>
+      </div>
+
+      <div id="register-form-container" style="display: none;">
+        <form id="register-form" class="auth-form">
+          <h2>Criar conta</h2>
+          <input type="email" name="email" placeholder="Email" required>
+          <input type="password" name="password" placeholder="Senha" required>
+          <input type="password" name="confirm_password" placeholder="Confirmar senha" required>
+          <button type="submit">Cadastrar</button>
+          <p class="auth-switch">Já tem conta? <a href="#" id="show-login">Entrar</a></p>
+        </form>
+      </div>
+
+      <div id="verify-email-container" style="display: none;">
+        <div class="auth-form">
+          <h2>Verificar Email</h2>
+          <p class="verify-info">Conta criada! Por favor, verifique seu email.</p>
+          <p class="verify-info-small">Copie o token que aparece no console do servidor e cole abaixo:</p>
+          <input type="text" id="verification-token" placeholder="Cole o token de verificação aqui" required>
+          <button type="button" id="verify-btn">Verificar</button>
+          <p class="auth-switch">Já verificado? <a href="#" id="show-login-verify">Entrar</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="main-app" style="display: none;">
   <header>
     <h1>Cronograma</h1>
     <p class="subtitle">Organize seus estudos</p>
+    <div class="header-controls">
+      <select id="theme-select" class="theme-select" aria-label="Selecionar tema">
+        <option value="dark">🌙 Escuro</option>
+        <option value="light">☀️ Claro</option>
+        <option value="ocean">🌊 Ocean</option>
+      </select>
+      <button id="logout-btn" class="logout-btn">Sair</button>
+    </div>
   </header>
 
   <nav class="tabs">
     <button class="tab active" data-tab="areas">Áreas</button>
     <button class="tab" data-tab="foco">🎯 Foco</button>
+    <button class="tab" data-tab="gamificacao">🏆 Gamificação</button>
     <button class="tab" data-tab="horarios">Quadro de Horários</button>
     <button class="tab" data-tab="tasks">Tarefas</button>
     <button class="tab" data-tab="sessoes">Sessões</button>
@@ -143,6 +210,50 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gamificação -->
+    <section id="gamificacao" class="panel">
+      <h2>🏆 Gamificação</h2>
+      <p class="section-desc">Acompanhe seu progresso e conquiste badges!</p>
+      
+      <div class="gami-container">
+        <div class="gami-level-card">
+          <div class="gami-level-info">
+            <span class="gami-level-num" id="gami-level">1</span>
+            <span class="gami-level-label">Nível</span>
+          </div>
+          <div class="gami-xp-info">
+            <div class="gami-xp-bar">
+              <div class="gami-xp-fill" id="gami-xp-fill"></div>
+            </div>
+            <span class="gami-xp-text"><span id="gami-xp-current">0</span> / <span id="gami-xp-next">500</span> XP</span>
+          </div>
+          <div class="gami-streak">
+            <span>🔥 Sequência: <span id="gami-streak">0</span> dias</span>
+          </div>
+        </div>
+        
+        <div class="gami-stats">
+          <div class="gami-stat">
+            <span class="gami-stat-num" id="gami-pomodoros">0</span>
+            <span class="gami-stat-label">🍅 Pomodoros</span>
+          </div>
+          <div class="gami-stat">
+            <span class="gami-stat-num" id="gami-tarefas">0</span>
+            <span class="gami-stat-label">✅ Tarefas</span>
+          </div>
+          <div class="gami-stat">
+            <span class="gami-stat-num" id="gami-areas">0</span>
+            <span class="gami-stat-label">📚 Áreas</span>
+          </div>
+        </div>
+        
+        <div class="gami-badges">
+          <h3>Conquistas</h3>
+          <div class="gami-badges-grid" id="gami-badges-grid"></div>
         </div>
       </div>
     </section>
@@ -324,7 +435,14 @@
     </div>
   </div>
 
+  <div><!-- End main-app -->
+
+  <script src="/static/theme.js"></script>
+  <script>ThemeManager.init();</script>
+  <script src="/static/auth.js"></script>
+  <script src="/static/stores.js"></script>
   <script src="/static/app.js"></script>
   <script src="/static/foco.js"></script>
+  <script src="/static/gamification.js"></script>
 </body>
 </html>
