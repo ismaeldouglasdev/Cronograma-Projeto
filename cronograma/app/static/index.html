@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cronograma - Meus Estudos</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Cronograma</h1>
+    <p class="subtitle">Organize seus estudos</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="areas">Áreas</button>
+    <button class="tab" data-tab="foco">🎯 Foco</button>
+    <button class="tab" data-tab="horarios">Quadro de Horários</button>
+    <button class="tab" data-tab="tasks">Tarefas</button>
+    <button class="tab" data-tab="sessoes">Sessões</button>
+    <button class="tab" data-tab="resumo">Resumo</button>
+  </nav>
+
+  <main>
+    <!-- Áreas -->
+    <section id="areas" class="panel active">
+      <h2>Áreas / Matérias</h2>
+      <div class="areas-filters">
+        <input type="text" id="search-areas" placeholder="Buscar por nome..." aria-label="Buscar por nome">
+        <select id="filter-categoria" aria-label="Filtrar por categoria">
+          <option value="">Todas as categorias</option>
+        </select>
+      </div>
+      <form id="form-area" class="card form-card">
+        <div class="input-with-color">
+          <input type="text" name="nome" id="area-nome" placeholder="Nome (ex: Matemática)" required aria-label="Nome da área">
+          <label class="color-picker-wrap" title="Cor" for="area-cor">
+            <span class="color-square" id="color-preview"></span>
+            <input type="color" name="cor" id="area-cor" value="#6366f1" class="color-input">
+          </label>
+        </div>
+        <input type="text" name="subcategoria" id="subcategoria-input" list="subcategoria-list" placeholder="Categoria (opcional)" aria-label="Categoria">
+        <datalist id="subcategoria-list"></datalist>
+        <select name="tipo" id="tipo-aula" aria-label="Tipo de aula">
+          <option value="online">Online</option>
+          <option value="presencial">Presencial</option>
+        </select>
+        <div id="campos-presencial" class="campos-presencial" style="display:none;">
+          <select name="dia_semana" id="dia-semana" aria-label="Dia da semana">
+            <option value="">Dia da semana</option>
+            <option value="segunda">Segunda-feira</option>
+            <option value="terca">Terça-feira</option>
+            <option value="quarta">Quarta-feira</option>
+            <option value="quinta">Quinta-feira</option>
+            <option value="sexta">Sexta-feira</option>
+            <option value="sabado">Sábado</option>
+            <option value="domingo">Domingo</option>
+          </select>
+          <input type="text" name="horario" id="area-horario" placeholder="Horário (ex: 19:00 - 20:40)" aria-label="Horário">
+          <input type="text" name="sala" id="area-sala" placeholder="Sala (ex: 206)" aria-label="Sala">
+          <input type="text" name="bloco" id="area-bloco" placeholder="Bloco (ex: E)" aria-label="Bloco">
+          <input type="text" name="professor" id="area-professor" placeholder="Professor (ex: Andre)" aria-label="Professor">
+        </div>
+        <button type="submit">Adicionar</button>
+      </form>
+      <div id="lista-areas" class="areas-grid"></div>
+    </section>
+
+    <!-- Foco / Pomodoro -->
+    <section id="foco" class="panel">
+      <h2>🎯 Modo Foco</h2>
+      <p class="section-desc">Execute suas tarefas com concentração</p>
+      
+      <div class="foco-container">
+        <div class="foco-timer-section">
+          <div class="foco-timer-wrapper">
+            <svg class="foco-timer-svg" viewBox="0 0 200 200">
+              <circle class="foco-timer-bg" cx="100" cy="100" r="90" />
+              <circle class="foco-timer-progress" cx="100" cy="100" r="90" />
+            </svg>
+            <div class="foco-timer-display">
+              <span id="foco-timer-time">25:00</span>
+              <span id="foco-timer-label">Foco</span>
+            </div>
+          </div>
+          
+          <div class="foco-controls">
+            <button id="foco-start" class="foco-btn foco-start">▶ Iniciar</button>
+            <button id="foco-pause" class="foco-btn foco-pause" style="display:none;">⏸ Pausar</button>
+            <button id="foco-reset" class="foco-btn foco-reset">🔄 Reset</button>
+            <button id="foco-skip" class="foco-btn foco-reset" style="display:none;">⏭️ Pular</button>
+          </div>
+        </div>
+        
+        <div class="foco-config-section">
+          <div class="foco-config">
+            <label for="foco-area">Área</label>
+            <select id="foco-area">
+              <option value="">Selecione a área</option>
+            </select>
+            
+            <label for="foco-task">Tarefa (opcional)</label>
+            <select id="foco-task" disabled>
+              <option value="">Selecione uma tarefa</option>
+            </select>
+            
+            <div class="foco-time-config">
+              <div class="foco-time-input">
+                <label for="foco-minutes">Foco</label>
+                <div class="foco-input-group">
+                  <input type="number" id="foco-minutes" value="25" min="5" max="90">
+                  <span>min</span>
+                </div>
+              </div>
+              
+              <div class="foco-time-input">
+                <label for="foco-break-minutes">Descanso</label>
+                <div class="foco-input-group">
+                  <input type="number" id="foco-break-minutes" value="5" min="1" max="30">
+                  <span>min</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="foco-auto-break">
+              <input type="checkbox" id="foco-auto-break" checked>
+              <label for="foco-auto-break">Descanso automático</label>
+            </div>
+          </div>
+          
+          <div class="foco-stats">
+            <div class="foco-today">
+              <h4>Hoje</h4>
+              <p><span id="foco-sessions-count">0</span> sessões</p>
+              <p><span id="foco-total-time">0</span>min</p>
+            </div>
+            <div class="foco-task-progress" id="foco-task-progress" style="display:none;">
+              <h4>Meta da tarefa</h4>
+              <p><span id="foco-task-pomodoros">0</span> / <span id="foco-task-meta">0</span> pomodoros</p>
+              <div class="foco-progress-bar">
+                <div class="foco-progress-fill" id="foco-progress-fill"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quadro de Horários -->
+    <section id="horarios" class="panel">
+      <h2>Quadro de Horários</h2>
+      <p class="section-desc">Seus horários de aulas presenciais por dia da semana</p>
+      <div id="quadro-horarios" class="horarios-grid"></div>
+    </section>
+
+    <!-- Tarefas -->
+    <section id="tasks" class="panel">
+      <h2>Tarefas / Entregas</h2>
+      <div class="tasks-filters">
+        <select id="sort-tasks" aria-label="Ordenar por">
+          <option value="prioridade">Por Prioridade</option>
+          <option value="data">Por Data</option>
+        </select>
+      </div>
+      <form id="form-task" class="card form-card form-task">
+        <label class="form-label" for="task-area">Área</label>
+        <select name="area_id" id="task-area" required class="form-select-area">
+          <option value="">Selecione a área</option>
+        </select>
+        <span id="area-selected" class="area-selected" aria-live="polite"></span>
+        <label class="form-label" for="task-titulo">Título</label>
+        <input type="text" name="titulo" id="task-titulo" placeholder="Título da tarefa" required class="form-input-lg">
+        <label class="form-label" for="task-prioridade">Prioridade</label>
+        <select name="prioridade" id="task-prioridade">
+          <option value="">Sem prioridade</option>
+          <option value="3">🔴 Alta</option>
+          <option value="2">🟡 Média</option>
+          <option value="1">🟢 Baixa</option>
+        </select>
+        <label class="form-label" for="task-meta-pomodoros">Meta de Pomodoros</label>
+        <input type="number" name="meta_pomodoros" id="task-meta-pomodoros" placeholder="Opcional" min="1" max="50">
+        <label class="form-label" for="task-desc">Descrição</label>
+        <textarea name="descricao" id="task-desc" placeholder="Descrição (opcional)" rows="3" class="form-textarea"></textarea>
+        <label class="form-label" for="task-data">Data de entrega</label>
+        <input type="date" name="data_entrega" id="task-data" required>
+        <button type="submit">Adicionar</button>
+      </form>
+      <ul id="lista-tasks" class="list"></ul>
+    </section>
+
+    <!-- Sessões -->
+    <section id="sessoes" class="panel">
+      <h2>Registrar sessão de estudo</h2>
+      <form id="form-sessao" class="card form-card">
+        <select name="area_id" required aria-label="Área">
+          <option value="">Selecione a área</option>
+        </select>
+        <input type="number" name="duracao_minutos" placeholder="Minutos (ex: 30)" min="1" max="480" required aria-label="Duração em minutos">
+        <input type="date" name="data" title="Deixe em branco para hoje" aria-label="Data">
+        <button type="submit">Registrar</button>
+      </form>
+      <ul id="lista-sessoes" class="list"></ul>
+    </section>
+
+    <!-- Resumo -->
+    <section id="resumo" class="panel">
+      <h2>Horas de estudo por área</h2>
+      <div class="chart-wrap"><canvas id="chart-resumo"></canvas></div>
+      <div id="resumo-horas" class="resumo-grid"></div>
+    </section>
+  </main>
+
+  <div id="modal-task" class="modal" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <button class="modal-close" title="Fechar">×</button>
+      <form id="form-edit-task" class="modal-form">
+        <h3 class="modal-title">Editar Tarefa</h3>
+        <input type="hidden" name="id">
+        <label class="form-label" for="edit-task-area">Área</label>
+        <select name="area_id" id="edit-task-area" required class="form-select-area">
+          <option value="">Selecione a área</option>
+        </select>
+        <label class="form-label" for="edit-task-titulo">Título</label>
+        <input type="text" name="titulo" id="edit-task-titulo" required>
+        <label class="form-label" for="edit-task-desc">Descrição</label>
+        <textarea name="descricao" id="edit-task-desc" rows="3"></textarea>
+        <label class="form-label" for="edit-task-data">Data de entrega</label>
+        <input type="date" name="data_entrega" id="edit-task-data" required>
+        <label class="form-label" for="edit-task-status">Status</label>
+        <select name="concluida" id="edit-task-status">
+          <option value="false">Pendente</option>
+          <option value="true">Concluída</option>
+        </select>
+        <label class="form-label" for="edit-task-prioridade">Prioridade</label>
+        <select name="prioridade" id="edit-task-prioridade">
+          <option value="">Sem prioridade</option>
+          <option value="3">🔴 Alta</option>
+          <option value="2">🟡 Média</option>
+          <option value="1">🟢 Baixa</option>
+        </select>
+        <label class="form-label" for="edit-task-meta-pomodoros">Meta de Pomodoros</label>
+        <input type="number" name="meta_pomodoros" id="edit-task-meta-pomodoros" min="1" max="50">
+        <div class="edit-pomo-progress" id="edit-pomo-progress" style="display:none;">
+          <span>Pomodoros concluídos: </span>
+          <span id="edit-pomo-concluidos">0</span>
+        </div>
+        <div id="edit-duracao-container" style="display:none;">
+          <label class="form-label" for="edit-task-duracao">Duração (minutos)</label>
+          <input type="number" name="duracao_minutos" id="edit-task-duracao" min="1">
+        </div>
+        <button type="submit" class="btn-save">Salvar</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-area" class="modal" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <button class="modal-close" title="Fechar">×</button>
+      <form id="form-edit-area" class="modal-form">
+        <h3 class="modal-title">Editar Área</h3>
+        <input type="hidden" name="id">
+        <label class="form-label" for="edit-area-nome">Nome</label>
+        <div class="input-with-color">
+          <input type="text" name="nome" id="edit-area-nome" required>
+          <div class="color-picker-wrap" title="Cor">
+            <span class="color-square" id="edit-color-preview"></span>
+            <input type="color" name="cor" id="edit-area-cor" value="#6366f1" class="color-input">
+          </div>
+        </div>
+        <label class="form-label" for="edit-area-subcat">Subcategoria</label>
+        <input type="text" name="subcategoria" id="edit-area-subcat" list="subcategoria-list-edit" placeholder="Categoria (opcional)">
+        <datalist id="subcategoria-list-edit"></datalist>
+        <label class="form-label" for="edit-tipo-aula">Tipo</label>
+        <select name="tipo" id="edit-tipo-aula" aria-label="Tipo de aula">
+          <option value="online">Online</option>
+          <option value="presencial">Presencial</option>
+        </select>
+        <div id="edit-campos-presencial" class="campos-presencial" style="display:none;">
+          <label class="form-label" for="edit-area-dia">Dia da semana</label>
+          <select name="dia_semana" id="edit-area-dia">
+            <option value="">Selecione</option>
+            <option value="segunda">Segunda-feira</option>
+            <option value="terca">Terça-feira</option>
+            <option value="quarta">Quarta-feira</option>
+            <option value="quinta">Quinta-feira</option>
+            <option value="sexta">Sexta-feira</option>
+            <option value="sabado">Sábado</option>
+            <option value="domingo">Domingo</option>
+          </select>
+          <label class="form-label" for="edit-area-horario">Horário</label>
+          <input type="text" name="horario" id="edit-area-horario" placeholder="Ex: 19:00 - 20:40">
+          <label class="form-label" for="edit-area-sala">Sala</label>
+          <input type="text" name="sala" id="edit-area-sala" placeholder="Ex: 206">
+          <label class="form-label" for="edit-area-bloco">Bloco</label>
+          <input type="text" name="bloco" id="edit-area-bloco" placeholder="Ex: E">
+          <label class="form-label" for="edit-area-prof">Professor</label>
+          <input type="text" name="professor" id="edit-area-prof" placeholder="Ex: Andre">
+        </div>
+        <button type="submit" class="btn-save">Salvar</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-sessao" class="modal" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <button class="modal-close" title="Fechar">×</button>
+      <form id="form-edit-sessao" class="modal-form">
+        <h3 class="modal-title">Editar Sessão</h3>
+        <input type="hidden" name="id">
+        <label class="form-label" for="edit-sessao-area">Área</label>
+        <select name="area_id" id="edit-sessao-area" required>
+          <option value="">Selecione a área</option>
+        </select>
+        <label class="form-label" for="edit-sessao-duracao">Duração (minutos)</label>
+        <input type="number" name="duracao_minutos" id="edit-sessao-duracao" min="1" required>
+        <label class="form-label" for="edit-sessao-data">Data</label>
+        <input type="date" name="data" id="edit-sessao-data" required>
+        <button type="submit" class="btn-save">Salvar</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+  <script src="/static/foco.js"></script>
+</body>
+</html>
