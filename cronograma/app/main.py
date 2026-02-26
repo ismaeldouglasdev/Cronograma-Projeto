@@ -21,11 +21,11 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
-from jose import jwt as jose_jwt
-from jose.exceptions import JWTError, ExpiredSignatureError
 import hashlib
 import secrets
 import uuid
+import base64
+import time
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./cronograma.db")
 
@@ -35,11 +35,6 @@ engine = create_engine(
 )
 
 Base = declarative_base()
-
-# JWT Settings
-SECRET_KEY = os.environ.get("JWT_SECRET", secrets.token_urlsafe(32))
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 security = HTTPBearer(auto_error=False)
 
@@ -409,11 +404,36 @@ def get_db():
         db.close()
 
 
-# Funções de autenticação (definidas aqui para usar get_db)
+# Funções de autenticação simples (sem biblioteca JWT)
+SECRET_KEY = os.environ.get("JWT_SECRET", secrets.token_urlsafe(32))
+ACCESS_TOKEN_EXPIRE_HOURS = 24
+
+
 def create_access_token(user_id: int) -> str:
-    expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
-    payload = {"sub": str(user_id), "exp": expire}
-    return jose_jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    expire = int(time.time()) + (ACCESS_TOKEN_EXPIRE_HOURS * 3600)
+    data = f"{user_id}:{expire}"
+    encoded = base64.b64encode(data.encode()).decode()
+    signature = hashlib.sha256((data + SECRET_KEY).encode()).hexdigest()[:16]
+    return f"{encoded}.{signature}"
+
+
+def verify_token(token: str) -> tuple[bool, int]:
+    try:
+        parts = token.split(".")
+        if len(parts) != 2:
+            return False, 0
+        encoded, signature = parts
+        data = base64.b64decode(encoded.encode()).decode()
+        user_id, expire_str = data.split(":")
+        expire = int(expire_str)
+        if time.time() > expire:
+            return False, 0
+        expected_sig = hashlib.sha256((data + SECRET_KEY).encode()).hexdigest()[:16]
+        if signature != expected_sig:
+            return False, 0
+        return True, int(user_id)
+    except Exception:
+        return False, 0
 
 
 def get_current_user(
@@ -422,17 +442,10 @@ def get_current_user(
 ) -> int:
     if not credentials:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    try:
-        token = credentials.credentials
-        payload = jose_jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = int(payload.get("sub"))
-        if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        return user_id
-    except ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    valid, user_id = verify_token(credentials.credentials)
+    if not valid:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return user_id
 
 
 app = FastAPI()
