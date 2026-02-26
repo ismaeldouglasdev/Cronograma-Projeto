@@ -21,7 +21,6 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
-import jwt
 from jose import jwt as jose_jwt
 from jose.exceptions import JWTError, ExpiredSignatureError
 import hashlib
