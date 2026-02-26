@@ -22,6 +22,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 import jwt
+from jose import jwt as jose_jwt
+from jose.exceptions import JWTError, ExpiredSignatureError
 import hashlib
 import secrets
 import uuid
@@ -412,7 +414,7 @@ def get_db():
 def create_access_token(user_id: int) -> str:
     expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     payload = {"sub": str(user_id), "exp": expire}
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return jose_jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def get_current_user(
@@ -423,14 +425,14 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
         token = credentials.credentials
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jose_jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = int(payload.get("sub"))
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
         return user_id
-    except jwt.ExpiredSignatureError:
+    except ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
+    except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
