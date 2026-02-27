@@ -26,6 +26,7 @@ import secrets
 import uuid
 import base64
 import time
+import sqlite3
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./cronograma.db")
 
@@ -455,6 +456,100 @@ app = FastAPI()
 STATIC_DIR = Path(__file__).parent / "static"
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+# --- Admin Migration Endpoint ---
+MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
+
+
+@app.post("/admin/migrate")
+def migrate_data(secret: str = ""):
+    if MIGRATION_SECRET and secret != MIGRATION_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid secret")
+
+    report = {"tables": [], "errors": []}
+
+    sqlite_path = Path(__file__).parent / "cronograma.db"
+    if not sqlite_path.exists():
+        report["errors"].append("SQLite database not found at " + str(sqlite_path))
+        return report
+
+    pg_url = os.environ.get("DATABASE_URL", "")
+    if not pg_url or "sqlite" in pg_url:
+        report["errors"].append("PostgreSQL not configured")
+        return report
+
+    try:
+        sqlite_conn = sqlite3.connect(str(sqlite_path))
+        sqlite_conn.row_factory = sqlite3.Row
+        sqlite_cur = sqlite_conn.cursor()
+
+        pg_engine = create_engine(pg_url)
+        pg_conn = pg_engine.connect()
+
+        tables = ["users", "areas", "tasks", "sessoes"]
+
+        for table in tables:
+            try:
+                sqlite_cur.execute(f"SELECT * FROM {table}")
+                rows = sqlite_cur.fetchall()
+                if not rows:
+                    report["tables"].append(
+                        {"name": table, "records": 0, "status": "empty"}
+                    )
+                    continue
+
+                columns = [desc[0] for desc in sqlite_cur.description]
+                count = 0
+
+                for row in rows:
+                    data = dict(zip(columns, row))
+
+                    if "is_verified" in data:
+                        data["is_verified"] = (
+                            bool(data["is_verified"]) if data["is_verified"] else False
+                        )
+                    if "concluida" in data:
+                        data["concluida"] = (
+                            bool(data["concluida"]) if data["concluida"] else False
+                        )
+                    if "created_at" in data and data["created_at"]:
+                        data["created_at"] = str(data["created_at"])
+
+                    data_clean = {k: v for k, v in data.items() if v is not None}
+
+                    try:
+                        cols = ", ".join(data_clean.keys())
+                        placeholders = ", ".join([f":{k}" for k in data_clean.keys()])
+                        pg_conn.execute(
+                            text(
+                                f"INSERT INTO {table} ({cols}) VALUES ({placeholders})"
+                            ),
+                            data_clean,
+                        )
+                        pg_conn.commit()
+                        count += 1
+                    except Exception:
+                        pass
+
+                report["tables"].append(
+                    {"name": table, "records": count, "status": "ok"}
+                )
+                print(f"[MIGRATION] {table}: {count} records")
+
+            except Exception as e:
+                report["errors"].append(f"{table}: {str(e)}")
+                report["tables"].append(
+                    {"name": table, "records": 0, "status": "error"}
+                )
+
+        sqlite_conn.close()
+        pg_conn.close()
+
+    except Exception as e:
+        report["errors"].append(str(e))
+
+    return report
 
 
 # --- Auth Endpoints ---
