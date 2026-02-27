@@ -3,5 +3,6 @@ uvicorn[standard]==0.34.0
 sqlalchemy==2.0.36
 pydantic==2.10.5
 python-multipart==0.0.20
-psycopg2-binary==2.9.9
+psycopg2-binary
+
 
