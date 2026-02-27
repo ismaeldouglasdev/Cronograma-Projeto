@@ -854,6 +854,12 @@ async function init() {
     const tasks = await get("/tasks");
     FocoTimer.init(areas, tasks);
   }
+  
+  // Inicializar gamificação
+  if (typeof Gamification !== "undefined") {
+    Gamification.init();
+    renderGamification();
+  }
 }
 
 async function initApp() {
@@ -865,3 +871,34 @@ window.initApp = initApp;
 document.addEventListener("DOMContentLoaded", () => {
   // A inicialização será feita pelo Auth após login
 });
+
+// Função para renderizar gamificação
+function renderGamification() {
+  if (typeof Gamification === "undefined") return;
+  
+  const progress = Gamification.getProgresso();
+  
+  document.getElementById("gami-level").textContent = progress.level;
+  document.getElementById("gami-xp-current").textContent = progress.xp_atual;
+  document.getElementById("gami-xp-next").textContent = progress.xp_proximo;
+  document.getElementById("gami-streak").textContent = progress.streak_dias;
+  document.getElementById("gami-pomodoros").textContent = progress.pomodoros_total;
+  document.getElementById("gami-tarefas").textContent = progress.tarefas_concluidas;
+  document.getElementById("gami-areas").textContent = progress.areas_criadas;
+  
+  const xpPercent = (progress.xp_atual / progress.xp_proximo) * 100;
+  document.getElementById("gami-xp-fill").style.width = xpPercent + "%";
+  
+  const badgesGrid = document.getElementById("gami-badges-grid");
+  if (badgesGrid) {
+    badgesGrid.innerHTML = progress.badges_disponiveis.map(badge => {
+      const unlocked = progress.badges.includes(badge.id);
+      return `
+        <div class="gami-badge ${unlocked ? '' : 'locked'}">
+          <span class="gami-badge-icon">${badge.nome.split(' ')[0]}</span>
+          <span class="gami-badge-name">${badge.nome.split(' ').slice(1).join(' ')}</span>
+        </div>
+      `;
+    }).join("");
+  }
+}

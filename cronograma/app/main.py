@@ -29,10 +29,12 @@ import time
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./cronograma.db")
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
+engine_kwargs = (
+    {"connect_args": {"check_same_thread": False}}
+    if "sqlite" in DATABASE_URL
+    else {"pool_pre_ping": True}
 )
+engine = create_engine(DATABASE_URL, **engine_kwargs)
 
 Base = declarative_base()
 
