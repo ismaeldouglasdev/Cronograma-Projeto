@@ -279,6 +279,12 @@ class Tasks(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    area_id = Column(Integer, ForeignKey("areas.id"), nullable=True)  # Changed to nullable
+    titulo = Column(String(255), nullable=False)
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
     area_id = Column(Integer, ForeignKey("areas.id"), nullable=False)
     titulo = Column(String(255), nullable=False)
     descricao = Column(String(500), nullable=True)
@@ -459,6 +465,38 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 # --- Admin Migration Endpoint ---
+MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
+
+
+@app.post("/admin/add-user-id-column")
+def add_user_id_column(secret: str = ""):
+    """Add user_id column to tasks table in PostgreSQL."""
+    if MIGRATION_SECRET and secret != MIGRATION_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid secret")
+    
+    pg_url = os.environ.get("DATABASE_URL", "")
+    if not pg_url or "sqlite" in pg_url:
+        raise HTTPException(status_code=400, detail="PostgreSQL not configured")
+    
+    try:
+        pg_engine = create_engine(pg_url)
+        with pg_engine.connect() as conn:
+            # Check if column exists
+            result = conn.execute(text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name='tasks' AND column_name='user_id'"
+            ))
+            if result.fetchone():
+                return {"status": "Column already exists"}
+            
+            # Add column with default user_id = 1
+            conn.execute(text(
+                "ALTER TABLE tasks ADD COLUMN user_id INTEGER NOT NULL DEFAULT 1"
+            ))
+            conn.commit()
+        return {"status": "Column added successfully"}
+    except Exception as e:
+        return {"error": str(e)}
 MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
 
 
