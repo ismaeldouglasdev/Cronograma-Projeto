@@ -552,6 +552,59 @@ def migrate_data(secret: str = ""):
     return report
 
 
+@app.post("/admin/import-tasks")
+def import_tasks(secret: str = "", tasks_data: list = None):
+    """Import tasks with user_id. Provide tasks as JSON array."""
+    if MIGRATION_SECRET and secret != MIGRATION_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid secret")
+    
+    if not tasks_data:
+        # Use default tasks from data_clean.json
+        import json
+        data_path = Path(__file__).parent / "data_clean.json"
+        if data_path.exists():
+            with open(data_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                tasks_data = data.get('tasks', [])
+        else:
+            return {"error": "No tasks data provided and data_clean.json not found"}
+    
+    db = next(get_db())
+    imported = 0
+    errors = []
+    
+    for task in tasks_data:
+        try:
+            db_task = Tasks(
+                id=task['id'],
+                user_id=1,  # y2kgif@gmail.com
+                area_id=task.get('area_id'),
+                titulo=task['titulo'],
+                descricao=task.get('descricao'),
+                data_entrega=task.get('data_entrega'),
+                concluida=task.get('concluida', False),
+                duracao_minutos=task.get('duracao_minutos'),
+                prioridade=task.get('prioridade', 2),
+                meta_pomodoros=task.get('meta_pomodoros'),
+                pomodoros_concluidos=task.get('pomodoros_concluidos', 0)
+            )
+            db.merge(db_task)
+            imported += 1
+        except Exception as e:
+            errors.append(f"Task {task.get('id')}: {str(e)}")
+    
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        errors.append(f"Commit failed: {str(e)}")
+    
+    return {"imported": imported, "errors": errors}
+
+
+# --- Auth Endpoints ---
+
+
 # --- Auth Endpoints ---
 @app.post("/auth/register", response_model=TokenResponse)
 def register(body: UserRegister, db: Session = Depends(get_db)):
