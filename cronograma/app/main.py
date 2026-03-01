@@ -457,7 +457,86 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+# --- Admin Migration Endpoint ---
+MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
 
+
+@app.post("/admin/init")
+def init_database():
+    """Initialize database tables"""
+    pg_url = os.environ.get("DATABASE_URL", "")
+    if not pg_url or "sqlite" in pg_url:
+        raise HTTPException(status_code=500, detail="PostgreSQL not configured")
+    
+    try:
+        pg_engine = create_engine(pg_url)
+        with pg_engine.connect() as conn:
+            # Users
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    email VARCHAR(255) UNIQUE NOT NULL,
+                    password_hash VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    is_verified BOOLEAN DEFAULT FALSE,
+                    verification_token VARCHAR(255)
+                )
+            """))
+            
+            # Areas
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS areas (
+                    id SERIAL PRIMARY KEY,
+                    nome VARCHAR(255) NOT NULL,
+                    cor VARCHAR(20),
+                    ordem INTEGER,
+                    tipo VARCHAR(20) DEFAULT 'online',
+                    dia_semana VARCHAR(20),
+                    horario VARCHAR(50),
+                    sala VARCHAR(50),
+                    bloco VARCHAR(50),
+                    professor VARCHAR(255),
+                    subcategoria VARCHAR(100),
+                    user_id INTEGER DEFAULT 1
+                )
+            """))
+            
+            # Tasks
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS tasks (
+                    id SERIAL PRIMARY KEY,
+                    area_id INTEGER REFERENCES areas(id),
+                    titulo VARCHAR(255) NOT NULL,
+                    descricao VARCHAR(500),
+                    data_entrega DATE,
+                    concluida BOOLEAN DEFAULT FALSE,
+                    duracao_minutos INTEGER,
+                    prioridade INTEGER,
+                    meta_pomodoros INTEGER,
+                    pomodoros_concluidos INTEGER DEFAULT 0,
+                    user_id INTEGER DEFAULT 1
+                )
+            """))
+            
+            # Sessoes
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS sessoes (
+                    id SERIAL PRIMARY KEY,
+                    area_id INTEGER REFERENCES areas(id),
+                    duracao_minutos INTEGER,
+                    data DATE,
+                    task_id INTEGER REFERENCES tasks(id),
+                    user_id INTEGER DEFAULT 1
+                )
+            """))
+            
+            conn.commit()
+        return {"status": "ok", "message": "Tables created successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/admin/migrate")
 # --- Admin Migration Endpoint ---
 MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
 
