@@ -1,0 +1,7 @@
+[project]
+name = "cronograma"
+version = "1.0.0"
+requires-python = ">=3.11,<3.12"
+
+[tool.uv]
+python = "3.11"
