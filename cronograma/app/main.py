@@ -471,7 +471,6 @@ def init_database():
     try:
         pg_engine = create_engine(pg_url)
         with pg_engine.connect() as conn:
-            # Users
             conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS users (
                     id SERIAL PRIMARY KEY,
@@ -482,8 +481,6 @@ def init_database():
                     verification_token VARCHAR(255)
                 )
             """))
-            
-            # Areas
             conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS areas (
                     id SERIAL PRIMARY KEY,
@@ -500,8 +497,6 @@ def init_database():
                     user_id INTEGER DEFAULT 1
                 )
             """))
-            
-            # Tasks
             conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS tasks (
                     id SERIAL PRIMARY KEY,
@@ -517,8 +512,6 @@ def init_database():
                     user_id INTEGER DEFAULT 1
                 )
             """))
-            
-            # Sessoes
             conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS sessoes (
                     id SERIAL PRIMARY KEY,
@@ -529,14 +522,85 @@ def init_database():
                     user_id INTEGER DEFAULT 1
                 )
             """))
-            
             conn.commit()
         return {"status": "ok", "message": "Tables created successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/admin/migrate")
+# --- Import Data Endpoint ---
+class ImportData(BaseModel):
+    users: Optional[List[dict]] = []
+    areas: Optional[List[dict]] = []
+    tasks: Optional[List[dict]] = []
+    sessoes: Optional[List[dict]] = []
+
+
+@app.post("/admin/import")
+def import_data(data: ImportData, secret: str = ""):
+    """Import data from JSON (for migration from SQLite)"""
+    if MIGRATION_SECRET and secret != MIGRATION_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid secret")
+    
+    pg_url = os.environ.get("DATABASE_URL", "")
+    if not pg_url or "sqlite" in pg_url:
+        raise HTTPException(status_code=500, detail="PostgreSQL not configured")
+    
+    report = {"tables": [], "errors": []}
+    
+    try:
+        pg_engine = create_engine(pg_url)
+        
+        if data.users:
+            with pg_engine.connect() as conn:
+                for user in data.users:
+                    is_ver = bool(user.get('is_verified')) if user.get('is_verified') else False
+                    conn.execute(text("""
+                        INSERT INTO users (id, email, password_hash, created_at, is_verified, verification_token)
+                        VALUES (:id, :email, :password_hash, :created_at, :is_verified, :verification_token)
+                        ON CONFLICT (id) DO NOTHING
+                    """), {'id': user['id'], 'email': user['email'], 'password_hash': user['password_hash'], 'created_at': user.get('created_at'), 'is_verified': is_ver, 'verification_token': user.get('verification_token')})
+                conn.commit()
+            report["tables"].append({"name": "users", "records": len(data.users), "status": "ok"})
+        
+        if data.areas:
+            with pg_engine.connect() as conn:
+                for area in data.areas:
+                    conn.execute(text("""
+                        INSERT INTO areas (id, nome, cor, ordem, tipo, dia_semana, horario, sala, bloco, professor, subcategoria, user_id)
+                        VALUES (:id, :nome, :cor, :ordem, :tipo, :dia_semana, :horario, :sala, :bloco, :professor, :subcategoria, 1)
+                        ON CONFLICT (id) DO NOTHING
+                    """), area)
+                conn.commit()
+            report["tables"].append({"name": "areas", "records": len(data.areas), "status": "ok"})
+        
+        if data.tasks:
+            with pg_engine.connect() as conn:
+                for task in data.tasks:
+                    conc = bool(task.get('concluida')) if task.get('concluida') else False
+                    conn.execute(text("""
+                        INSERT INTO tasks (id, area_id, titulo, descricao, data_entrega, concluida, duracao_minutos, prioridade, meta_pomodoros, pomodoros_concluidos, user_id)
+                        VALUES (:id, :area_id, :titulo, :descricao, :data_entrega, :concluida, :duracao_minutos, :prioridade, :meta_pomodoros, :pomodoros_concluidos, 1)
+                        ON CONFLICT (id) DO NOTHING
+                    """), {'id': task['id'], 'area_id': task['area_id'], 'titulo': task['titulo'], 'descricao': task.get('descricao'), 'data_entrega': task['data_entrega'], 'concluida': conc, 'duracao_minutos': task.get('duracao_minutos'), 'prioridade': task.get('prioridade'), 'meta_pomodoros': task.get('meta_pomodoros'), 'pomodoros_concluidos': task.get('pomodoros_concluidos')})
+                conn.commit()
+            report["tables"].append({"name": "tasks", "records": len(data.tasks), "status": "ok"})
+        
+        if data.sessoes:
+            with pg_engine.connect() as conn:
+                for sessao in data.sessoes:
+                    conn.execute(text("""
+                        INSERT INTO sessoes (id, area_id, duracao_minutos, data, task_id, user_id)
+                        VALUES (:id, :area_id, :duracao_minutos, :data, :task_id, 1)
+                        ON CONFLICT (id) DO NOTHING
+                    """), sessao)
+                conn.commit()
+            report["tables"].append({"name": "sessoes", "records": len(data.sessoes), "status": "ok"})
+            
+    except Exception as e:
+        report["errors"].append(str(e))
+    
+    return report
 # --- Admin Migration Endpoint ---
 MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
 
@@ -629,101 +693,6 @@ def migrate_data(secret: str = ""):
         report["errors"].append(str(e))
 
     return report
-
-
-# --- Import JSON Endpoint ---
-class ImportData(BaseModel):
-    users: Optional[List[dict]] = []
-    areas: Optional[List[dict]] = []
-    tasks: Optional[List[dict]] = []
-    sessoes: Optional[List[dict]] = []
-
-
-@app.post("/admin/import")
-def import_data(data: ImportData, secret: str = ""):
-    """Import data from JSON (for migration from SQLite)"""
-    if MIGRATION_SECRET and secret != MIGRATION_SECRET:
-        raise HTTPException(status_code=403, detail="Invalid secret")
-    
-    pg_url = os.environ.get("DATABASE_URL", "")
-    if not pg_url or "sqlite" in pg_url:
-        raise HTTPException(status_code=500, detail="PostgreSQL not configured")
-    
-    report = {"tables": [], "errors": []}
-    
-    try:
-        pg_engine = create_engine(pg_url)
-        
-        # Import users
-        if data.users:
-            with pg_engine.connect() as conn:
-                for user in data.users:
-                    is_verified = bool(user.get('is_verified')) if user.get('is_verified') else False
-                    conn.execute(text("""
-                        INSERT INTO users (id, email, password_hash, created_at, is_verified, verification_token)
-                        VALUES (:id, :email, :password_hash, :created_at, :is_verified, :verification_token)
-                        ON CONFLICT (id) DO NOTHING
-                    """), {
-                        'id': user['id'],
-                        'email': user['email'],
-                        'password_hash': user['password_hash'],
-                        'created_at': user.get('created_at'),
-                        'is_verified': is_verified,
-                        'verification_token': user.get('verification_token')
-                    })
-                conn.commit()
-            report["tables"].append({"name": "users", "records": len(data.users), "status": "ok"})
-        
-        # Import areas
-        if data.areas:
-            with pg_engine.connect() as conn:
-                for area in data.areas:
-                    conn.execute(text("""
-                        INSERT INTO areas (id, nome, cor, ordem, tipo, dia_semana, horario, sala, bloco, professor, subcategoria)
-                        VALUES (:id, :nome, :cor, :ordem, :tipo, :dia_semana, :horario, :sala, :bloco, :professor, :subcategoria)
-                        ON CONFLICT (id) DO NOTHING
-                    """), area)
-                conn.commit()
-            report["tables"].append({"name": "areas", "records": len(data.areas), "status": "ok"})
-        
-        # Import tasks
-        if data.tasks:
-            with pg_engine.connect() as conn:
-                for task in data.tasks:
-                    concluida = bool(task.get('concluida')) if task.get('concluida') else False
-                    conn.execute(text("""
-                        INSERT INTO tasks (id, area_id, titulo, descricao, data_entrega, concluida, duracao_minutos, prioridade, meta_pomodoros, pomodoros_concluidos)
-                        VALUES (:id, :area_id, :titulo, :descricao, :data_entrega, :concluida, :duracao_minutos, :prioridade, :meta_pomodoros, :pomodoros_concluidos)
-                        ON CONFLICT (id) DO NOTHING
-                    """), {
-                        'id': task['id'], 'area_id': task['area_id'], 'titulo': task['titulo'],
-                        'descricao': task.get('descricao'), 'data_entrega': task['data_entrega'],
-                        'concluida': concluida, 'duracao_minutos': task.get('duracao_minutos'),
-                        'prioridade': task.get('prioridade'), 'meta_pomodoros': task.get('meta_pomodoros'),
-                        'pomodoros_concluidos': task.get('pomodoros_concluidos')
-                    })
-                conn.commit()
-            report["tables"].append({"name": "tasks", "records": len(data.tasks), "status": "ok"})
-        
-        # Import sessoes
-        if data.sessoes:
-            with pg_engine.connect() as conn:
-                for sessao in data.sessoes:
-                    conn.execute(text("""
-                        INSERT INTO sessoes (id, area_id, duracao_minutos, data, task_id)
-                        VALUES (:id, :area_id, :duracao_minutos, :data, :task_id)
-                        ON CONFLICT (id) DO NOTHING
-                    """), sessao)
-                conn.commit()
-            report["tables"].append({"name": "sessoes", "records": len(data.sessoes), "status": "ok"})
-            
-    except Exception as e:
-        report["errors"].append(str(e))
-    
-    return report
-
-
-# --- Auth Endpoints ---
 
 
 # --- Auth Endpoints ---
