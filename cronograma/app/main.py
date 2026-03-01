@@ -161,7 +161,7 @@ class AreaPatch(BaseModel):
 class TaskCreate(BaseModel):
     """Schema de entrada para criar uma tarefa."""
 
-    area_id: Optional[int] = None
+    area_id: int
     titulo: str
     descricao: Optional[str] = None
     data_entrega: date
@@ -279,7 +279,7 @@ class Tasks(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    area_id = Column(Integer, ForeignKey("areas.id"), nullable=True)
+    area_id = Column(Integer, ForeignKey("areas.id"), nullable=False)
     titulo = Column(String(255), nullable=False)
     descricao = Column(String(500), nullable=True)
     data_entrega = Column(Date, nullable=False)
@@ -724,11 +724,22 @@ def excluir_area(area_id: int, db: Session = Depends(get_db)):
 
 # --- Tasks ---
 @app.get("/tasks", response_model=List[TaskResponse])
+def listar_tasks(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    return db.query(Tasks).filter(Tasks.user_id == user_id).all()
 def listar_tasks(db: Session = Depends(get_db)):
     return db.query(Tasks).all()
 
 
 @app.post("/tasks", response_model=TaskResponse)
+def criar_task(body: TaskCreate, user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    task = Tasks(
+        area_id=body.area_id,
+        titulo=body.titulo,
+        descricao=body.descricao,
+        data_entrega=body.data_entrega,
+        prioridade=body.prioridade,
+        user_id=user_id,
+    )
 def criar_task(body: TaskCreate, db: Session = Depends(get_db)):
     task = Tasks(
         area_id=body.area_id,
@@ -796,11 +807,21 @@ def excluir_task(task_id: int, db: Session = Depends(get_db)):
 
 # --- Sessões de estudo ---
 @app.get("/sessoes", response_model=List[SessaoResponse])
+def listar_sessoes(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    return db.query(Sessoes).filter(Sessoes.user_id == user_id).order_by(Sessoes.data.desc()).all()
 def listar_sessoes(db: Session = Depends(get_db)):
     return db.query(Sessoes).order_by(Sessoes.data.desc()).all()
 
 
 @app.post("/sessoes", response_model=SessaoResponse)
+def criar_sessao(body: SessaoCreate, user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    data_sessao = body.data or date.today()
+    sessao = Sessoes(
+        area_id=body.area_id,
+        duracao_minutos=body.duracao_minutos,
+        data=data_sessao,
+        user_id=user_id,
+    )
 def criar_sessao(body: SessaoCreate, db: Session = Depends(get_db)):
     data_sessao = body.data or date.today()
     sessao = Sessoes(
@@ -867,6 +888,20 @@ def completar_pomodoro(body: PomodoroComplete, db: Session = Depends(get_db)):
 
 
 @app.get("/sessoes/resumo", response_model=List[HorasPorArea])
+def resumo_horas(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Retorna total de minutos/horas de estudo por área."""
+    rows = (
+        db.query(
+            Sessoes.area_id,
+            Areas.nome,
+            Areas.cor,
+            func.sum(Sessoes.duracao_minutos).label("total_minutos"),
+        )
+        .join(Areas, Sessoes.area_id == Areas.id)
+        .filter(Sessoes.user_id == user_id)
+        .group_by(Sessoes.area_id)
+        .all()
+    )
 def resumo_horas(db: Session = Depends(get_db)):
     """Retorna total de minutos/horas de estudo por área."""
     rows = (
@@ -890,68 +925,3 @@ def resumo_horas(db: Session = Depends(get_db)):
         )
         for r in rows
     ]
-
-
-# --- Admin Endpoints ---
-MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
-
-@app.post("/admin/init")
-def init_database():
-    pg_url = os.environ.get("DATABASE_URL", "")
-    if not pg_url or "sqlite" in pg_url:
-        raise HTTPException(status_code=500, detail="PostgreSQL not configured")
-    try:
-        pg_engine = create_engine(pg_url)
-        with pg_engine.connect() as conn:
-            conn.execute(text("CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, email VARCHAR(255) UNIQUE NOT NULL, password_hash VARCHAR(255) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, is_verified BOOLEAN DEFAULT FALSE, verification_token VARCHAR(255))"))
-            conn.execute(text("CREATE TABLE IF NOT EXISTS areas (id SERIAL PRIMARY KEY, nome VARCHAR(255) NOT NULL, cor VARCHAR(20), ordem INTEGER, tipo VARCHAR(20) DEFAULT 'online', dia_semana VARCHAR(20), horario VARCHAR(50), sala VARCHAR(50), bloco VARCHAR(50), professor VARCHAR(255), subcategoria VARCHAR(100), user_id INTEGER DEFAULT 1)"))
-            conn.execute(text("CREATE TABLE IF NOT EXISTS tasks (id SERIAL PRIMARY KEY, area_id INTEGER REFERENCES areas(id), titulo VARCHAR(255) NOT NULL, descricao VARCHAR(500), data_entrega DATE, concluida BOOLEAN DEFAULT FALSE, duracao_minutos INTEGER, prioridade INTEGER, meta_pomodoros INTEGER, pomodoros_concluidos INTEGER DEFAULT 0, user_id INTEGER DEFAULT 1)"))
-            conn.execute(text("CREATE TABLE IF NOT EXISTS sessoes (id SERIAL PRIMARY KEY, area_id INTEGER REFERENCES areas(id), duracao_minutos INTEGER, data DATE, task_id INTEGER REFERENCES tasks(id), user_id INTEGER DEFAULT 1)"))
-            conn.commit()
-        return {"status": "ok"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-class ImportData(BaseModel):
-    users: Optional[List[dict]] = []
-    areas: Optional[List[dict]] = []
-    tasks: Optional[List[dict]] = []
-    sessoes: Optional[List[dict]] = []
-
-@app.post("/admin/import")
-def import_data(data: ImportData, secret: str = ""):
-    pg_url = os.environ.get("DATABASE_URL", "")
-    if not pg_url or "sqlite" in pg_url:
-        raise HTTPException(status_code=500, detail="PostgreSQL not configured")
-    report = {"tables": [], "errors": []}
-    try:
-        pg_engine = create_engine(pg_url)
-        if data.users:
-            with pg_engine.connect() as conn:
-                for u in data.users:
-                    iv = bool(u.get('is_verified')) if u.get('is_verified') else False
-                    conn.execute(text("INSERT INTO users (id, email, password_hash, created_at, is_verified, verification_token) VALUES (:id, :email, :password_hash, :created_at, :is_verified, :verification_token) ON CONFLICT (id) DO NOTHING"), {'id': u['id'], 'email': u['email'], 'password_hash': u['password_hash'], 'created_at': u.get('created_at'), 'is_verified': iv, 'verification_token': u.get('verification_token')})
-                conn.commit()
-            report["tables"].append({"name": "users", "records": len(data.users)})
-        if data.areas:
-            with pg_engine.connect() as conn:
-                for a in data.areas:
-                    conn.execute(text("INSERT INTO areas (id, nome, cor, ordem, tipo, dia_semana, horario, sala, bloco, professor, subcategoria, user_id) VALUES (:id, :nome, :cor, :ordem, :tipo, :dia_semana, :horario, :sala, :bloco, :professor, :subcategoria, 1) ON CONFLICT (id) DO NOTHING"), a)
-                conn.commit()
-            report["tables"].append({"name": "areas", "records": len(data.areas)})
-        if data.tasks:
-            with pg_engine.connect() as conn:
-                for t in data.tasks:
-                    c = bool(t.get('concluida')) if t.get('concluida') else False
-                    conn.execute(text("INSERT INTO tasks (id, area_id, titulo, descricao, data_entrega, concluida, duracao_minutos, prioridade, meta_pomodoros, pomodoros_concluidos, user_id) VALUES (:id, :area_id, :titulo, :descricao, :data_entrega, :concluida, :duracao_minutos, :prioridade, :meta_pomodoros, :pomodoros_concluidos, 1) ON CONFLICT (id) DO NOTHING"), {'id': t['id'], 'area_id': t['area_id'], 'titulo': t['titulo'], 'descricao': t.get('descricao'), 'data_entrega': t['data_entrega'], 'concluida': c, 'duracao_minutos': t.get('duracao_minutos'), 'prioridade': t.get('prioridade'), 'meta_pomodoros': t.get('meta_pomodoros'), 'pomodoros_concluidos': t.get('pomodoros_concluidos')})
-                conn.commit()
-            report["tables"].append({"name": "tasks", "records": len(data.tasks)})
-        if data.sessoes:
-            with pg_engine.connect() as conn:
-                for s in data.sessoes:
-                    conn.execute(text("INSERT INTO sessoes (id, area_id, duracao_minutos, data, task_id, user_id) VALUES (:id, :area_id, :duracao_minutos, :data, :task_id, 1) ON CONFLICT (id) DO NOTHING"), s)
-                conn.commit()
-            report["tables"].append({"name": "sessoes", "records": len(data.sessoes)})
-    except Exception as e:
-        report["errors"].append(str(e))
-    return report

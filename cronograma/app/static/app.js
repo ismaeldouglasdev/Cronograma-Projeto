@@ -717,6 +717,60 @@ async function loadHorarios() {
   horariosLoaded = true;
 }
 
+let resumoLoaded = false;
+
+async function loadResumo() {
+  if (resumoLoaded) return;
+  
+  try {
+    const resumo = await get("/sessoes/resumo");
+    
+    const container = document.getElementById("resumo-horas");
+    const chartCanvas = document.getElementById("chart-resumo");
+    
+    if (!resumo.length) {
+      container.innerHTML = '<p class="resumo-empty">Nenhuma sessão registrada ainda.</p>';
+      resumoLoaded = true;
+      return;
+    }
+    
+    // Renderizar lista
+    container.innerHTML = resumo
+      .map((r) => `
+        <div class="resumo-item">
+          <span class="resumo-dot" style="background:${r.area_cor}"></span>
+          <span class="resumo-nome">${escapeHtml(r.area_nome)}</span>
+          <span class="resumo-tempo">${r.total_horas}h (${r.total_minutos}min)</span>
+        </div>
+      `).join("");
+    
+    // Renderizar gráfico se Chart.js estiver disponível
+    if (typeof Chart !== "undefined" && chartCanvas) {
+      new Chart(chartCanvas, {
+        type: "pie",
+        data: {
+          labels: resumo.map((r) => r.area_nome),
+          datasets: [{
+            data: resumo.map((r) => r.total_minutos),
+            backgroundColor: resumo.map((r) => r.area_cor || "#6366f1"),
+          }],
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: "bottom" },
+          },
+        },
+      });
+    }
+    
+    resumoLoaded = true;
+  } catch (e) {
+    console.error("Erro ao carregar resumo:", e);
+  }
+}
+}
+
 function initTabs() {
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -732,6 +786,11 @@ function initTabs() {
       document.getElementById(tab.dataset.tab).classList.add("active");
       
       if (tab.dataset.tab === "horarios") {
+        loadHorarios();
+      }
+      if (tab.dataset.tab === "resumo") {
+        loadResumo();
+      }
         loadHorarios();
       }
     });
