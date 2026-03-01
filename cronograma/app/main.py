@@ -161,7 +161,7 @@ class AreaPatch(BaseModel):
 class TaskCreate(BaseModel):
     """Schema de entrada para criar uma tarefa."""
 
-    area_id: int
+    area_id: Optional[int] = None
     titulo: str
     descricao: Optional[str] = None
     data_entrega: date
@@ -279,7 +279,7 @@ class Tasks(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    area_id = Column(Integer, ForeignKey("areas.id"), nullable=False)
+    area_id = Column(Integer, ForeignKey("areas.id"), nullable=True)
     titulo = Column(String(255), nullable=False)
     descricao = Column(String(500), nullable=True)
     data_entrega = Column(Date, nullable=False)
