@@ -640,6 +640,17 @@ def import_tasks(secret: str = "", tasks_data: list = None):
     return {"imported": imported, "errors": errors}
 
 
+@app.post("/admin/check-tasks")
+def check_tasks():
+    """Check tasks in database."""
+    db = next(get_db())
+    tasks = db.query(Tasks).all()
+    return {
+        "count": len(tasks),
+        "tasks": [{"id": t.id, "user_id": t.user_id, "titulo": t.titulo[:30], "area_id": t.area_id} for t in tasks]
+    }
+
+
 # --- Auth Endpoints ---
 
 
