@@ -295,6 +295,19 @@ class Tasks(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    area_id = Column(Integer, ForeignKey("areas.id"), nullable=True)  # nullable for tasks without area
+    titulo = Column(String(255), nullable=False)
+    descricao = Column(String(500), nullable=True)
+    data_entrega = Column(Date, nullable=False)
+    concluida = Column(Boolean, default=False, nullable=False)
+    duracao_minutos = Column(Integer, nullable=True)
+    prioridade = Column(Integer, nullable=True)  # 1=baixa, 2=media, 3=alta
+    meta_pomodoros = Column(Integer, nullable=True)
+    pomodoros_concluidos = Column(Integer, default=0, nullable=True)
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     area_id = Column(Integer, ForeignKey("areas.id"), nullable=True)  # Changed to nullable
     titulo = Column(String(255), nullable=False)
     __tablename__ = "tasks"
