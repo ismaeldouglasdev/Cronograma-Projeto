@@ -538,6 +538,44 @@ def add_user_id_column(secret: str = ""):
         return {"status": "Column added successfully"}
     except Exception as e:
         return {"error": str(e)}
+
+
+@app.post("/admin/add-user-id-all")
+def add_user_id_all(secret: str = ""):
+    """Add user_id column to all tables in PostgreSQL."""
+    if MIGRATION_SECRET and secret != MIGRATION_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid secret")
+    
+    pg_url = os.environ.get("DATABASE_URL", "")
+    if not pg_url or "sqlite" in pg_url:
+        raise HTTPException(status_code=400, detail="PostgreSQL not configured")
+    
+    results = {}
+    try:
+        pg_engine = create_engine(pg_url)
+        with pg_engine.connect() as conn:
+            for table in ['areas', 'sessoes']:
+                # Check if column exists
+                result = conn.execute(text(
+                    f"SELECT column_name FROM information_schema.columns "
+                    f"WHERE table_name='{table}' AND column_name='user_id'"
+                ))
+                if result.fetchone():
+                    results[table] = "Column already exists"
+                    continue
+                
+                # Add column with default user_id = 1
+                conn.execute(text(
+                    f"ALTER TABLE {table} ADD COLUMN user_id INTEGER NOT NULL DEFAULT 1"
+                ))
+                conn.commit()
+                results[table] = "Column added successfully"
+        return results
+    except Exception as e:
+        return {"error": str(e)}
+
+MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
+        return {"error": str(e)}
 MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
 
 
