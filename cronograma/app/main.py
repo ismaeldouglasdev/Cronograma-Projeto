@@ -902,6 +902,12 @@ def excluir_area(area_id: int, db: Session = Depends(get_db)):
 @app.get("/tasks", response_model=List[TaskResponse])
 def listar_tasks(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
     return db.query(Tasks).filter(Tasks.user_id == user_id).all()
+
+
+@app.post("/tasks", response_model=TaskResponse)
+@app.get("/tasks", response_model=List[TaskResponse])
+def listar_tasks(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    return db.query(Tasks).filter(Tasks.user_id == user_id).all()
 @app.get("/tasks", response_model=List[TaskResponse])
 def listar_tasks(db: Session = Depends(get_db)):
     return db.query(Tasks).all()
