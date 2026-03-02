@@ -278,6 +278,11 @@ class Areas(Base):
     __tablename__ = "areas"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    nome = Column(String(255), nullable=False)
+    __tablename__ = "areas"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
     nome = Column(String(255), nullable=False)
     cor = Column(String(20), nullable=True)
     ordem = Column(Integer, nullable=True)
@@ -325,6 +330,14 @@ class Tasks(Base):
 
 
 class Sessoes(Base):
+    __tablename__ = "sessoes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    area_id = Column(Integer, ForeignKey("areas.id"), nullable=False)
+    duracao_minutos = Column(Integer, nullable=False)
+    data = Column(Date, nullable=False)
+    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
     __tablename__ = "sessoes"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -800,7 +813,28 @@ def index():
         headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
     )
 
+#BJ|
 
+@app.get("/areas", response_model=List[AreaResponse])
+def listar_areas(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    return db.query(Areas).filter(Areas.user_id == user_id).all()
+
+
+@app.post("/areas", response_model=AreaResponse)
+def criar_area(body: AreaCreate, user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    area = Areas(
+        nome=body.nome,
+        cor=body.cor,
+        ordem=body.ordem,
+        tipo=body.tipo or "online",
+        dia_semana=body.dia_semana,
+        horario=body.horario,
+        sala=body.sala,
+        bloco=body.bloco,
+        professor=body.professor,
+        subcategoria=body.subcategoria,
+        user_id=user_id,
+    )
 @app.get("/areas", response_model=List[AreaResponse])
 def listar_areas(db: Session = Depends(get_db)):
     return db.query(Areas).all()
@@ -869,6 +903,29 @@ def excluir_area(area_id: int, db: Session = Depends(get_db)):
 
 
 # --- Tasks ---
+@app.get("/tasks", response_model=List[TaskResponse])
+def listar_tasks(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    return db.query(Tasks).filter(Tasks.user_id == user_id).all()
+
+
+@app.get("/tasks", response_model=List[TaskResponse])
+def listar_tasks(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    return db.query(Tasks).filter(Tasks.user_id == user_id).all()
+
+
+@app.post("/tasks", response_model=TaskResponse)
+def criar_task(body: TaskCreate, user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    task = Tasks(
+        area_id=body.area_id,
+        titulo=body.titulo,
+        descricao=body.descricao,
+        data_entrega=body.data_entrega,
+        prioridade=body.prioridade,
+        user_id=user_id,
+    )
+    db.add(task)
+
+@app.post("/tasks", response_model=TaskResponse)
 @app.get("/tasks", response_model=List[TaskResponse])
 def listar_tasks(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
     return db.query(Tasks).filter(Tasks.user_id == user_id).all()
@@ -952,6 +1009,21 @@ def excluir_task(task_id: int, db: Session = Depends(get_db)):
 
 
 # --- Sessões de estudo ---
+@app.get("/sessoes", response_model=List[SessaoResponse])
+def listar_sessoes(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    return db.query(Sessoes).filter(Sessoes.user_id == user_id).order_by(Sessoes.data.desc()).all()
+
+
+@app.post("/sessoes", response_model=SessaoResponse)
+def criar_sessao(body: SessaoCreate, user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    data_sessao = body.data or date.today()
+    sessao = Sessoes(
+        area_id=body.area_id,
+        duracao_minutos=body.duracao_minutos,
+        data=data_sessao,
+        user_id=user_id,
+    )
+    db.add(sessao)
 @app.get("/sessoes", response_model=List[SessaoResponse])
 def listar_sessoes(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
     return db.query(Sessoes).filter(Sessoes.user_id == user_id).order_by(Sessoes.data.desc()).all()
