@@ -187,6 +187,21 @@ class TaskResponse(BaseModel):
     """Schema de resposta ao retornar uma tarefa."""
 
     id: int
+    area_id: Optional[int] = None  # Changed to optional
+    titulo: str
+    descricao: Optional[str] = None
+    data_entrega: date
+    concluida: bool = False
+    duracao_minutos: Optional[int] = None
+    prioridade: Optional[int] = None
+    meta_pomodoros: Optional[int] = None
+    pomodoros_concluidos: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+    """Schema de resposta ao retornar uma tarefa."""
+
+    id: int
     area_id: int
     titulo: str
     descricao: Optional[str] = None
@@ -276,6 +291,24 @@ class Areas(Base):
 
 
 class Tasks(Base):
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    area_id = Column(Integer, ForeignKey("areas.id"), nullable=True)  # nullable for tasks without area
+    titulo = Column(String(255), nullable=False)
+    descricao = Column(String(500), nullable=True)
+    data_entrega = Column(Date, nullable=False)
+    concluida = Column(Boolean, default=False, nullable=False)
+    duracao_minutos = Column(Integer, nullable=True)
+    prioridade = Column(Integer, nullable=True)  # 1=baixa, 2=media, 3=alta
+    meta_pomodoros = Column(Integer, nullable=True)
+    pomodoros_concluidos = Column(Integer, default=0, nullable=True)
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    area_id = Column(Integer, ForeignKey("areas.id"), nullable=True)  # nullable for tasks without area
+    titulo = Column(String(255), nullable=False)
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -866,6 +899,9 @@ def excluir_area(area_id: int, db: Session = Depends(get_db)):
 
 
 # --- Tasks ---
+@app.get("/tasks", response_model=List[TaskResponse])
+def listar_tasks(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    return db.query(Tasks).filter(Tasks.user_id == user_id).all()
 @app.get("/tasks", response_model=List[TaskResponse])
 def listar_tasks(db: Session = Depends(get_db)):
     return db.query(Tasks).all()
