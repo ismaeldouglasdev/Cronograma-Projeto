@@ -187,6 +187,21 @@ class TaskResponse(BaseModel):
     """Schema de resposta ao retornar uma tarefa."""
 
     id: int
+    area_id: Optional[int] = None  # Changed to Optional
+    titulo: str
+    descricao: Optional[str] = None
+    data_entrega: date
+    concluida: bool = False
+    duracao_minutos: Optional[int] = None
+    prioridade: Optional[int] = None
+    meta_pomodoros: Optional[int] = None
+    pomodoros_concluidos: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+    """Schema de resposta ao retornar uma tarefa."""
+
+    id: int
     area_id: int
     titulo: str
     descricao: Optional[str] = None
