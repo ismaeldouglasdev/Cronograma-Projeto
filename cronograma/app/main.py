@@ -187,21 +187,6 @@ class TaskResponse(BaseModel):
     """Schema de resposta ao retornar uma tarefa."""
 
     id: int
-    area_id: Optional[int] = None  # Changed to Optional
-    titulo: str
-    descricao: Optional[str] = None
-    data_entrega: date
-    concluida: bool = False
-    duracao_minutos: Optional[int] = None
-    prioridade: Optional[int] = None
-    meta_pomodoros: Optional[int] = None
-    pomodoros_concluidos: Optional[int] = None
-
-    class Config:
-        from_attributes = True
-    """Schema de resposta ao retornar uma tarefa."""
-
-    id: int
     area_id: int
     titulo: str
     descricao: Optional[str] = None
@@ -278,11 +263,6 @@ class Areas(Base):
     __tablename__ = "areas"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    nome = Column(String(255), nullable=False)
-    __tablename__ = "areas"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
     nome = Column(String(255), nullable=False)
     cor = Column(String(20), nullable=True)
     ordem = Column(Integer, nullable=True)
@@ -299,25 +279,6 @@ class Tasks(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    area_id = Column(Integer, ForeignKey("areas.id"), nullable=True)  # nullable for tasks without area
-    titulo = Column(String(255), nullable=False)
-    descricao = Column(String(500), nullable=True)
-    data_entrega = Column(Date, nullable=False)
-    concluida = Column(Boolean, default=False, nullable=False)
-    duracao_minutos = Column(Integer, nullable=True)
-    prioridade = Column(Integer, nullable=True)  # 1=baixa, 2=media, 3=alta
-    meta_pomodoros = Column(Integer, nullable=True)
-    pomodoros_concluidos = Column(Integer, default=0, nullable=True)
-    __tablename__ = "tasks"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    area_id = Column(Integer, ForeignKey("areas.id"), nullable=True)  # Changed to nullable
-    titulo = Column(String(255), nullable=False)
-    __tablename__ = "tasks"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
     area_id = Column(Integer, ForeignKey("areas.id"), nullable=False)
     titulo = Column(String(255), nullable=False)
     descricao = Column(String(500), nullable=True)
@@ -330,14 +291,6 @@ class Tasks(Base):
 
 
 class Sessoes(Base):
-    __tablename__ = "sessoes"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    area_id = Column(Integer, ForeignKey("areas.id"), nullable=False)
-    duracao_minutos = Column(Integer, nullable=False)
-    data = Column(Date, nullable=False)
-    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
     __tablename__ = "sessoes"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -504,78 +457,151 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-
 # --- Admin Migration Endpoint ---
 MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
 
 
-@app.post("/admin/add-user-id-column")
-def add_user_id_column(secret: str = ""):
-    """Add user_id column to tasks table in PostgreSQL."""
-    if MIGRATION_SECRET and secret != MIGRATION_SECRET:
-        raise HTTPException(status_code=403, detail="Invalid secret")
-    
+@app.post("/admin/init")
+def init_database():
+    """Initialize database tables"""
     pg_url = os.environ.get("DATABASE_URL", "")
     if not pg_url or "sqlite" in pg_url:
-        raise HTTPException(status_code=400, detail="PostgreSQL not configured")
+        raise HTTPException(status_code=500, detail="PostgreSQL not configured")
     
     try:
         pg_engine = create_engine(pg_url)
         with pg_engine.connect() as conn:
-            # Check if column exists
-            result = conn.execute(text(
-                "SELECT column_name FROM information_schema.columns "
-                "WHERE table_name='tasks' AND column_name='user_id'"
-            ))
-            if result.fetchone():
-                return {"status": "Column already exists"}
-            
-            # Add column with default user_id = 1
-            conn.execute(text(
-                "ALTER TABLE tasks ADD COLUMN user_id INTEGER NOT NULL DEFAULT 1"
-            ))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    email VARCHAR(255) UNIQUE NOT NULL,
+                    password_hash VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    is_verified BOOLEAN DEFAULT FALSE,
+                    verification_token VARCHAR(255)
+                )
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS areas (
+                    id SERIAL PRIMARY KEY,
+                    nome VARCHAR(255) NOT NULL,
+                    cor VARCHAR(20),
+                    ordem INTEGER,
+                    tipo VARCHAR(20) DEFAULT 'online',
+                    dia_semana VARCHAR(20),
+                    horario VARCHAR(50),
+                    sala VARCHAR(50),
+                    bloco VARCHAR(50),
+                    professor VARCHAR(255),
+                    subcategoria VARCHAR(100),
+                    user_id INTEGER DEFAULT 1
+                )
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS tasks (
+                    id SERIAL PRIMARY KEY,
+                    area_id INTEGER REFERENCES areas(id),
+                    titulo VARCHAR(255) NOT NULL,
+                    descricao VARCHAR(500),
+                    data_entrega DATE,
+                    concluida BOOLEAN DEFAULT FALSE,
+                    duracao_minutos INTEGER,
+                    prioridade INTEGER,
+                    meta_pomodoros INTEGER,
+                    pomodoros_concluidos INTEGER DEFAULT 0,
+                    user_id INTEGER DEFAULT 1
+                )
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS sessoes (
+                    id SERIAL PRIMARY KEY,
+                    area_id INTEGER REFERENCES areas(id),
+                    duracao_minutos INTEGER,
+                    data DATE,
+                    task_id INTEGER REFERENCES tasks(id),
+                    user_id INTEGER DEFAULT 1
+                )
+            """))
             conn.commit()
-        return {"status": "Column added successfully"}
+        return {"status": "ok", "message": "Tables created successfully"}
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/admin/add-user-id-all")
-def add_user_id_all(secret: str = ""):
-    """Add user_id column to all tables in PostgreSQL."""
+# --- Import Data Endpoint ---
+class ImportData(BaseModel):
+    users: Optional[List[dict]] = []
+    areas: Optional[List[dict]] = []
+    tasks: Optional[List[dict]] = []
+    sessoes: Optional[List[dict]] = []
+
+
+@app.post("/admin/import")
+def import_data(data: ImportData, secret: str = ""):
+    """Import data from JSON (for migration from SQLite)"""
     if MIGRATION_SECRET and secret != MIGRATION_SECRET:
         raise HTTPException(status_code=403, detail="Invalid secret")
     
     pg_url = os.environ.get("DATABASE_URL", "")
     if not pg_url or "sqlite" in pg_url:
-        raise HTTPException(status_code=400, detail="PostgreSQL not configured")
+        raise HTTPException(status_code=500, detail="PostgreSQL not configured")
     
-    results = {}
+    report = {"tables": [], "errors": []}
+    
     try:
         pg_engine = create_engine(pg_url)
-        with pg_engine.connect() as conn:
-            for table in ['areas', 'sessoes']:
-                # Check if column exists
-                result = conn.execute(text(
-                    f"SELECT column_name FROM information_schema.columns "
-                    f"WHERE table_name='{table}' AND column_name='user_id'"
-                ))
-                if result.fetchone():
-                    results[table] = "Column already exists"
-                    continue
-                
-                # Add column with default user_id = 1
-                conn.execute(text(
-                    f"ALTER TABLE {table} ADD COLUMN user_id INTEGER NOT NULL DEFAULT 1"
-                ))
+        
+        if data.users:
+            with pg_engine.connect() as conn:
+                for user in data.users:
+                    is_ver = bool(user.get('is_verified')) if user.get('is_verified') else False
+                    conn.execute(text("""
+                        INSERT INTO users (id, email, password_hash, created_at, is_verified, verification_token)
+                        VALUES (:id, :email, :password_hash, :created_at, :is_verified, :verification_token)
+                        ON CONFLICT (id) DO NOTHING
+                    """), {'id': user['id'], 'email': user['email'], 'password_hash': user['password_hash'], 'created_at': user.get('created_at'), 'is_verified': is_ver, 'verification_token': user.get('verification_token')})
                 conn.commit()
-                results[table] = "Column added successfully"
-        return results
+            report["tables"].append({"name": "users", "records": len(data.users), "status": "ok"})
+        
+        if data.areas:
+            with pg_engine.connect() as conn:
+                for area in data.areas:
+                    conn.execute(text("""
+                        INSERT INTO areas (id, nome, cor, ordem, tipo, dia_semana, horario, sala, bloco, professor, subcategoria, user_id)
+                        VALUES (:id, :nome, :cor, :ordem, :tipo, :dia_semana, :horario, :sala, :bloco, :professor, :subcategoria, 1)
+                        ON CONFLICT (id) DO NOTHING
+                    """), area)
+                conn.commit()
+            report["tables"].append({"name": "areas", "records": len(data.areas), "status": "ok"})
+        
+        if data.tasks:
+            with pg_engine.connect() as conn:
+                for task in data.tasks:
+                    conc = bool(task.get('concluida')) if task.get('concluida') else False
+                    conn.execute(text("""
+                        INSERT INTO tasks (id, area_id, titulo, descricao, data_entrega, concluida, duracao_minutos, prioridade, meta_pomodoros, pomodoros_concluidos, user_id)
+                        VALUES (:id, :area_id, :titulo, :descricao, :data_entrega, :concluida, :duracao_minutos, :prioridade, :meta_pomodoros, :pomodoros_concluidos, 1)
+                        ON CONFLICT (id) DO NOTHING
+                    """), {'id': task['id'], 'area_id': task['area_id'], 'titulo': task['titulo'], 'descricao': task.get('descricao'), 'data_entrega': task['data_entrega'], 'concluida': conc, 'duracao_minutos': task.get('duracao_minutos'), 'prioridade': task.get('prioridade'), 'meta_pomodoros': task.get('meta_pomodoros'), 'pomodoros_concluidos': task.get('pomodoros_concluidos')})
+                conn.commit()
+            report["tables"].append({"name": "tasks", "records": len(data.tasks), "status": "ok"})
+        
+        if data.sessoes:
+            with pg_engine.connect() as conn:
+                for sessao in data.sessoes:
+                    conn.execute(text("""
+                        INSERT INTO sessoes (id, area_id, duracao_minutos, data, task_id, user_id)
+                        VALUES (:id, :area_id, :duracao_minutos, :data, :task_id, 1)
+                        ON CONFLICT (id) DO NOTHING
+                    """), sessao)
+                conn.commit()
+            report["tables"].append({"name": "sessoes", "records": len(data.sessoes), "status": "ok"})
+            
     except Exception as e:
-        return {"error": str(e)}
-
-MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
-        return {"error": str(e)}
+        report["errors"].append(str(e))
+    
+    return report
+# --- Admin Migration Endpoint ---
 MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
 
 
@@ -667,86 +693,6 @@ def migrate_data(secret: str = ""):
         report["errors"].append(str(e))
 
     return report
-
-
-@app.post("/admin/import-tasks")
-def import_tasks(secret: str = "", tasks_data: list = None):
-    """Import tasks with user_id. Provide tasks as JSON array."""
-    if MIGRATION_SECRET and secret != MIGRATION_SECRET:
-        raise HTTPException(status_code=403, detail="Invalid secret")
-    
-    if not tasks_data:
-        # Use default tasks from data_clean.json
-        import json
-        data_path = Path(__file__).parent / "data_clean.json"
-        if data_path.exists():
-            with open(data_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                tasks_data = data.get('tasks', [])
-        else:
-            return {"error": "No tasks data provided and data_clean.json not found"}
-    
-    db = next(get_db())
-    imported = 0
-    errors = []
-    
-    for task in tasks_data:
-        try:
-            db_task = Tasks(
-                id=task['id'],
-                user_id=1,  # y2kgif@gmail.com
-                area_id=task.get('area_id'),
-                titulo=task['titulo'],
-                descricao=task.get('descricao'),
-                data_entrega=task.get('data_entrega'),
-                concluida=task.get('concluida', False),
-                duracao_minutos=task.get('duracao_minutos'),
-                prioridade=task.get('prioridade', 2),
-                meta_pomodoros=task.get('meta_pomodoros'),
-                pomodoros_concluidos=task.get('pomodoros_concluidos', 0)
-            )
-            db.merge(db_task)
-            imported += 1
-        except Exception as e:
-            errors.append(f"Task {task.get('id')}: {str(e)}")
-    
-    try:
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        errors.append(f"Commit failed: {str(e)}")
-    
-    return {"imported": imported, "errors": errors}
-
-
-@app.post("/admin/check-tasks")
-def check_tasks():
-    """Check tasks in database."""
-    db = next(get_db())
-    tasks = db.query(Tasks).all()
-    return {
-        "count": len(tasks),
-        "tasks": [{"id": t.id, "user_id": t.user_id, "titulo": t.titulo[:30], "area_id": t.area_id} for t in tasks]
-    }
-
-
-@app.post("/admin/reset-password")
-def reset_password(email: str, new_password: str, secret: str = ""):
-    """Reset a user's password."""
-    if MIGRATION_SECRET and secret != MIGRATION_SECRET:
-        raise HTTPException(status_code=403, detail="Invalid secret")
-    
-    db = next(get_db())
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    user.password_hash = hash_password(new_password)
-    db.commit()
-    return {"status": "Password reset successfully"}
-
-
-# --- Auth Endpoints ---
 
 
 # --- Auth Endpoints ---
@@ -851,28 +797,7 @@ def index():
         headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
     )
 
-#BJ|
 
-@app.get("/areas", response_model=List[AreaResponse])
-def listar_areas(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    return db.query(Areas).filter(Areas.user_id == user_id).all()
-
-
-@app.post("/areas", response_model=AreaResponse)
-def criar_area(body: AreaCreate, user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    area = Areas(
-        nome=body.nome,
-        cor=body.cor,
-        ordem=body.ordem,
-        tipo=body.tipo or "online",
-        dia_semana=body.dia_semana,
-        horario=body.horario,
-        sala=body.sala,
-        bloco=body.bloco,
-        professor=body.professor,
-        subcategoria=body.subcategoria,
-        user_id=user_id,
-    )
 @app.get("/areas", response_model=List[AreaResponse])
 def listar_areas(db: Session = Depends(get_db)):
     return db.query(Areas).all()
@@ -942,45 +867,11 @@ def excluir_area(area_id: int, db: Session = Depends(get_db)):
 
 # --- Tasks ---
 @app.get("/tasks", response_model=List[TaskResponse])
-def listar_tasks(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    return db.query(Tasks).filter(Tasks.user_id == user_id).all()
-
-
-@app.get("/tasks", response_model=List[TaskResponse])
-def listar_tasks(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    return db.query(Tasks).filter(Tasks.user_id == user_id).all()
-
-
-@app.post("/tasks", response_model=TaskResponse)
-def criar_task(body: TaskCreate, user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    task = Tasks(
-        area_id=body.area_id,
-        titulo=body.titulo,
-        descricao=body.descricao,
-        data_entrega=body.data_entrega,
-        prioridade=body.prioridade,
-        user_id=user_id,
-    )
-    db.add(task)
-
-@app.post("/tasks", response_model=TaskResponse)
-@app.get("/tasks", response_model=List[TaskResponse])
-def listar_tasks(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    return db.query(Tasks).filter(Tasks.user_id == user_id).all()
 def listar_tasks(db: Session = Depends(get_db)):
     return db.query(Tasks).all()
 
 
 @app.post("/tasks", response_model=TaskResponse)
-def criar_task(body: TaskCreate, user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    task = Tasks(
-        area_id=body.area_id,
-        titulo=body.titulo,
-        descricao=body.descricao,
-        data_entrega=body.data_entrega,
-        prioridade=body.prioridade,
-        user_id=user_id,
-    )
 def criar_task(body: TaskCreate, db: Session = Depends(get_db)):
     task = Tasks(
         area_id=body.area_id,
@@ -1048,36 +939,11 @@ def excluir_task(task_id: int, db: Session = Depends(get_db)):
 
 # --- Sessões de estudo ---
 @app.get("/sessoes", response_model=List[SessaoResponse])
-def listar_sessoes(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    return db.query(Sessoes).filter(Sessoes.user_id == user_id).order_by(Sessoes.data.desc()).all()
-
-
-@app.post("/sessoes", response_model=SessaoResponse)
-def criar_sessao(body: SessaoCreate, user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    data_sessao = body.data or date.today()
-    sessao = Sessoes(
-        area_id=body.area_id,
-        duracao_minutos=body.duracao_minutos,
-        data=data_sessao,
-        user_id=user_id,
-    )
-    db.add(sessao)
-@app.get("/sessoes", response_model=List[SessaoResponse])
-def listar_sessoes(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    return db.query(Sessoes).filter(Sessoes.user_id == user_id).order_by(Sessoes.data.desc()).all()
 def listar_sessoes(db: Session = Depends(get_db)):
     return db.query(Sessoes).order_by(Sessoes.data.desc()).all()
 
 
 @app.post("/sessoes", response_model=SessaoResponse)
-def criar_sessao(body: SessaoCreate, user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    data_sessao = body.data or date.today()
-    sessao = Sessoes(
-        area_id=body.area_id,
-        duracao_minutos=body.duracao_minutos,
-        data=data_sessao,
-        user_id=user_id,
-    )
 def criar_sessao(body: SessaoCreate, db: Session = Depends(get_db)):
     data_sessao = body.data or date.today()
     sessao = Sessoes(
@@ -1144,20 +1010,6 @@ def completar_pomodoro(body: PomodoroComplete, db: Session = Depends(get_db)):
 
 
 @app.get("/sessoes/resumo", response_model=List[HorasPorArea])
-def resumo_horas(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Retorna total de minutos/horas de estudo por área."""
-    rows = (
-        db.query(
-            Sessoes.area_id,
-            Areas.nome,
-            Areas.cor,
-            func.sum(Sessoes.duracao_minutos).label("total_minutos"),
-        )
-        .join(Areas, Sessoes.area_id == Areas.id)
-        .filter(Sessoes.user_id == user_id)
-        .group_by(Sessoes.area_id)
-        .all()
-    )
 def resumo_horas(db: Session = Depends(get_db)):
     """Retorna total de minutos/horas de estudo por área."""
     rows = (
