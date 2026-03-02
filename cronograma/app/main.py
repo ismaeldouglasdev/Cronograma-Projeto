@@ -651,6 +651,22 @@ def check_tasks():
     }
 
 
+@app.post("/admin/reset-password")
+def reset_password(email: str, new_password: str, secret: str = ""):
+    """Reset a user's password."""
+    if MIGRATION_SECRET and secret != MIGRATION_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid secret")
+    
+    db = next(get_db())
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.password_hash = hash_password(new_password)
+    db.commit()
+    return {"status": "Password reset successfully"}
+
+
 # --- Auth Endpoints ---
 
 
