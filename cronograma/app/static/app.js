@@ -891,6 +891,20 @@ async function init() {
   await loadSessoes(areas);
   await loadResumo();
   
+  // Sincronizar com AppStore para persistência de gamificação
+  if (typeof AppStore !== 'undefined') {
+    AppStore.init();
+    AppStore.setAreas(areas);
+    const allTasks = await get('/tasks');
+    AppStore.setTasks(allTasks);
+    AppStore.syncStatsFromData();
+    
+    // Renderizar gamificação com dados do store
+    if (typeof renderGamification === 'function') {
+      renderGamification();
+    }
+  }
+  
   if (typeof FocoTimer !== "undefined") {
     const tasks = await get("/tasks");
     FocoTimer.init(areas, tasks);
@@ -915,6 +929,48 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Função para renderizar gamificação
 function renderGamification() {
+  // Preferir AppStore (novo sistema centralizado)
+  if (typeof AppStore !== 'undefined') {
+    const state = AppStore.getState();
+    const stats = state.stats;
+    
+    // Atualizar elementos do hero
+    document.getElementById("gami-level").textContent = stats.level;
+    document.getElementById("gami-xp-current").textContent = stats.xpForCurrentLevel;
+    document.getElementById("gami-xp-next").textContent = stats.xpForNextLevel;
+    document.getElementById("gami-xp-total").textContent = stats.totalXP;
+    document.getElementById("gami-streak").textContent = stats.currentStreak;
+    document.getElementById("gami-pomodoros").textContent = stats.totalPomodoros;
+    document.getElementById("gami-tarefas").textContent = stats.completedTasks;
+    document.getElementById("gami-areas").textContent = state.areas.length;
+    
+    // Barra de XP com percentual
+    const xpPercent = stats.xpForNextLevel > 0 
+      ? Math.min((stats.xpForCurrentLevel / stats.xpForNextLevel) * 100, 100) 
+      : 0;
+    document.getElementById("gami-xp-fill").style.width = xpPercent + "%";
+    document.getElementById("gami-xp-percent").textContent = Math.round(xpPercent) + "%";
+    
+    // Renderizar conquistas por categoria
+    const achievements = state.achievements;
+    const categorias = ['xp', 'streak', 'pomodoro', 'tasks', 'level'];
+    
+    categorias.forEach(catId => {
+      const container = document.getElementById(`gami-badges-${catId}`);
+      if (!container || !achievements[catId]) return;
+      
+      container.innerHTML = achievements[catId].map(ach => `
+        <div class="gami-badge ${ach.unlocked ? 'unlocked' : 'locked'}" title="${ach.description}">
+          <span class="gami-badge-icon">${ach.title.split(' ')[0]}</span>
+          <span class="gami-badge-name">${ach.title.split(' ').slice(1).join(' ')}</span>
+        </div>
+      `).join('');
+    });
+    
+    return;
+  }
+  
+  // Fallback para Gamification antigo
   if (typeof Gamification === "undefined") return;
   
   const progress = Gamification.getProgresso();
