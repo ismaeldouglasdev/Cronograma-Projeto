@@ -769,7 +769,6 @@ async function loadResumo() {
     console.error("Erro ao carregar resumo:", e);
   }
 }
-}
 
 function initTabs() {
   document.querySelectorAll(".tab").forEach((tab) => {
@@ -790,8 +789,6 @@ function initTabs() {
       }
       if (tab.dataset.tab === "resumo") {
         loadResumo();
-      }
-        loadHorarios();
       }
     });
   });
