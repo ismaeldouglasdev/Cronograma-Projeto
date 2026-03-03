@@ -1,5 +1,15 @@
 const API = "";
 
+// Auto-detect API URL based on current location
+(function() {
+  const loc = window.location;
+  if (loc.hostname === "localhost" || loc.hostname === "127.0.0.1") {
+    API = `${loc.protocol}//${loc.host}:${loc.port || "80"}`;
+  } else {
+    API = `${loc.protocol}//${loc.host}`;
+  }
+})();
+
 let cachedAreas = null;
 
 function getToken() {
