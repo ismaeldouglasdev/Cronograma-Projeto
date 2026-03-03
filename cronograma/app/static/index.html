@@ -216,44 +216,114 @@
 
     <!-- Gamificação -->
     <section id="gamificacao" class="panel">
-      <h2>🏆 Gamificação</h2>
-      <p class="section-desc">Acompanhe seu progresso e conquiste badges!</p>
-      
-      <div class="gami-container">
-        <div class="gami-level-card">
-          <div class="gami-level-info">
-            <span class="gami-level-num" id="gami-level">1</span>
-            <span class="gami-level-label">Nível</span>
-          </div>
-          <div class="gami-xp-info">
-            <div class="gami-xp-bar">
-              <div class="gami-xp-fill" id="gami-xp-fill"></div>
+      <div class="gami-page">
+        <!-- Hero Section - Card Principal -->
+        <div class="gami-hero">
+          <div class="gami-hero-content">
+            <div class="gami-level-badge">
+              <span class="gami-level-label-small">NÍVEL</span>
+              <span class="gami-level-num-big" id="gami-level">1</span>
             </div>
-            <span class="gami-xp-text"><span id="gami-xp-current">0</span> / <span id="gami-xp-next">500</span> XP</span>
-          </div>
-          <div class="gami-streak">
-            <span>🔥 Sequência: <span id="gami-streak">0</span> dias</span>
+            <div class="gami-hero-info">
+              <div class="gami-xp-container">
+                <div class="gami-xp-header">
+                  <span class="gami-xp-label">Experiência</span>
+                  <span class="gami-xp-values">
+                    <span id="gami-xp-current">0</span> / <span id="gami-xp-next">100</span> XP
+                  </span>
+                </div>
+                <div class="gami-xp-bar-big">
+                  <div class="gami-xp-fill-big" id="gami-xp-fill"></div>
+                  <div class="gami-xp-glow"></div>
+                </div>
+                <div class="gami-xp-percent" id="gami-xp-percent">0%</div>
+              </div>
+              <div class="gami-streak-badge">
+                <span class="gami-streak-icon">🔥</span>
+                <div class="gami-streak-info">
+                  <span class="gami-streak-num" id="gami-streak">0</span>
+                  <span class="gami-streak-label">dias seguidos</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <div class="gami-stats">
-          <div class="gami-stat">
-            <span class="gami-stat-num" id="gami-pomodoros">0</span>
-            <span class="gami-stat-label">🍅 Pomodoros</span>
+
+        <!-- Métricas Secundárias - Grid 4 colunas -->
+        <div class="gami-metrics-grid">
+          <div class="gami-metric-card">
+            <div class="gami-metric-icon">🍅</div>
+            <div class="gami-metric-content">
+              <span class="gami-metric-num" id="gami-pomodoros">0</span>
+              <span class="gami-metric-label">Pomodoros</span>
+            </div>
           </div>
-          <div class="gami-stat">
-            <span class="gami-stat-num" id="gami-tarefas">0</span>
-            <span class="gami-stat-label">✅ Tarefas</span>
+          <div class="gami-metric-card">
+            <div class="gami-metric-icon">✅</div>
+            <div class="gami-metric-content">
+              <span class="gami-metric-num" id="gami-tarefas">0</span>
+              <span class="gami-metric-label">Tarefas</span>
+            </div>
           </div>
-          <div class="gami-stat">
-            <span class="gami-stat-num" id="gami-areas">0</span>
-            <span class="gami-stat-label">📚 Áreas</span>
+          <div class="gami-metric-card">
+            <div class="gami-metric-icon">📚</div>
+            <div class="gami-metric-content">
+              <span class="gami-metric-num" id="gami-areas">0</span>
+              <span class="gami-metric-label">Áreas</span>
+            </div>
+          </div>
+          <div class="gami-metric-card">
+            <div class="gami-metric-icon">⭐</div>
+            <div class="gami-metric-content">
+              <span class="gami-metric-num" id="gami-xp-total">0</span>
+              <span class="gami-metric-label">XP Total</span>
+            </div>
           </div>
         </div>
-        
-        <div class="gami-badges">
-          <h3>Conquistas</h3>
-          <div class="gami-badges-grid" id="gami-badges-grid"></div>
+
+        <!-- Conquistas por Categoria -->
+        <div class="gami-achievements">
+          <h2 class="gami-section-title">Conquistas</h2>
+          
+          <div class="gami-category" id="gami-cat-xp">
+            <h3 class="gami-category-title">
+              <span class="gami-cat-icon">⭐</span>
+              Experiência
+            </h3>
+            <div class="gami-badges-grid" id="gami-badges-xp"></div>
+          </div>
+
+          <div class="gami-category" id="gami-cat-streak">
+            <h3 class="gami-category-title">
+              <span class="gami-cat-icon">🔥</span>
+              Dias Seguidos
+            </h3>
+            <div class="gami-badges-grid" id="gami-badges-streak"></div>
+          </div>
+
+          <div class="gami-category" id="gami-cat-pomodoro">
+            <h3 class="gami-category-title">
+              <span class="gami-cat-icon">🍅</span>
+              Pomodoros
+            </h3>
+            <div class="gami-badges-grid" id="gami-badges-pomodoro"></div>
+          </div>
+
+          <div class="gami-category" id="gami-cat-tasks">
+            <h3 class="gami-category-title">
+              <span class="gami-cat-icon">✅</span>
+              Tarefas Concluídas
+            </h3>
+            <div class="gami-badges-grid" id="gami-badges-tasks"></div>
+          </div>
+
+          <div class="gami-category" id="gami-cat-level">
+            <h3 class="gami-category-title">
+              <span class="gami-cat-icon">🎖️</span>
+              Níveis Alcançados
+            </h3>
+            <div class="gami-badges-grid" id="gami-badges-level"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -316,9 +386,39 @@
 
     <!-- Resumo -->
     <section id="resumo" class="panel">
-      <h2>Horas de estudo por área</h2>
-      <div class="chart-wrap"><canvas id="chart-resumo"></canvas></div>
-      <div id="resumo-horas" class="resumo-grid"></div>
+      <div class="resumo-page">
+        <!-- Métricas Principais -->
+        <div class="resumo-hero">
+          <div class="resumo-hero-stat">
+            <span class="resumo-hero-num" id="resumo-horas-total">0</span>
+            <span class="resumo-hero-label">horas estudadas</span>
+          </div>
+          <div class="resumo-hero-divider"></div>
+          <div class="resumo-hero-stat">
+            <span class="resumo-hero-num" id="resumo-sessoes-total">0</span>
+            <span class="resumo-hero-label">sessões</span>
+          </div>
+          <div class="resumo-hero-divider"></div>
+          <div class="resumo-hero-stat">
+            <span class="resumo-hero-num" id="resumo-areas-total">0</span>
+            <span class="resumo-hero-label">áreas</span>
+          </div>
+        </div>
+
+        <!-- Gráfico Principal -->
+        <div class="resumo-chart-section">
+          <h3 class="resumo-section-title">Distribuição por Área</h3>
+          <div class="resumo-chart-container">
+            <canvas id="chart-resumo"></canvas>
+          </div>
+        </div>
+
+        <!-- Lista de Áreas com Barras -->
+        <div class="resumo-list-section">
+          <h3 class="resumo-section-title">Detalhamento</h3>
+          <div class="resumo-list" id="resumo-horas"></div>
+        </div>
+      </div>
     </section>
   </main>
 

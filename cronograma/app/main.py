@@ -971,9 +971,14 @@ def migrate_data(secret: str = ""):
         pg_engine = create_engine(pg_url)
         pg_conn = pg_engine.connect()
 
+        # WHITELIST de tabelas permitidas - NUNCA usar input do usuário diretamente
+        ALLOWED_TABLES = {"users", "areas", "tasks", "sessoes"}
         tables = ["users", "areas", "tasks", "sessoes"]
 
         for table in tables:
+            # Validar que table está na whitelist (proteção extra)
+            if table not in ALLOWED_TABLES:
+                continue
             try:
                 sqlite_cur.execute(f"SELECT * FROM {table}")
                 rows = sqlite_cur.fetchall()
