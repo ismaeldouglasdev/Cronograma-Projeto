@@ -341,76 +341,6 @@ async function loadSessoes(areas) {
   });
 }
 
-let chartResumo = null;
-
-async function loadResumo() {
-  const resumo = await get("/sessoes/resumo");
-  const chartCanvas = document.getElementById("chart-resumo");
-  const div = document.getElementById("resumo-horas");
-
-  if (chartResumo) {
-    chartResumo.destroy();
-    chartResumo = null;
-  }
-
-  if (!resumo.length) {
-    chartCanvas.parentElement.style.display = "none";
-    div.innerHTML = '<p class="resumo-empty">Registre sessões de estudo para ver o resumo aqui.</p>';
-    return;
-  }
-
-  chartCanvas.parentElement.style.display = "block";
-
-  const ctx = chartCanvas.getContext("2d");
-  const labels = resumo.map((r) => r.area_nome);
-  const data = resumo.map((r) => r.total_horas);
-  const colors = resumo.map((r) => r.area_cor || "#6366f1");
-
-  chartResumo = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: "Horas",
-          data,
-          backgroundColor: colors,
-          borderRadius: 6,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: { color: "rgba(255,255,255,0.06)" },
-          ticks: { color: "#9b9a97" },
-        },
-        x: {
-          grid: { display: false },
-          ticks: { color: "#9b9a97", maxRotation: 45 },
-        },
-      },
-    },
-  });
-
-  div.innerHTML = resumo
-    .map(
-      (r) => `
-    <div class="resumo-item">
-      <span class="nome">${escapeHtml(r.area_nome)}</span>
-      <span class="horas">${r.total_horas}h</span>
-    </div>
-  `
-    )
-    .join("");
-}
-
 async function openTaskModal(task, areas) {
   const modal = document.getElementById("modal-task");
   const form = document.getElementById("form-edit-task");
@@ -740,35 +670,80 @@ async function loadResumo() {
     
     if (!resumo.length) {
       container.innerHTML = '<p class="resumo-empty">Nenhuma sessão registrada ainda.</p>';
+      
+      // Zeros quando não há dados
+      document.getElementById("resumo-horas-total").textContent = "0";
+      document.getElementById("resumo-sessoes-total").textContent = "0";
+      document.getElementById("resumo-areas-total").textContent = "0";
+      
       resumoLoaded = true;
       return;
     }
     
-    // Renderizar lista
+    // Calcular totais
+    const totalMinutos = resumo.reduce((sum, r) => sum + r.total_minutos, 0);
+    const totalHoras = (totalMinutos / 60).toFixed(1);
+    const totalSessoes = resumo.length;
+    const totalAreas = resumo.length;
+    
+    // Atualizar métricas principais
+    document.getElementById("resumo-horas-total").textContent = totalHoras;
+    document.getElementById("resumo-sessoes-total").textContent = totalSessoes;
+    document.getElementById("resumo-areas-total").textContent = totalAreas;
+    
+    // Encontrar o máximo para as barras
+    const maxMinutos = Math.max(...resumo.map(r => r.total_minutos));
+    
+    // Renderizar lista com barras de progresso
     container.innerHTML = resumo
-      .map((r) => `
-        <div class="resumo-item">
-          <span class="resumo-dot" style="background:${r.area_cor}"></span>
-          <span class="resumo-nome">${escapeHtml(r.area_nome)}</span>
-          <span class="resumo-tempo">${r.total_horas}h (${r.total_minutos}min)</span>
-        </div>
-      `).join("");
+      .map((r) => {
+        const percent = maxMinutos > 0 ? (r.total_minutos / maxMinutos) * 100 : 0;
+        return `
+          <div class="resumo-item">
+            <span class="resumo-dot" style="background:${r.area_cor || '#6366f1'}"></span>
+            <div class="resumo-item-info">
+              <div class="resumo-item-header">
+                <span class="resumo-nome">${escapeHtml(r.area_nome)}</span>
+                <span class="resumo-tempo">${r.total_horas}h</span>
+              </div>
+              <div class="resumo-progress-bar">
+                <div class="resumo-progress-fill" style="width: ${percent}%; background: ${r.area_cor || '#6366f1'}"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    
+    // Destruir gráfico anterior se existir
+    if (chartResumo) {
+      chartResumo.destroy();
+      chartResumo = null;
+    }
     
     // Renderizar gráfico se Chart.js estiver disponível
     if (typeof Chart !== "undefined" && chartCanvas) {
-      new Chart(chartCanvas, {
+      chartResumo = new Chart(chartCanvas, {
         type: "pie",
         data: {
           labels: resumo.map((r) => r.area_nome),
           datasets: [{
             data: resumo.map((r) => r.total_minutos),
             backgroundColor: resumo.map((r) => r.area_cor || "#6366f1"),
+            borderWidth: 0,
           }],
         },
         options: {
           responsive: true,
+          maintainAspectRatio: true,
           plugins: {
-            legend: { position: "bottom" },
+            legend: { 
+              position: "bottom",
+              labels: {
+                padding: 20,
+                usePointStyle: true,
+                pointStyle: 'circle'
+              }
+            },
           },
         },
       });
@@ -944,27 +919,51 @@ function renderGamification() {
   
   const progress = Gamification.getProgresso();
   
+  // Atualizar elementos do hero
   document.getElementById("gami-level").textContent = progress.level;
   document.getElementById("gami-xp-current").textContent = progress.xp_atual;
   document.getElementById("gami-xp-next").textContent = progress.xp_proximo;
+  document.getElementById("gami-xp-total").textContent = progress.xp_total;
   document.getElementById("gami-streak").textContent = progress.streak_dias;
   document.getElementById("gami-pomodoros").textContent = progress.pomodoros_total;
   document.getElementById("gami-tarefas").textContent = progress.tarefas_concluidas;
   document.getElementById("gami-areas").textContent = progress.areas_criadas;
   
-  const xpPercent = (progress.xp_atual / progress.xp_proximo) * 100;
+  // Barra de XP com percentual
+  const xpPercent = Math.min((progress.xp_atual / progress.xp_proximo) * 100, 100);
   document.getElementById("gami-xp-fill").style.width = xpPercent + "%";
+  document.getElementById("gami-xp-percent").textContent = Math.round(xpPercent) + "%";
   
-  const badgesGrid = document.getElementById("gami-badges-grid");
-  if (badgesGrid) {
-    badgesGrid.innerHTML = progress.badges_disponiveis.map(badge => {
+  // Categorias de badges: xp, streak, pomodoro, tasks, level
+  const categorias = [
+    { id: 'xp', key: 'xp' },
+    { id: 'streak', key: 'streak' },
+    { id: 'pomodoro', key: 'pomodoro' },
+    { id: 'tasks', key: 'tarefa' },
+    { id: 'level', key: 'level' }
+  ];
+  
+  categorias.forEach(cat => {
+    const container = document.getElementById(`gami-badges-${cat.id}`);
+    if (!container) return;
+    
+    // Filtrar badges desta categoria
+    const badgesDaCategoria = Gamification.BADGES.filter(b => b.tipo === cat.key || (cat.id === 'level' && b.tipo === 'level'));
+    
+    if (badgesDaCategoria.length === 0) {
+      // Se não há badges locais, tentar usar dados do backend
+      container.innerHTML = '<p class="gami-empty">Carregando conquistas...</p>';
+      return;
+    }
+    
+    container.innerHTML = badgesDaCategoria.map(badge => {
       const unlocked = progress.badges.includes(badge.id);
       return `
-        <div class="gami-badge ${unlocked ? '' : 'locked'}">
+        <div class="gami-badge ${unlocked ? 'unlocked' : 'locked'}" title="${badge.descricao}">
           <span class="gami-badge-icon">${badge.nome.split(' ')[0]}</span>
           <span class="gami-badge-name">${badge.nome.split(' ').slice(1).join(' ')}</span>
         </div>
       `;
     }).join("");
-  }
+  });
 }

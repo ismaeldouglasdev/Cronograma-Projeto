@@ -1553,137 +1553,493 @@ main {
   color: var(--accent);
 }
 
-/* Gamification */
-.gami-container {
-  max-width: 600px;
+/* ========================================
+   GAMIFICAÇÃO - NOVA ESTRUTURA MODERNA
+   ======================================== */
+
+.gami-page {
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 1rem;
 }
 
-.gami-level-card {
-  background: var(--bg-card);
+/* Hero Section */
+.gami-hero {
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(99, 102, 241, 0.1) 100%);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.5rem;
+  border-radius: 20px;
+  padding: 2rem;
   margin-bottom: 1.5rem;
+}
+
+.gami-hero-content {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  gap: 2rem;
   align-items: center;
 }
 
-.gami-level-info {
+.gami-level-badge {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  min-height: 120px;
+  background: linear-gradient(135deg, var(--accent) 0%, #f97316 100%);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(245, 158, 11, 0.3);
 }
 
-.gami-level-num {
-  font-size: 2.5rem;
+.gami-level-label-small {
+  font-size: 0.7rem;
   font-weight: 700;
-  color: var(--accent);
+  color: rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-.gami-level-label {
-  font-size: 0.85rem;
-  color: var(--text-muted);
+.gami-level-num-big {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #000;
+  line-height: 1;
 }
 
-.gami-xp-info {
+.gami-hero-info {
   flex: 1;
-  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.gami-xp-bar {
-  height: 12px;
-  background: var(--bg-input);
-  border-radius: 6px;
-  overflow: hidden;
+/* XP Container */
+.gami-xp-container {
+  width: 100%;
+}
+
+.gami-xp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 0.5rem;
 }
 
-.gami-xp-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
-  border-radius: 6px;
-  transition: width 0.3s ease;
-}
-
-.gami-xp-text {
+.gami-xp-label {
   font-size: 0.85rem;
   color: var(--text-muted);
+  font-weight: 500;
 }
 
-.gami-streak {
-  color: var(--warning);
+.gami-xp-values {
+  font-size: 0.9rem;
+  color: var(--text);
   font-weight: 600;
 }
 
-.gami-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+.gami-xp-bar-big {
+  position: relative;
+  height: 24px;
+  background: var(--bg-input);
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-.gami-stat {
+.gami-xp-fill-big {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent) 0%, #fbbf24 100%);
+  border-radius: 12px;
+  transition: width 0.5s ease;
+}
+
+.gami-xp-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+  animation: xpGlow 2s ease-in-out infinite;
+}
+
+@keyframes xpGlow {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+.gami-xp-percent {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.7);
+  z-index: 1;
+}
+
+/* Streak Badge */
+.gami-streak-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 0.75rem 1.25rem;
+  width: fit-content;
+}
+
+.gami-streak-icon {
+  font-size: 1.75rem;
+}
+
+.gami-streak-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.gami-streak-num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ef4444;
+  line-height: 1;
+}
+
+.gami-streak-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Métricas Grid */
+.gami-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.gami-metric-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1rem;
-  text-align: center;
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.2s ease;
 }
 
-.gami-stat-num {
-  display: block;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--accent);
+.gami-metric-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
-.gami-stat-label {
+.gami-metric-icon {
+  font-size: 2rem;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-input);
+  border-radius: 12px;
+}
+
+.gami-metric-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.gami-metric-num {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.gami-metric-label {
   font-size: 0.8rem;
   color: var(--text-muted);
 }
 
-.gami-badges h3 {
-  margin: 0 0 1rem;
+/* Conquistas por Categoria */
+.gami-achievements {
+  margin-top: 1rem;
+}
+
+.gami-section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.gami-category {
+  margin-bottom: 1.5rem;
+}
+
+.gami-category-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.gami-cat-icon {
+  font-size: 1.25rem;
 }
 
 .gami-badges-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 0.75rem;
 }
 
 .gami-badge {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.75rem;
+  border-radius: 12px;
+  padding: 1rem;
   text-align: center;
-  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  cursor: default;
 }
 
-.gami-badge.locked {
-  opacity: 0.4;
+.gami-badge:hover:not(.locked) {
+  border-color: var(--accent);
+  transform: scale(1.02);
 }
 
-.gami-badge-icon {
-  font-size: 1.5rem;
-  display: block;
-  margin-bottom: 0.25rem;
+.gami-badge.unlocked {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(245, 158, 11, 0.1) 100%);
 }
 
-.gami-badge.locked .gami-badge-icon {
-  filter: grayscale(1);
+.gami-badge.unlocked .gami-badge-icon {
+  filter: none;
 }
 
-.gami-badge-name {
-  font-weight: 600;
+.gami-badge.unlocked .gami-badge-name {
   color: var(--text);
 }
 
-.gami-badge.locked .gami-badge-name {
+/* ========================================
+   RESUMO - NOVA ESTRUTURA MODERNA
+   ======================================== */
+
+.resumo-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Hero Metrics */
+.resumo-hero {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(99, 102, 241, 0.08) 100%);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.resumo-hero-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.resumo-hero-num {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.resumo-hero-label {
+  font-size: 0.85rem;
   color: var(--text-muted);
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.resumo-hero-divider {
+  width: 1px;
+  height: 60px;
+  background: var(--border);
+}
+
+/* Chart Section */
+.resumo-chart-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.resumo-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.resumo-chart-container {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* List Section */
+.resumo-list-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.resumo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.resumo-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-input);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.resumo-item:hover {
+  transform: translateX(4px);
+}
+
+.resumo-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.resumo-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.resumo-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.resumo-nome {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resumo-tempo {
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.resumo-progress-bar {
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.resumo-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.resumo-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem;
+}
+
+/* ========================================
+   RESPONSIVIDADE
+   ======================================== */
+
+@media (max-width: 768px) {
+  .gami-hero-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .gami-level-badge {
+    min-width: 100px;
+    min-height: 100px;
+  }
+
+  .gami-level-num-big {
+    font-size: 2.5rem;
+  }
+
+  .gami-streak-badge {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .gami-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gami-badges-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .resumo-hero {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .resumo-hero-divider {
+    width: 60px;
+    height: 1px;
+  }
+
+  .resumo-hero-num {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .gami-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gami-badges-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
