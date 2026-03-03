@@ -108,7 +108,6 @@ engine = create_engine(
 Base = declarative_base()
 
 
-# --- Schemas Pydantic ---
 class AreaCreate(BaseModel):
     """Schema de entrada para criar uma área."""
 
@@ -188,7 +187,7 @@ class TaskResponse(BaseModel):
     """Schema de resposta ao retornar uma tarefa."""
 
     id: int
-    area_id: Optional[int] = None  # Changed to optional
+    area_id: Optional[int] = None
     titulo: str
     descricao: Optional[str] = None
     data_entrega: date
@@ -200,19 +199,9 @@ class TaskResponse(BaseModel):
 
     class Config:
         from_attributes = True
-    """Schema de resposta ao retornar uma tarefa."""
 
-    id: int
-    area_id: Optional[int] = None
-    titulo: str
-    descricao: Optional[str] = None
-    data_entrega: date
-    concluida: bool = False
-    duracao_minutos: Optional[int] = None
-    prioridade: Optional[int] = None
-    meta_pomodoros: Optional[int] = None
-    pomodoros_concluidos: Optional[int] = None
 
+class SessaoCreate(BaseModel):
     class Config:
         from_attributes = True
 
@@ -275,6 +264,13 @@ class User(Base):
     is_verified = Column(Boolean, default=False, nullable=True)
     verification_token = Column(String(255), nullable=True)
 
+    # Gamification fields
+    current_streak = Column(Integer, default=0, nullable=True)
+    longest_streak = Column(Integer, default=0, nullable=True)
+    last_activity_date = Column(String(20), nullable=True)
+    streak_freezes = Column(Integer, default=0, nullable=True)
+    last_freeze_grant_date = Column(String(20), nullable=True)
+
 
 class Areas(Base):
     __tablename__ = "areas"
@@ -298,30 +294,13 @@ class Tasks(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    area_id = Column(Integer, ForeignKey("areas.id"), nullable=True)  # nullable for tasks without area
+    area_id = Column(Integer, ForeignKey("areas.id"), nullable=True)
     titulo = Column(String(255), nullable=False)
     descricao = Column(String(500), nullable=True)
     data_entrega = Column(Date, nullable=False)
     concluida = Column(Boolean, default=False, nullable=False)
     duracao_minutos = Column(Integer, nullable=True)
-    prioridade = Column(Integer, nullable=True)  # 1=baixa, 2=media, 3=alta
-    meta_pomodoros = Column(Integer, nullable=True)
-    pomodoros_concluidos = Column(Integer, default=0, nullable=True)
-    __tablename__ = "tasks"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    area_id = Column(Integer, ForeignKey("areas.id"), nullable=True)  # nullable for tasks without area
-    titulo = Column(String(255), nullable=False)
-    __tablename__ = "tasks"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    area_id = Column(Integer, ForeignKey("areas.id"), nullable=False)
-    titulo = Column(String(255), nullable=False)
-    descricao = Column(String(500), nullable=True)
-    data_entrega = Column(Date, nullable=False)
-    concluida = Column(Boolean, default=False, nullable=False)
-    duracao_minutos = Column(Integer, nullable=True)
-    prioridade = Column(Integer, nullable=True)  # 1=baixa, 2=media, 3=alta
+    prioridade = Column(Integer, nullable=True)
     meta_pomodoros = Column(Integer, nullable=True)
     pomodoros_concluidos = Column(Integer, default=0, nullable=True)
 
@@ -335,6 +314,26 @@ class Sessoes(Base):
     duracao_minutos = Column(Integer, nullable=False)
     data = Column(Date, nullable=False)
     task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
+
+
+class Achievement(Base):
+    __tablename__ = "achievements"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nome = Column(String(255), nullable=False)
+    descricao = Column(String(500), nullable=False)
+    categoria = Column(String(50), nullable=False)
+    requisito = Column(Integer, nullable=False)
+    icone = Column(String(50), nullable=True)
+
+
+class UserAchievement(Base):
+    __tablename__ = "user_achievements"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    achievement_id = Column(Integer, ForeignKey("achievements.id"), nullable=False)
+    unlocked_at = Column(String(20), nullable=True)
 
 
 Base.metadata.create_all(engine)
@@ -433,6 +432,111 @@ with engine.connect() as conn:
     except Exception:
         pass
 
+    # Gamification migrations
+    try:
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN current_streak INTEGER DEFAULT 0")
+        )
+        conn.commit()
+    except Exception:
+        pass
+    try:
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN longest_streak INTEGER DEFAULT 0")
+        )
+        conn.commit()
+    except Exception:
+        pass
+    try:
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN last_activity_date VARCHAR(20)")
+        )
+        conn.commit()
+    except Exception:
+        pass
+    try:
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN streak_freezes INTEGER DEFAULT 0")
+        )
+        conn.commit()
+    except Exception:
+        pass
+    try:
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN last_freeze_grant_date VARCHAR(20)")
+        )
+        conn.commit()
+    except Exception:
+        pass
+    # Achievements table
+    try:
+        conn.execute(
+            text(
+                "CREATE TABLE IF NOT EXISTS achievements (id INTEGER PRIMARY KEY, nome VARCHAR(255) NOT NULL, descricao VARCHAR(500) NOT NULL, categoria VARCHAR(50) NOT NULL, requisito INTEGER NOT NULL, icone VARCHAR(50))"
+            )
+        )
+        conn.commit()
+    except Exception:
+        pass
+    # User achievements table
+    try:
+        conn.execute(
+            text(
+                "CREATE TABLE IF NOT EXISTS user_achievements (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, achievement_id INTEGER NOT NULL, unlocked_at VARCHAR(20))"
+            )
+        )
+        conn.commit()
+    except Exception:
+        pass
+    # Seed achievements
+    try:
+        result = conn.execute(text("SELECT COUNT(*) FROM achievements"))
+        count = result.fetchone()[0]
+        if count == 0:
+            achievements_data = [
+                ("Primeiros Passos", "Ganhe 100 XP", "xp", 100, "star"),
+                ("Dedicado", "Ganhe 500 XP", "xp", 500, "star"),
+                ("Estudioso", "Ganhe 1000 XP", "xp", 1000, "star"),
+                ("Mestre do Conhecimento", "Ganhe 5000 XP", "xp", 5000, "star"),
+                ("Lenda da Disciplina", "Ganhe 10000 XP", "xp", 10000, "crown"),
+                ("Inicio da Jornada", "3 dias de sequencia", "streak", 3, "fire"),
+                ("Consistente", "7 dias de sequencia", "streak", 7, "fire"),
+                ("Focado", "14 dias de sequencia", "streak", 14, "fire"),
+                ("Dedicado", "30 dias de sequencia", "streak", 30, "fire"),
+                ("Invencivel", "100 dias de sequencia", "streak", 100, "crown"),
+                ("Primeiro Pomodoro", "Complete 1 pomodoro", "pomodoro", 1, "clock"),
+                ("Aquecendo", "Complete 10 pomodoros", "pomodoro", 10, "clock"),
+                ("Produtivo", "Complete 50 pomodoros", "pomodoro", 50, "clock"),
+                ("Workaholic", "Complete 100 pomodoros", "pomodoro", 100, "clock"),
+                (
+                    "Maquina de Estudo",
+                    "Complete 500 pomodoros",
+                    "pomodoro",
+                    500,
+                    "trophy",
+                ),
+                ("Primeira Tarefa", "Complete 1 tarefa", "tasks", 1, "check"),
+                ("Comecando", "Complete 10 tarefas", "tasks", 10, "check"),
+                ("Organizado", "Complete 50 tarefas", "tasks", 50, "check"),
+                ("Profissional", "Complete 100 tarefas", "tasks", 100, "check"),
+                ("Mestre das Tarefas", "Complete 500 tarefas", "tasks", 500, "medal"),
+                ("Level 2", "Atinga level 2", "level", 2, "arrow-up"),
+                ("Level 5", "Atinga level 5", "level", 5, "arrow-up"),
+                ("Level 10", "Atinga level 10", "level", 10, "arrow-up"),
+                ("Level 25", "Atinga level 25", "level", 25, "arrow-up"),
+                ("Level 50", "Atinga level 50", "level", 50, "arrow-up"),
+            ]
+            for nome, desc, cat, req, icone in achievements_data:
+                conn.execute(
+                    text(
+                        "INSERT INTO achievements (nome, descricao, categoria, requisito, icone) VALUES (:n, :d, :c, :r, :i)"
+                    ),
+                    {"n": nome, "d": desc, "c": cat, "r": req, "i": icone},
+                )
+            conn.commit()
+    except Exception:
+        pass
+
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 
@@ -488,6 +592,152 @@ def get_current_user(
     return user_id
 
 
+# ============== GAMIFICATION FUNCTIONS ==============
+
+
+def calcular_level(xp_total: int) -> int:
+    """Calcula o level baseado no XP total usando curva: XP = 100 * level^1.5"""
+    level = 1
+    while True:
+        xp_needed = int(100 * (level**1.5))
+        if xp_total < xp_needed:
+            break
+        xp_total -= xp_needed
+        level += 1
+    return level
+
+
+def xp_para_proximo_level(xp_total: int) -> tuple[int, int]:
+    """Retorna (XP atual no level, XP necessario para proximo level)"""
+    level = calcular_level(xp_total)
+    xp_needed = int(100 * (level**1.5))
+    xp_in_level = xp_total
+    for l in range(1, level):
+        xp_in_level -= int(100 * (l**1.5))
+    return max(0, xp_in_level), xp_needed
+
+
+def calcular_xp_total(user_id: int, db: Session) -> int:
+    """Calcula XP total: 1 XP por minuto de sessao + 50 XP por tarefa concluida"""
+    result = (
+        db.query(func.sum(Sessoes.duracao_minutos))
+        .filter(Sessoes.user_id == user_id)
+        .scalar()
+    )
+    xp_sessoes = int(result or 0)
+    result = (
+        db.query(func.count(Tasks.id))
+        .filter(Tasks.user_id == user_id, Tasks.concluida == True)
+        .scalar()
+    )
+    xp_tarefas = int(result or 0) * 50
+    return xp_sessoes + xp_tarefas
+
+
+def contar_pomodoros(user_id: int, db: Session) -> int:
+    """Conta total de sessoes (pomodoros) do usuario"""
+    result = (
+        db.query(func.count(Sessoes.id)).filter(Sessoes.user_id == user_id).scalar()
+    )
+    return int(result or 0)
+
+
+def contar_tarefas_concluidas(user_id: int, db: Session) -> int:
+    """Conta tarefas concluidas do usuario"""
+    result = (
+        db.query(func.count(Tasks.id))
+        .filter(Tasks.user_id == user_id, Tasks.concluida == True)
+        .scalar()
+    )
+    return int(result or 0)
+
+
+def atualizar_streak(user_id: int, db: Session) -> int:
+    """Atualiza a sequencia de dias do usuario"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return 0
+    today = date.today().isoformat()
+    if user.last_activity_date == today:
+        return user.current_streak or 0
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    if user.last_activity_date == yesterday:
+        user.current_streak = (user.current_streak or 0) + 1
+    elif user.last_activity_date is None or user.last_activity_date < yesterday:
+        if (user.streak_freezes or 0) > 0 and user.last_activity_date is not None:
+            user.streak_freezes = (user.streak_freezes or 0) - 1
+        else:
+            user.current_streak = 1
+    else:
+        user.current_streak = 1
+    if (user.current_streak or 0) > (user.longest_streak or 0):
+        user.longest_streak = user.current_streak
+    user.last_activity_date = today
+    db.commit()
+    return user.current_streak or 0
+
+
+def atualizar_freezes(user_id: int, db: Session) -> int:
+    """Concede freeze semanal (max 4)"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return 0
+    today = date.today().isoformat()
+    last_grant = user.last_freeze_grant_date
+    if last_grant:
+        last_date = datetime.fromisoformat(last_grant).date()
+        days_since = (date.today() - last_date).days
+        if days_since < 7:
+            return user.streak_freezes or 0
+    user.streak_freezes = min((user.streak_freezes or 0) + 1, 4)
+    user.last_freeze_grant_date = today
+    db.commit()
+    return user.streak_freezes or 0
+
+
+def verificar_conquistas(user_id: int, db: Session) -> list:
+    """Verifica e desbloqueia conquistas"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return []
+    xp_total = calcular_xp_total(user_id, db)
+    level = calcular_level(xp_total)
+    streak = user.current_streak or 0
+    pomodoros = contar_pomodoros(user_id, db)
+    tarefas = contar_tarefas_concluidas(user_id, db)
+    unlocked_ids = [
+        ua.achievement_id
+        for ua in db.query(UserAchievement)
+        .filter(UserAchievement.user_id == user_id)
+        .all()
+    ]
+    new_unlocks = []
+    categories = ["xp", "streak", "pomodoro", "tasks", "level"]
+    values = [xp_total, streak, pomodoros, tarefas, level]
+    for cat, val in zip(categories, values):
+        achievements = db.query(Achievement).filter(Achievement.categoria == cat).all()
+        for ach in achievements:
+            if ach.id not in unlocked_ids and val >= ach.requisito:
+                ua = UserAchievement(
+                    user_id=user_id,
+                    achievement_id=ach.id,
+                    unlocked_at=datetime.utcnow().isoformat(),
+                )
+                db.add(ua)
+                unlocked_ids.append(ach.id)
+                new_unlocks.append(
+                    {
+                        "id": ach.id,
+                        "nome": ach.nome,
+                        "descricao": ach.descricao,
+                        "icone": ach.icone,
+                    }
+                )
+    if new_unlocks:
+        db.commit()
+    return new_unlocks
+
+
 app = FastAPI()
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -504,11 +754,12 @@ def init_database():
     pg_url = os.environ.get("DATABASE_URL", "")
     if not pg_url or "sqlite" in pg_url:
         raise HTTPException(status_code=500, detail="PostgreSQL not configured")
-    
+
     try:
         pg_engine = create_engine(pg_url)
         with pg_engine.connect() as conn:
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS users (
                     id SERIAL PRIMARY KEY,
                     email VARCHAR(255) UNIQUE NOT NULL,
@@ -517,8 +768,10 @@ def init_database():
                     is_verified BOOLEAN DEFAULT FALSE,
                     verification_token VARCHAR(255)
                 )
-            """))
-            conn.execute(text("""
+            """)
+            )
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS areas (
                     id SERIAL PRIMARY KEY,
                     nome VARCHAR(255) NOT NULL,
@@ -533,8 +786,10 @@ def init_database():
                     subcategoria VARCHAR(100),
                     user_id INTEGER DEFAULT 1
                 )
-            """))
-            conn.execute(text("""
+            """)
+            )
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS tasks (
                     id SERIAL PRIMARY KEY,
                     area_id INTEGER REFERENCES areas(id),
@@ -548,8 +803,10 @@ def init_database():
                     pomodoros_concluidos INTEGER DEFAULT 0,
                     user_id INTEGER DEFAULT 1
                 )
-            """))
-            conn.execute(text("""
+            """)
+            )
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS sessoes (
                     id SERIAL PRIMARY KEY,
                     area_id INTEGER REFERENCES areas(id),
@@ -558,7 +815,8 @@ def init_database():
                     task_id INTEGER REFERENCES tasks(id),
                     user_id INTEGER DEFAULT 1
                 )
-            """))
+            """)
+            )
             conn.commit()
         return {"status": "ok", "message": "Tables created successfully"}
     except Exception as e:
@@ -578,66 +836,112 @@ def import_data(data: ImportData, secret: str = ""):
     """Import data from JSON (for migration from SQLite)"""
     if MIGRATION_SECRET and secret != MIGRATION_SECRET:
         raise HTTPException(status_code=403, detail="Invalid secret")
-    
+
     pg_url = os.environ.get("DATABASE_URL", "")
     if not pg_url or "sqlite" in pg_url:
         raise HTTPException(status_code=500, detail="PostgreSQL not configured")
-    
+
     report = {"tables": [], "errors": []}
-    
+
     try:
         pg_engine = create_engine(pg_url)
-        
+
         if data.users:
             with pg_engine.connect() as conn:
                 for user in data.users:
-                    is_ver = bool(user.get('is_verified')) if user.get('is_verified') else False
-                    conn.execute(text("""
+                    is_ver = (
+                        bool(user.get("is_verified"))
+                        if user.get("is_verified")
+                        else False
+                    )
+                    conn.execute(
+                        text("""
                         INSERT INTO users (id, email, password_hash, created_at, is_verified, verification_token)
                         VALUES (:id, :email, :password_hash, :created_at, :is_verified, :verification_token)
                         ON CONFLICT (id) DO NOTHING
-                    """), {'id': user['id'], 'email': user['email'], 'password_hash': user['password_hash'], 'created_at': user.get('created_at'), 'is_verified': is_ver, 'verification_token': user.get('verification_token')})
+                    """),
+                        {
+                            "id": user["id"],
+                            "email": user["email"],
+                            "password_hash": user["password_hash"],
+                            "created_at": user.get("created_at"),
+                            "is_verified": is_ver,
+                            "verification_token": user.get("verification_token"),
+                        },
+                    )
                 conn.commit()
-            report["tables"].append({"name": "users", "records": len(data.users), "status": "ok"})
-        
+            report["tables"].append(
+                {"name": "users", "records": len(data.users), "status": "ok"}
+            )
+
         if data.areas:
             with pg_engine.connect() as conn:
                 for area in data.areas:
-                    conn.execute(text("""
+                    conn.execute(
+                        text("""
                         INSERT INTO areas (id, nome, cor, ordem, tipo, dia_semana, horario, sala, bloco, professor, subcategoria, user_id)
                         VALUES (:id, :nome, :cor, :ordem, :tipo, :dia_semana, :horario, :sala, :bloco, :professor, :subcategoria, 1)
                         ON CONFLICT (id) DO NOTHING
-                    """), area)
+                    """),
+                        area,
+                    )
                 conn.commit()
-            report["tables"].append({"name": "areas", "records": len(data.areas), "status": "ok"})
-        
+            report["tables"].append(
+                {"name": "areas", "records": len(data.areas), "status": "ok"}
+            )
+
         if data.tasks:
             with pg_engine.connect() as conn:
                 for task in data.tasks:
-                    conc = bool(task.get('concluida')) if task.get('concluida') else False
-                    conn.execute(text("""
+                    conc = (
+                        bool(task.get("concluida")) if task.get("concluida") else False
+                    )
+                    conn.execute(
+                        text("""
                         INSERT INTO tasks (id, area_id, titulo, descricao, data_entrega, concluida, duracao_minutos, prioridade, meta_pomodoros, pomodoros_concluidos, user_id)
                         VALUES (:id, :area_id, :titulo, :descricao, :data_entrega, :concluida, :duracao_minutos, :prioridade, :meta_pomodoros, :pomodoros_concluidos, 1)
                         ON CONFLICT (id) DO NOTHING
-                    """), {'id': task['id'], 'area_id': task['area_id'], 'titulo': task['titulo'], 'descricao': task.get('descricao'), 'data_entrega': task['data_entrega'], 'concluida': conc, 'duracao_minutos': task.get('duracao_minutos'), 'prioridade': task.get('prioridade'), 'meta_pomodoros': task.get('meta_pomodoros'), 'pomodoros_concluidos': task.get('pomodoros_concluidos')})
+                    """),
+                        {
+                            "id": task["id"],
+                            "area_id": task["area_id"],
+                            "titulo": task["titulo"],
+                            "descricao": task.get("descricao"),
+                            "data_entrega": task["data_entrega"],
+                            "concluida": conc,
+                            "duracao_minutos": task.get("duracao_minutos"),
+                            "prioridade": task.get("prioridade"),
+                            "meta_pomodoros": task.get("meta_pomodoros"),
+                            "pomodoros_concluidos": task.get("pomodoros_concluidos"),
+                        },
+                    )
                 conn.commit()
-            report["tables"].append({"name": "tasks", "records": len(data.tasks), "status": "ok"})
-        
+            report["tables"].append(
+                {"name": "tasks", "records": len(data.tasks), "status": "ok"}
+            )
+
         if data.sessoes:
             with pg_engine.connect() as conn:
                 for sessao in data.sessoes:
-                    conn.execute(text("""
+                    conn.execute(
+                        text("""
                         INSERT INTO sessoes (id, area_id, duracao_minutos, data, task_id, user_id)
                         VALUES (:id, :area_id, :duracao_minutos, :data, :task_id, 1)
                         ON CONFLICT (id) DO NOTHING
-                    """), sessao)
+                    """),
+                        sessao,
+                    )
                 conn.commit()
-            report["tables"].append({"name": "sessoes", "records": len(data.sessoes), "status": "ok"})
-            
+            report["tables"].append(
+                {"name": "sessoes", "records": len(data.sessoes), "status": "ok"}
+            )
+
     except Exception as e:
         report["errors"].append(str(e))
-    
+
     return report
+
+
 # --- Admin Migration Endpoint ---
 MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
 
@@ -836,12 +1140,18 @@ def index():
 
 
 @app.get("/areas", response_model=List[AreaResponse])
-def listar_areas(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+def listar_areas(
+    user_id: int = Depends(get_current_user), db: Session = Depends(get_db)
+):
     return db.query(Areas).filter(Areas.user_id == user_id).all()
 
 
 @app.post("/areas", response_model=AreaResponse)
-def criar_area(body: AreaCreate, user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+def criar_area(
+    body: AreaCreate,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     area = Areas(
         user_id=user_id,
         nome=body.nome,
@@ -905,22 +1215,20 @@ def excluir_area(area_id: int, db: Session = Depends(get_db)):
 
 # --- Tasks ---
 @app.get("/tasks", response_model=List[TaskResponse])
-def listar_tasks(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+def listar_tasks(
+    user_id: int = Depends(get_current_user), db: Session = Depends(get_db)
+):
     return db.query(Tasks).filter(Tasks.user_id == user_id).all()
 
 
 @app.post("/tasks", response_model=TaskResponse)
-@app.get("/tasks", response_model=List[TaskResponse])
-def listar_tasks(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    return db.query(Tasks).filter(Tasks.user_id == user_id).all()
-@app.get("/tasks", response_model=List[TaskResponse])
-def listar_tasks(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    return db.query(Tasks).filter(Tasks.user_id == user_id).all()
-
-
-@app.post("/tasks", response_model=TaskResponse)
-def criar_task(body: TaskCreate, db: Session = Depends(get_db)):
+def criar_task(
+    body: TaskCreate,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     task = Tasks(
+        user_id=user_id,
         area_id=body.area_id,
         titulo=body.titulo,
         descricao=body.descricao,
@@ -986,12 +1294,23 @@ def excluir_task(task_id: int, db: Session = Depends(get_db)):
 
 # --- Sessões de estudo ---
 @app.get("/sessoes", response_model=List[SessaoResponse])
-def listar_sessoes(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    return db.query(Sessoes).filter(Sessoes.user_id == user_id).order_by(Sessoes.data.desc()).all()
+def listar_sessoes(
+    user_id: int = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    return (
+        db.query(Sessoes)
+        .filter(Sessoes.user_id == user_id)
+        .order_by(Sessoes.data.desc())
+        .all()
+    )
 
 
 @app.post("/sessoes", response_model=SessaoResponse)
-def criar_sessao(body: SessaoCreate, user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+def criar_sessao(
+    body: SessaoCreate,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     data_sessao = body.data or date.today()
     sessao = Sessoes(
         user_id=user_id,
@@ -1032,9 +1351,14 @@ def excluir_sessao(sessao_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/pomodoro/completar", response_model=SessaoResponse)
-def completar_pomodoro(body: PomodoroComplete, db: Session = Depends(get_db)):
+def completar_pomodoro(
+    body: PomodoroComplete,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Cria uma sessão de estudo ao completar um pomodoro."""
     sessao = Sessoes(
+        user_id=user_id,
         area_id=body.area_id,
         duracao_minutos=body.duracao_minutos,
         data=date.today(),
@@ -1058,7 +1382,9 @@ def completar_pomodoro(body: PomodoroComplete, db: Session = Depends(get_db)):
 
 
 @app.get("/sessoes/resumo", response_model=List[HorasPorArea])
-def resumo_horas(db: Session = Depends(get_db)):
+def resumo_horas(
+    user_id: int = Depends(get_current_user), db: Session = Depends(get_db)
+):
     """Retorna total de minutos/horas de estudo por área."""
     rows = (
         db.query(
@@ -1067,7 +1393,8 @@ def resumo_horas(db: Session = Depends(get_db)):
             Areas.cor,
             func.sum(Sessoes.duracao_minutos).label("total_minutos"),
         )
-        .join(Areas, Sessoes.area_id == Areas.id)
+        .join(Areas, (Sessoes.area_id == Areas.id) & (Areas.user_id == user_id))
+        .filter(Sessoes.user_id == user_id)
         .group_by(Sessoes.area_id)
         .all()
     )
@@ -1081,3 +1408,57 @@ def resumo_horas(db: Session = Depends(get_db)):
         )
         for r in rows
     ]
+
+
+@app.get("/gamification-summary")
+def gamification_summary(
+    user_id: int = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    """Retorna todos os dados de gamificacao do usuario"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario nao encontrado")
+    xp_total = calcular_xp_total(user_id, db)
+    level = calcular_level(xp_total)
+    xp_atual, xp_proximo = xp_para_proximo_level(xp_total)
+    pomodoros = contar_pomodoros(user_id, db)
+    tarefas = contar_tarefas_concluidas(user_id, db)
+    unlocked = (
+        db.query(UserAchievement).filter(UserAchievement.user_id == user_id).all()
+    )
+    unlocked_ids = [ua.achievement_id for ua in unlocked]
+    all_achievements = {}
+    for cat in ["xp", "streak", "pomodoro", "tasks", "level"]:
+        achievements = db.query(Achievement).filter(Achievement.categoria == cat).all()
+        all_achievements[cat] = [
+            {
+                "id": a.id,
+                "nome": a.nome,
+                "descricao": a.descricao,
+                "requisito": a.requisito,
+                "icone": a.icone,
+                "desbloqueado": a.id in unlocked_ids,
+                "desbloqueado_em": next(
+                    (ua.unlocked_at for ua in unlocked if ua.achievement_id == a.id),
+                    None,
+                ),
+            }
+            for a in achievements
+        ]
+    return {
+        "xp_total": xp_total,
+        "level": level,
+        "xp_atual_no_level": xp_atual,
+        "xp_para_proximo_level": xp_proximo,
+        "progresso_level": round((xp_atual / xp_proximo) * 100, 1)
+        if xp_proximo > 0
+        else 100,
+        "current_streak": user.current_streak or 0,
+        "longest_streak": user.longest_streak or 0,
+        "streak_freezes": user.streak_freezes or 0,
+        "total_pomodoros": pomodoros,
+        "tarefas_concluidas": tarefas,
+        "achievements": all_achievements,
+        "conquistas_desbloqueadas": len(unlocked_ids),
+        "total_conquistas": db.query(Achievement).count(),
+    }
