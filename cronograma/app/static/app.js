@@ -760,9 +760,54 @@ async function loadResumo() {
   }
 }
 
+// Page titles for each tab
+const PAGE_TITLES = {
+  'areas': 'Áreas',
+  'foco': 'Foco',
+  'gamificacao': 'Gamificação',
+  'horarios': 'Quadro de Horários',
+  'tasks': 'Tarefas',
+  'sessoes': 'Sessões',
+  'resumo': 'Resumo'
+};
+
+function switchToTab(tabName) {
+  // Update all tab/sidebar-link elements
+  document.querySelectorAll('.tab, .sidebar-link').forEach((t) => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach((p) => p.classList.remove('active'));
+  
+  // Activate the selected tab/sidebar-link
+  const tabButton = document.querySelector(`.tab[data-tab="${tabName}"]`) || 
+                    document.querySelector(`.sidebar-link[data-tab="${tabName}"]`);
+  if (tabButton) {
+    tabButton.classList.add('active');
+  }
+  
+  // Show the panel
+  const panel = document.getElementById(tabName);
+  if (panel) {
+    panel.classList.add('active');
+  }
+  
+  // Update page title
+  const pageTitle = document.getElementById('page-title');
+  if (pageTitle && PAGE_TITLES[tabName]) {
+    pageTitle.textContent = PAGE_TITLES[tabName];
+  }
+  
+  // Load data if needed
+  if (tabName === 'horarios') {
+    loadHorarios();
+  }
+  if (tabName === 'resumo') {
+    loadResumo();
+  }
+}
+
 function initTabs() {
   let alertShownThisSession = false;
   
+  // Handle original tabs
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       if (typeof FocoTimer !== "undefined" && FocoTimer.isActive()) {
@@ -772,17 +817,21 @@ function initTabs() {
         alertShownThisSession = true;
       }
       
-      document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
-      document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
-      tab.classList.add("active");
-      document.getElementById(tab.dataset.tab).classList.add("active");
+      switchToTab(tab.dataset.tab);
+    });
+  });
+  
+  // Handle sidebar links
+  document.querySelectorAll(".sidebar-link").forEach((link) => {
+    link.addEventListener("click", () => {
+      if (typeof FocoTimer !== "undefined" && FocoTimer.isActive()) {
+        if (!alertShownThisSession && !confirm("Trocar de aba?")) {
+          return;
+        }
+        alertShownThisSession = true;
+      }
       
-      if (tab.dataset.tab === "horarios") {
-        loadHorarios();
-      }
-      if (tab.dataset.tab === "resumo") {
-        loadResumo();
-      }
+      switchToTab(link.dataset.tab);
     });
   });
 }
@@ -952,6 +1001,14 @@ function renderGamification() {
     document.getElementById("gami-tarefas").textContent = stats.completedTasks;
     document.getElementById("gami-areas").textContent = state.areas.length;
     
+    // Atualizar sidebar stats
+    const sidebarLevel = document.getElementById("sidebar-level");
+    const sidebarXp = document.getElementById("sidebar-xp");
+    const sidebarStreak = document.getElementById("sidebar-streak");
+    if (sidebarLevel) sidebarLevel.textContent = stats.level;
+    if (sidebarXp) sidebarXp.textContent = stats.totalXP;
+    if (sidebarStreak) sidebarStreak.textContent = stats.currentStreak;
+    
     // Barra de XP com percentual
     const xpPercent = stats.xpForNextLevel > 0 
       ? Math.min((stats.xpForCurrentLevel / stats.xpForNextLevel) * 100, 100) 
@@ -992,6 +1049,14 @@ function renderGamification() {
   document.getElementById("gami-pomodoros").textContent = progress.pomodoros_total;
   document.getElementById("gami-tarefas").textContent = progress.tarefas_concluidas;
   document.getElementById("gami-areas").textContent = progress.areas_criadas;
+  
+  // Atualizar sidebar stats (fallback)
+  const sidebarLevel = document.getElementById("sidebar-level");
+  const sidebarXp = document.getElementById("sidebar-xp");
+  const sidebarStreak = document.getElementById("sidebar-streak");
+  if (sidebarLevel) sidebarLevel.textContent = progress.level;
+  if (sidebarXp) sidebarXp.textContent = progress.xp_total;
+  if (sidebarStreak) sidebarStreak.textContent = progress.streak_dias;
   
   // Barra de XP com percentual
   const xpPercent = Math.min((progress.xp_atual / progress.xp_proximo) * 100, 100);

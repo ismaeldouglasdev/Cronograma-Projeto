@@ -66,30 +66,97 @@
 
   <!-- Main App -->
   <div id="main-app" style="display: none;">
-  <header>
-    <h1>Cronograma</h1>
-    <p class="subtitle">Organize seus estudos</p>
-    <div class="header-controls">
-      <select id="theme-select" class="theme-select" aria-label="Selecionar tema">
-        <option value="dark">🌙 Escuro</option>
-        <option value="light">☀️ Claro</option>
-        <option value="ocean">🌊 Ocean</option>
-      </select>
-      <button id="logout-btn" class="logout-btn">Sair</button>
-    </div>
-  </header>
-
-  <nav class="tabs">
-    <button class="tab active" data-tab="areas">Áreas</button>
-    <button class="tab" data-tab="foco">🎯 Foco</button>
-    <button class="tab" data-tab="gamificacao">🏆 Gamificação</button>
-    <button class="tab" data-tab="horarios">Quadro de Horários</button>
-    <button class="tab" data-tab="tasks">Tarefas</button>
-    <button class="tab" data-tab="sessoes">Sessões</button>
-    <button class="tab" data-tab="resumo">Resumo</button>
-  </nav>
-
-  <main>
+    <!-- Dashboard Layout with Sidebar -->
+    <div class="dashboard-layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1 class="sidebar-logo">📚</h1>
+          <span class="sidebar-title">Cronograma</span>
+        </div>
+        
+        <!-- User Stats Mini -->
+        <div class="sidebar-user">
+          <div class="sidebar-user-level">
+            <span class="level-badge" id="sidebar-level">1</span>
+            <span class="level-label">Nível</span>
+          </div>
+          <div class="sidebar-user-stats">
+            <div class="sidebar-stat">
+              <span class="sidebar-stat-icon">⭐</span>
+              <span class="sidebar-stat-value" id="sidebar-xp">0</span>
+            </div>
+            <div class="sidebar-stat">
+              <span class="sidebar-stat-icon">🔥</span>
+              <span class="sidebar-stat-value" id="sidebar-streak">0</span>
+            </div>
+          </div>
+        </div>
+        
+        <nav class="sidebar-nav">
+          <button class="sidebar-link active" data-tab="areas">
+            <span class="sidebar-icon">📁</span>
+            <span class="sidebar-text">Áreas</span>
+          </button>
+          <button class="sidebar-link" data-tab="foco">
+            <span class="sidebar-icon">🎯</span>
+            <span class="sidebar-text">Foco</span>
+          </button>
+          <button class="sidebar-link" data-tab="gamificacao">
+            <span class="sidebar-icon">🏆</span>
+            <span class="sidebar-text">Gamificação</span>
+          </button>
+          <button class="sidebar-link" data-tab="horarios">
+            <span class="sidebar-icon">📅</span>
+            <span class="sidebar-text">Horários</span>
+          </button>
+          <button class="sidebar-link" data-tab="tasks">
+            <span class="sidebar-icon">✅</span>
+            <span class="sidebar-text">Tarefas</span>
+          </button>
+          <button class="sidebar-link" data-tab="sessoes">
+            <span class="sidebar-icon">⏱️</span>
+            <span class="sidebar-text">Sessões</span>
+          </button>
+          <button class="sidebar-link" data-tab="resumo">
+            <span class="sidebar-icon">📊</span>
+            <span class="sidebar-text">Resumo</span>
+          </button>
+        </nav>
+        
+        <div class="sidebar-footer">
+          <select id="theme-select-sidebar" class="theme-select" aria-label="Selecionar tema">
+            <option value="dark">🌙 Escuro</option>
+            <option value="light">☀️ Claro</option>
+            <option value="ocean">🌊 Ocean</option>
+            <option value="purple">🟣 Purple</option>
+            <option value="forest">🌲 Forest</option>
+            <option value="midnight">🌌 Midnight</option>
+            <option value="pastel">🎨 Pastel</option>
+            <option value="contrast">⬛ High Contrast</option>
+          </select>
+          <button id="logout-btn-sidebar" class="logout-btn">Sair</button>
+        </div>
+      </aside>
+      
+      <!-- Main Content -->
+      <main class="dashboard-main">
+        <header class="dashboard-header">
+          <h1 class="page-title" id="page-title">Áreas</h1>
+          <div class="header-controls">
+            <select id="theme-select" class="theme-select" aria-label="Selecionar tema" style="display: none;">
+              <option value="dark">🌙 Escuro</option>
+              <option value="light">☀️ Claro</option>
+              <option value="ocean">🌊 Ocean</option>
+              <option value="purple">🟣 Purple</option>
+              <option value="forest">🌲 Forest</option>
+              <option value="midnight">🌌 Midnight</option>
+              <option value="pastel">🎨 Pastel</option>
+              <option value="contrast">⬛ High Contrast</option>
+            </select>
+            <button id="logout-btn" class="logout-btn" style="display: none;">Sair</button>
+          </div>
+        </header>
     <!-- Áreas -->
     <section id="areas" class="panel active">
       <h2>Áreas / Matérias</h2>
@@ -422,6 +489,8 @@
       </div>
     </section>
   </main>
+  </div><!-- End dashboard-main -->
+  </div><!-- End dashboard-layout -->
 
   <div id="modal-task" class="modal" aria-hidden="true">
     <div class="modal-backdrop"></div>
