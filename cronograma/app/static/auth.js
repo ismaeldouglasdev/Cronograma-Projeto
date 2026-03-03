@@ -169,6 +169,7 @@ const Auth = (function() {
     const showLogin = document.getElementById("show-login");
     const showLoginVerify = document.getElementById("show-login-verify");
     const logoutBtn = document.getElementById("logout-btn");
+    const logoutBtnSidebar = document.getElementById("logout-btn-sidebar");
     const verifyBtn = document.getElementById("verify-btn");
     const verificationTokenInput = document.getElementById("verification-token");
     
@@ -255,6 +256,10 @@ const Auth = (function() {
     
     if (logoutBtn) {
       logoutBtn.addEventListener("click", logout);
+    }
+    
+    if (logoutBtnSidebar) {
+      logoutBtnSidebar.addEventListener("click", logout);
     }
     
     checkAuth();
