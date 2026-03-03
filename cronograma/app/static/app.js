@@ -719,29 +719,35 @@ async function loadResumo() {
       chartResumo = null;
     }
     
-    // Renderizar gráfico se Chart.js estiver disponível
+    // Renderizar gráfico de barras se Chart.js estiver disponível
     if (typeof Chart !== "undefined" && chartCanvas) {
       chartResumo = new Chart(chartCanvas, {
-        type: "pie",
+        type: "bar",
         data: {
           labels: resumo.map((r) => r.area_nome),
           datasets: [{
+            label: "Minutos",
             data: resumo.map((r) => r.total_minutos),
             backgroundColor: resumo.map((r) => r.area_cor || "#6366f1"),
-            borderWidth: 0,
+            borderRadius: 6,
           }],
         },
         options: {
           responsive: true,
           maintainAspectRatio: true,
+          indexAxis: 'y', // Gráfico de barras horizontal
           plugins: {
-            legend: { 
-              position: "bottom",
-              labels: {
-                padding: 20,
-                usePointStyle: true,
-                pointStyle: 'circle'
-              }
+            legend: { display: false },
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              grid: { color: "rgba(255,255,255,0.06)" },
+              ticks: { color: "#9b9a97" },
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: "#9b9a97" },
             },
           },
         },
