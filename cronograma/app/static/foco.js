@@ -11,6 +11,11 @@ const FocoTimer = (function() {
   let currentTaskId = null;
   let cachedAreas = null;
   let cachedTasks = null;
+  let originalTitle = document.title;
+  
+  // Persistent audio - works in background
+  let audioContext = null;
+  let oscillator = null;
   
   const elements = {
     timerTime: document.getElementById("foco-timer-time"),
@@ -18,6 +23,7 @@ const FocoTimer = (function() {
     timerProgress: document.querySelector(".foco-timer-progress"),
     startBtn: document.getElementById("foco-start"),
     pauseBtn: document.getElementById("foco-pause"),
+    endBtn: document.getElementById("foco-end"),
     resetBtn: document.getElementById("foco-reset"),
     skipBtn: document.getElementById("foco-skip"),
     areaSelect: document.getElementById("foco-area"),
@@ -163,6 +169,7 @@ const FocoTimer = (function() {
   function attachEventListeners() {
     elements.startBtn?.addEventListener("click", handleStart);
     elements.pauseBtn?.addEventListener("click", handlePause);
+    elements.endBtn?.addEventListener("click", endManually);
     elements.resetBtn?.addEventListener("click", handleReset);
     elements.skipBtn?.addEventListener("click", handleSkip);
     
@@ -286,11 +293,13 @@ const FocoTimer = (function() {
       tempoRestante = Math.max(0, duracaoTotal - elapsed);
     }
     updateDisplay();
+    updateTabTitle();
     
     if (tempoRestante <= 0) {
       cancelAnimationFrame(animationFrameId);
       animationFrameId = null;
       startTimestamp = null;
+      document.title = originalTitle;
       onTimerComplete();
     } else {
       animationFrameId = requestAnimationFrame(tick);
@@ -470,6 +479,107 @@ const FocoTimer = (function() {
     populateAreaSelect();
   }
   
+  // Audio using Web Audio API - works in background
+  function playBeep() {
+    try {
+      // Create audio context if not exists
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      // Resume context if suspended (needed for background)
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      
+      // Play notification sound
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+      
+      // Play second beep
+      setTimeout(() => {
+        const osc2 = audioContext.createOscillator();
+        const gain2 = audioContext.createGain();
+        osc2.connect(gain2);
+        gain2.connect(audioContext.destination);
+        osc2.frequency.value = 1000;
+        osc2.type = 'sine';
+        gain2.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        osc2.start(audioContext.currentTime);
+        osc2.stop(audioContext.currentTime + 0.5);
+      }, 200);
+      
+    } catch (e) {
+      console.log('Audio error:', e);
+    }
+  }
+  
+  // Update tab title with timer
+  function updateTabTitle() {
+    if (state === "running" || state === "paused") {
+      const mins = Math.floor(tempoRestante / 60);
+      const secs = tempoRestante % 60;
+      const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      const label = isBreak ? "Descanso" : "Foco";
+      document.title = `⏳ ${timeStr} - ${label}`;
+    } else {
+      document.title = originalTitle;
+    }
+  }
+  
+  // Manual end - calculate elapsed time and create session
+  function endManually() {
+    if (state !== "running" && state !== "paused") return;
+    
+    const elapsed = Math.floor((duracaoTotal - tempoRestante) / 60);
+    if (elapsed < 1) {
+      alert("Sessão muito curta para registrar.");
+      return;
+    }
+    
+    completarPomodoroManual(elapsed);
+    resetTimer();
+  }
+  
+  async function completarPomodoroManual(minutes) {
+    if (!currentAreaId) return;
+    
+    try {
+      await post("/pomodoro/completar", {
+        area_id: currentAreaId,
+        duracao_minutos: minutes,
+        task_id: currentTaskId || null,
+      });
+      
+      // Update AppStore with XP
+      if (typeof AppStore !== 'undefined') {
+        AppStore.addXP('pomodoro', minutes);
+      }
+      
+      loadTodayStats();
+      updateProgressDisplay();
+      
+      if (typeof loadSessoes === "function") loadSessoes(cachedAreas);
+      if (typeof loadResumo === "function") loadResumo();
+      
+    } catch (e) {
+      console.error('Erro ao registrar sessão:', e);
+    }
+  }
+  
   function isActive() {
     return state === "running" || state === "paused";
   }
@@ -480,6 +590,7 @@ const FocoTimer = (function() {
     refreshAreas,
     isActive,
     loadTodayStats,
+    endManually,
   };
 })();
 

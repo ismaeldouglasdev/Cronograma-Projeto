@@ -761,12 +761,15 @@ async function loadResumo() {
 }
 
 function initTabs() {
+  let alertShownThisSession = false;
+  
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       if (typeof FocoTimer !== "undefined" && FocoTimer.isActive()) {
-        if (!confirm("Atenção: Há uma sessão de foco em andamento. Deseja cambiar de aba?")) {
+        if (!alertShownThisSession && !confirm("Trocar de aba?")) {
           return;
         }
+        alertShownThisSession = true;
       }
       
       document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));

@@ -1,54 +1,70 @@
 /**
  * AppStore - Estado Global Centralizado com Persistência Automática
- * Resolve: Perda de dados ao atualizar página
+ * Gamificação completa: XP, Streak, Freezes, Coins, Conquistas
  */
 
 const AppStore = (function() {
   // ============================================
   // CONSTANTES DE GAMIFICAÇÃO
   // ============================================
-  const XP_POR_POMODORO = 25;
-  const XP_POR_TAREFA_CONCLUIDA = 50;
-  const XP_POR_AREA_CRIADA = 25;
-
+  const XP_POR_MINUTO = 0.5; // 30 min = 15 XP, 60 min = 30 XP
+  const XP_POR_TAREFA = 5;
+  const XP_POR_AREA = 25;
+  
+  // Coins
+  const COINS_POR_TAREFA = 2;
+  const COINS_POR_POMODORO = 3;
+  const COINS_POR_STREAK_DIA = 1;
+  const FREEZE_COST = 50; // Custo para comprar freeze
+  
+  // Freezes
+  const MAX_FREEZES = 4;
+  const FREEZE_GAIN_INTERVAL = 7; // Ganha 1 freeze por semana
+  
   // ============================================
-  // DEFINIÇÃO DE CONQUISTAS POR CATEGORIA
+  // DEFINIÇÃO DE CONQUISTAS
   // ============================================
   const ACHIEVEMENTS = {
     xp: [
       { id: 'xp_100', title: '🌱 Primeiros Passos', description: 'Ganhe 100 XP', requirement: 100 },
       { id: 'xp_500', title: '🔥 Dedicado', description: 'Ganhe 500 XP', requirement: 500 },
       { id: 'xp_1000', title: '⚡ Estudioso', description: 'Ganhe 1000 XP', requirement: 1000 },
-      { id: 'xp_5000', title: '💎 Mestre do Conhecimento', description: 'Ganhe 5000 XP', requirement: 5000 },
-      { id: 'xp_10000', title: '👑 Lenda da Disciplina', description: 'Ganhe 10000 XP', requirement: 10000 },
+      { id: 'xp_5000', title: '💎 Mestre', description: 'Ganhe 5000 XP', requirement: 5000 },
+      { id: 'xp_10000', title: '👑 Lenda', description: 'Ganhe 10000 XP', requirement: 10000 },
     ],
     streak: [
-      { id: 'streak_3', title: '🔥 Início da Jornada', description: '3 dias consecutivos', requirement: 3 },
+      { id: 'streak_3', title: '🔥 Início', description: '3 dias consecutivos', requirement: 3 },
       { id: 'streak_7', title: '🔥🔥 Consistente', description: '7 dias consecutivos', requirement: 7 },
       { id: 'streak_14', title: '🔥🔥🔥 Focado', description: '14 dias consecutivos', requirement: 14 },
       { id: 'streak_30', title: '🔥🔥🔥🔥 Dedicado', description: '30 dias consecutivos', requirement: 30 },
-      { id: 'streak_100', title: '🔥🔥🔥🔥🔥 Invencível', description: '100 dias consecutivos', requirement: 100 },
+      { id: 'streak_100', title: '🔥🔥🔥🔥🔥 Lenda', description: '100 dias consecutivos', requirement: 100 },
     ],
     pomodoro: [
-      { id: 'pomo_1', title: '🍅 Primeiro Pomodoro', description: 'Complete 1 pomodoro', requirement: 1 },
-      { id: 'pomo_10', title: '🍅🍅 Aquecendo', description: 'Complete 10 pomodoros', requirement: 10 },
-      { id: 'pomo_50', title: '🍅🍅🍅 Produtivo', description: 'Complete 50 pomodoros', requirement: 50 },
-      { id: 'pomo_100', title: '🍅🍅🍅🍅 Workaholic', description: 'Complete 100 pomodoros', requirement: 100 },
-      { id: 'pomo_500', title: '🍅🍅🍅🍅🍅 Máquina', description: 'Complete 500 pomodoros', requirement: 500 },
+      { id: 'pomo_1', title: '🍅 Primeiro', description: 'Complete 1 pomodoro', requirement: 1 },
+      { id: 'pomo_10', title: '🍅🍅 Aquecido', description: 'Complete 10 pomodoros', requirement: 10 },
+      { id: 'pomo_50', title: '🍅🍅🔥 Fogo', description: 'Complete 50 pomodoros', requirement: 50 },
+      { id: 'pomo_100', title: '🍅🔥🔥🔥 Mestre', description: 'Complete 100 pomodoros', requirement: 100 },
+      { id: 'pomo_500', title: '🍅⚡ Lendário', description: 'Complete 500 pomodoros', requirement: 500 },
     ],
     tasks: [
-      { id: 'task_1', title: '✅ Primeira Tarefa', description: 'Complete 1 tarefa', requirement: 1 },
-      { id: 'task_10', title: '✅✅ Começando', description: 'Complete 10 tarefas', requirement: 10 },
-      { id: 'task_50', title: '✅✅✅ Organizado', description: 'Complete 50 tarefas', requirement: 50 },
-      { id: 'task_100', title: '✅✅✅✅ Profissional', description: 'Complete 100 tarefas', requirement: 100 },
-      { id: 'task_500', title: '✅✅✅✅✅ Mestre', description: 'Complete 500 tarefas', requirement: 500 },
+      { id: 'task_1', title: '✅ Início', description: 'Complete 1 tarefa', requirement: 1 },
+      { id: 'task_10', title: '✅✅ Mover', description: 'Complete 10 tarefas', requirement: 10 },
+      { id: 'task_50', title: '✅✅🔥 Produtivo', description: 'Complete 50 tarefas', requirement: 50 },
+      { id: 'task_100', title: '✅🔥🔥 Expert', description: 'Complete 100 tarefas', requirement: 100 },
+      { id: 'task_500', title: '✅⚡ Lenda', description: 'Complete 500 tarefas', requirement: 500 },
     ],
     level: [
       { id: 'level_2', title: '⬆️ Level 2', description: 'Atinga level 2', requirement: 2 },
       { id: 'level_5', title: '⬆️⬆️ Level 5', description: 'Atinga level 5', requirement: 5 },
       { id: 'level_10', title: '⬆️⬆️⬆️ Level 10', description: 'Atinga level 10', requirement: 10 },
-      { id: 'level_25', title: '⬆️⬆️⬆️⬆️ Level 25', description: 'Atinga level 25', requirement: 25 },
-      { id: 'level_50', title: '⬆️⬆️⬆️⬆️⬆️ Level 50', description: 'Atinga level 50', requirement: 50 },
+      { id: 'level_25', title: '⬆️🔥 Level 25', description: 'Atinga level 25', requirement: 25 },
+      { id: 'level_50', title: '⚡⚡ Level 50', description: 'Atinga level 50', requirement: 50 },
+    ],
+    coins: [
+      { id: 'coin_50', title: '💰 Iniciante', description: 'Acumule 50 coins', requirement: 50 },
+      { id: 'coin_200', title: '💰💰 Economizador', description: 'Acumule 200 coins', requirement: 200 },
+      { id: 'coin_500', title: '💰💰💰 Rico', description: 'Acumule 500 coins', requirement: 500 },
+      { id: 'coin_1000', title: '💎💎 Milionário', description: 'Acumule 1000 coins', requirement: 1000 },
     ]
   };
 
@@ -56,12 +72,10 @@ const AppStore = (function() {
   // ESTADO PRIVADO
   // ============================================
   let state = {
-    // Dados principais
     areas: [],
     tasks: [],
     sessions: [],
     
-    // Stats de gamificação
     stats: {
       totalXP: 0,
       level: 1,
@@ -70,12 +84,13 @@ const AppStore = (function() {
       totalPomodoros: 0,
       completedTasks: 0,
       lastActivityDate: null,
+      coins: 0,
+      freezes: 0,
+      lastFreezeGain: null,
     },
     
-    // Conquistas desbloqueadas
     unlockedAchievements: [],
     
-    // Controle de loaded
     _loaded: false,
     _subscribers: [],
   };
@@ -86,7 +101,6 @@ const AppStore = (function() {
   function calculateLevel(xp) {
     let level = 1;
     let remainingXP = xp;
-    // Fórmula: cada nível requer level * 500 XP
     while (remainingXP >= level * 500) {
       remainingXP -= level * 500;
       level++;
@@ -109,6 +123,95 @@ const AppStore = (function() {
   }
 
   // ============================================
+  // HELPERS DE DATA
+  // ============================================
+  function getDateString(date = new Date()) {
+    return date.toISOString().split('T')[0];
+  }
+
+  function getDaysDifference(date1, date2) {
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    const diffTime = Math.abs(d2 - d1);
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  }
+
+  // ============================================
+  // SISTEMA DE STREAK COM FREEZES
+  // ============================================
+  function updateStreak() {
+    const today = getDateString();
+    const lastDate = state.stats.lastActivityDate;
+    
+    if (!lastDate) {
+      // Primeiro dia de atividade
+      state.stats.currentStreak = 1;
+    } else if (lastDate === today) {
+      // Mesmo dia, não altera streak
+      return;
+    } else {
+      const diff = getDaysDifference(lastDate, today);
+      
+      if (diff === 1) {
+        // Dia consecutivo - mantém streak
+        state.stats.currentStreak++;
+      } else if (diff > 1) {
+        // Pulou dias - usar freeze se disponível
+        if (state.stats.freezes > 0) {
+          state.stats.freezes--;
+          console.log('🔒 Freeze usado! Restam: ' + state.stats.freezes);
+        } else {
+          // Perdeu streak
+          state.stats.currentStreak = 1;
+        }
+      }
+    }
+    
+    // Atualizar longest streak
+    if (state.stats.currentStreak > state.stats.longestStreak) {
+      state.stats.longestStreak = state.stats.currentStreak;
+    }
+    
+    // Atualizar última data de atividade
+    state.stats.lastActivityDate = today;
+    
+    // Verificar ganha de freeze semanal
+    checkWeeklyFreeze();
+  }
+
+  function checkWeeklyFreeze() {
+    const today = getDateString();
+    const lastGain = state.stats.lastFreezeGain;
+    
+    if (!lastGain || getDaysDifference(lastGain, today) >= FREEZE_GAIN_INTERVAL) {
+      if (state.stats.freezes < MAX_FREEZES) {
+        state.stats.freezes++;
+        state.stats.lastFreezeGain = today;
+        console.log('🔒 Novo freeze ganho! Total: ' + state.stats.freezes);
+      }
+    }
+  }
+
+  // ============================================
+  // SISTEMA DE MOEDAS
+  // ============================================
+  function addCoins(amount) {
+    state.stats.coins += amount;
+    checkAchievements();
+  }
+
+  function buyFreeze() {
+    if (state.stats.coins >= FREEZE_COST && state.stats.freezes < MAX_FREEZES) {
+      state.stats.coins -= FREEZE_COST;
+      state.stats.freezes++;
+      _save();
+      _notify();
+      return true;
+    }
+    return false;
+  }
+
+  // ============================================
   // SISTEMA DE CONQUISTAS
   // ============================================
   function checkAchievements() {
@@ -116,30 +219,19 @@ const AppStore = (function() {
     const stats = state.stats;
     const currentUnlocked = state.unlockedAchievements;
 
-    // Verificar cada categoria
     for (const [category, achievements] of Object.entries(ACHIEVEMENTS)) {
       for (const achievement of achievements) {
-        // Se já está desbloqueado, pular
         if (currentUnlocked.includes(achievement.id)) continue;
 
         let currentValue = 0;
         
         switch (category) {
-          case 'xp':
-            currentValue = stats.totalXP;
-            break;
-          case 'streak':
-            currentValue = stats.currentStreak;
-            break;
-          case 'pomodoro':
-            currentValue = stats.totalPomodoros;
-            break;
-          case 'tasks':
-            currentValue = stats.completedTasks;
-            break;
-          case 'level':
-            currentValue = stats.level;
-            break;
+          case 'xp': currentValue = stats.totalXP; break;
+          case 'streak': currentValue = stats.currentStreak; break;
+          case 'pomodoro': currentValue = stats.totalPomodoros; break;
+          case 'tasks': currentValue = stats.completedTasks; break;
+          case 'level': currentValue = stats.level; break;
+          case 'coins': currentValue = stats.coins; break;
         }
 
         if (currentValue >= achievement.requirement) {
@@ -149,7 +241,6 @@ const AppStore = (function() {
       }
     }
 
-    // Se houve novos desbloqueios, salvar e notificar
     if (newUnlocks.length > 0) {
       _save();
       _notify();
@@ -160,7 +251,6 @@ const AppStore = (function() {
 
   function getAchievementsWithStatus() {
     const result = {};
-    
     for (const [category, achievements] of Object.entries(ACHIEVEMENTS)) {
       result[category] = achievements.map(a => ({
         ...a,
@@ -168,7 +258,6 @@ const AppStore = (function() {
         unlocked: state.unlockedAchievements.includes(a.id)
       }));
     }
-    
     return result;
   }
 
@@ -222,12 +311,10 @@ const AppStore = (function() {
   // AÇÕES PÚBLICAS
   // ============================================
   
-  // Setters para dados (chamados após fetch do backend)
   function setAreas(areas) {
     const wasEmpty = state.areas.length === 0;
     state.areas = areas;
     
-    // Se criou primeira área, ganha XP
     if (wasEmpty && areas.length > 0) {
       addXP('area');
     }
@@ -241,7 +328,6 @@ const AppStore = (function() {
     
     state.tasks = tasks;
     
-    // Se completou tarefa nova, atualiza stats
     if (newCompleted > previousCompleted) {
       const diff = newCompleted - previousCompleted;
       for (let i = 0; i < diff; i++) {
@@ -254,102 +340,86 @@ const AppStore = (function() {
 
   function setSessions(sessions) {
     state.sessions = sessions;
+    updateStreak();
     _notify();
   }
 
-  // Atualizar stats baseado em dados reais
   function syncStatsFromData() {
     const completedTasks = state.tasks.filter(t => t.concluida).length;
     const totalSessions = state.sessions.length;
     
-    // Atualizar sem ganhar XP duplicado
     if (completedTasks > state.stats.completedTasks) {
       state.stats.completedTasks = completedTasks;
     }
     
-    // Calcular streak baseado em sessões
+    // Recalcular streak baseado em datas das sessões
     if (totalSessions > 0) {
       const dates = [...new Set(state.sessions.map(s => s.data))].sort().reverse();
-      const today = new Date().toISOString().split('T')[0];
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-      
-      if (dates[0] === today || dates[0] === yesterday) {
-        // Contar dias consecutivos
-        let streak = 0;
-        let checkDate = dates[0] === today ? today : yesterday;
+      if (dates.length > 0) {
+        const today = getDateString();
+        const lastSessionDate = dates[0];
+        const daysDiff = getDaysDifference(lastSessionDate, today);
         
-        for (const date of dates) {
-          if (date === checkDate) {
-            streak++;
-            checkDate = new Date(new Date(checkDate).getTime() - 86400000).toISOString().split('T')[0];
-          } else if (date < checkDate) {
-            break;
+        if (daysDiff <= 1) {
+          let streak = 0;
+          let checkDate = new Date(lastSessionDate);
+          
+          for (let i = 0; i < dates.length; i++) {
+            const expectedDate = getDateString(new Date(checkDate.getTime() - i * 86400000));
+            if (dates.includes(expectedDate)) {
+              streak++;
+            } else {
+              break;
+            }
+          }
+          
+          if (streak > state.stats.currentStreak) {
+            state.stats.currentStreak = streak;
           }
         }
-        
-        if (streak > state.stats.currentStreak) {
-          state.stats.currentStreak = streak;
-        }
-        if (streak > state.stats.longestStreak) {
-          state.stats.longestStreak = streak;
-        }
-        
-        state.stats.lastActivityDate = dates[0];
       }
     }
     
-    // Verificar conquistas
     checkAchievements();
     _save();
     _notify();
   }
 
   // Adicionar XP (gamificação)
-  function addXP(source) {
+  function addXP(source, minutes = 0) {
     let xpGained = 0;
     
     switch (source) {
       case 'pomodoro':
-        xpGained = XP_POR_POMODORO;
+        // XP baseado no tempo real
+        xpGained = Math.round(minutes * XP_POR_MINUTO) || XP_POR_MINUTO * 25;
         state.stats.totalPomodoros++;
+        addCoins(COINS_POR_POMODORO);
         break;
       case 'task':
-        xpGained = XP_POR_TAREFA_CONCLUIDA;
+        xpGained = XP_POR_TAREFA;
         state.stats.completedTasks++;
+        addCoins(COINS_POR_TAREFA);
         break;
       case 'area':
-        xpGained = XP_POR_AREA_CRIADA;
+        xpGained = XP_POR_AREA;
+        break;
+      case 'session':
+        // Para sessões manuais
+        xpGained = Math.round(minutes * XP_POR_MINUTO);
         break;
     }
     
-    // Atualizar XP total
     const oldLevel = state.stats.level;
     state.stats.totalXP += xpGained;
     state.stats.level = calculateLevel(state.stats.totalXP);
     
     // Atualizar streak
-    const today = new Date().toISOString().split('T')[0];
-    const lastDate = state.stats.lastActivityDate;
-    
-    if (lastDate !== today) {
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-      if (lastDate === yesterday) {
-        state.stats.currentStreak++;
-      } else if (lastDate !== today) {
-        state.stats.currentStreak = 1;
-      }
-      
-      if (state.stats.currentStreak > state.stats.longestStreak) {
-        state.stats.longestStreak = state.stats.currentStreak;
-      }
-      
-      state.stats.lastActivityDate = today;
-    }
+    updateStreak();
     
     // Verificar conquistas
     checkAchievements();
     
-    // Salvar e notificar
     _save();
     _notify();
     
@@ -360,7 +430,6 @@ const AppStore = (function() {
     };
   }
 
-  // Obter estado atual
   function getState() {
     return {
       areas: state.areas,
@@ -376,17 +445,13 @@ const AppStore = (function() {
     };
   }
 
-  // Inicializar
   function init() {
     _load();
-    
-    // Recalcular level baseado em XP total
     state.stats.level = calculateLevel(state.stats.totalXP);
-    
+    updateStreak(); // Verificar streak ao iniciar
     return getState();
   }
 
-  // Resetar progresso
   function resetProgress() {
     state.stats = {
       totalXP: 0,
@@ -396,15 +461,16 @@ const AppStore = (function() {
       totalPomodoros: 0,
       completedTasks: 0,
       lastActivityDate: null,
+      coins: 0,
+      freezes: 0,
+      lastFreezeGain: null,
     };
     state.unlockedAchievements = [];
     _save();
     _notify();
   }
 
-  // ============================================
   // API PÚBLICA
-  // ============================================
   return {
     init,
     getState,
@@ -414,12 +480,14 @@ const AppStore = (function() {
     setSessions,
     syncStatsFromData,
     addXP,
+    addCoins,
+    buyFreeze,
     resetProgress,
     ACHIEVEMENTS,
   };
 })();
 
-// Exportar para window
+// Exportar
 if (typeof window !== 'undefined') {
   window.AppStore = AppStore;
 }
