@@ -1,4 +1,4 @@
-const API = "";
+let API = "";
 
 // Auto-detect API URL based on current location
 (function() {
@@ -11,6 +11,7 @@ const API = "";
 })();
 
 let cachedAreas = null;
+let allAreas = [];
 
 function getToken() {
   return localStorage.getItem("cronograma_token");
@@ -123,8 +124,6 @@ async function loadAreas() {
   
   return areas;
 }
-
-let allAreas = [];
 
 function renderAreasGrid(areas) {
   if (!areas || !areas.length) return;
