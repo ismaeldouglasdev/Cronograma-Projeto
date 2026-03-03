@@ -1902,7 +1902,8 @@ main {
 }
 
 .resumo-chart-container {
-  max-width: 400px;
+  max-width: 100%;
+  height: 300px;
   margin: 0 auto;
 }
 
