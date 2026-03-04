@@ -1,0 +1,26 @@
+# OpenCode Configuration - Cronograma Project
+# Adicione os MCP servers que deseja usar
+
+mcpServers:
+  # Busca na web gratuita (sem API key)
+  open-websearch:
+    command: "npx"
+    args: ["-y", "open-websearch"]
+    env:
+      DEFAULT_SEARCH_ENGINE: "duckduckgo"
+      ALLOWED_SEARCH_ENGINES: "duckduckgo,bing,exa"
+
+  # Pensamento estruturado
+  sequential-thinking:
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+
+  # Memória persistente
+  memory:
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-memory"]
+
+  # Sistema de arquivos
+  filesystem:
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "./memory"]
