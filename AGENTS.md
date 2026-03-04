@@ -1,7 +1,7 @@
 # Cronograma Project
 
 ## Visão Geral
-Sistema de gerenciamento de tarefas e estudos com timer Pomodoro integrado, tracking de horas de estudo, e quadro de horários de aulas.
+Sistema de gerenciamento de tarefas e estudos com timer Pomodoro integrado, tracking de horas de estudo, quadro de horários de aulas e sistema completo de gamificação (XP, coins, achievements, streak).
 
 ## Stack Tecnológico
 - **Backend**: FastAPI + SQLAlchemy + SQLite
@@ -34,14 +34,28 @@ cronograma/iniciar_cronograma.bat
 
 ## Banco de Dados
 - Localização: `cronograma/app/cronograma.db`
-- Tabelas: `areas`, `tasks`, `sessoes`
+- Tabelas: `areas`, `tasks`, `sessoes`, `users`, `achievements`, `user_achievements`
 
 ## Estrutura das Tabelas
+
+### Users
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| id | INTEGER | Chave primária |
+| email | VARCHAR(255) | Email único |
+| password_hash | VARCHAR(255) | Hash da senha |
+| is_verified | BOOLEAN | Email verificado |
+| current_streak | INTEGER | Dias seguidos atuais |
+| longest_streak | INTEGER | Maior sequência |
+| streak_freezes | INTEGER | Freezes disponíveis (max 4) |
+| coins | INTEGER | Moedas acumuladas |
+| last_activity_date | VARCHAR(20) | Última atividade |
 
 ### Areas
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
 | id | INTEGER | Chave primária |
+| user_id | INTEGER | FK para users |
 | nome | VARCHAR(255) | Nome da área/matéria |
 | cor | VARCHAR(20) | Cor hexadecimal |
 | ordem | INTEGER | Ordem de exibição |
@@ -57,6 +71,7 @@ cronograma/iniciar_cronograma.bat
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
 | id | INTEGER | Chave primária |
+| user_id | INTEGER | FK para users |
 | area_id | INTEGER | FK para areas |
 | titulo | VARCHAR(255) | Título da tarefa |
 | descricao | VARCHAR(500) | Descrição opcional |
@@ -71,34 +86,77 @@ cronograma/iniciar_cronograma.bat
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
 | id | INTEGER | Chave primária |
+| user_id | INTEGER | FK para users |
 | area_id | INTEGER | FK para areas |
 | duracao_minutos | INTEGER | Duração em minutos |
 | data | DATE | Data da sessão |
 | task_id | INTEGER | FK opcional para tasks |
+
+### Achievements
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| id | INTEGER | Chave primária |
+| nome | VARCHAR(255) | Nome da conquista |
+| descricao | VARCHAR(500) | Descrição |
+| categoria | VARCHAR(50) | xp, streak, pomodoro, tasks, level, coins |
+| requisito | INTEGER | Valor necessário |
+| icone | VARCHAR(50) | Ícone visual |
 
 ## Endpoints da API
 
 ### Áreas
 - `GET /areas` - Listar todas as áreas
 - `POST /areas` - Criar área
-- `PATCH /areas/{id}` - Atualizar área
-- `DELETE /areas/{id}` - Deletar área (cascata para tasks/sessões)
+- `PATCH /areas/{id}` - Atualizar área (requer user_id)
+- `DELETE /areas/{id}` - Deletar área (requer user_id)
 
 ### Tarefas
 - `GET /tasks` - Listar todas as tarefas
 - `POST /tasks` - Criar tarefa
-- `PATCH /tasks/{id}` - Atualizar tarefa (todos os campos)
-- `DELETE /tasks/{id}` - Deletar tarefa
+- `PATCH /tasks/{id}` - Atualizar tarefa (requer user_id)
+- `DELETE /tasks/{id}` - Deletar tarefa (requer user_id)
 
 ### Sessões de Estudo
 - `GET /sessoes` - Listar todas as sessões
-- `POST /sessoes` - Criar sessão manualmente
-- `PATCH /sessoes/{id}` - Atualizar sessão
-- `DELETE /sessoes/{id}` - Deletar sessão
-- `GET /sessoes/resumo` - Resumo de horas por área
+- `POST /sessoes` - Criar sessão manualmente (+coins, atualiza streak)
+- `PATCH /sessoes/{id}` - Atualizar sessão (requer user_id)
+- `DELETE /sessoes/{id}` - Deletar sessão (requer user_id)
+- `GET /sessoes/resumo?start=YYYY-MM-DD&end=YYYY-MM-DD` - Resumo por período
 
 ### Pomodoro
-- `POST /pomodoro/completar` - Registrar pomodoro completo (cria sessão + incrementa contador da tarefa)
+- `POST /pomodoro/completar` - Registrar pomodoro (+3 coins, atualiza streak/conquistas)
+
+### Gamificação
+- `GET /gamification-summary` - Retorna XP, level, streak, coins, achievements
+
+### Coins
+- `POST /coins/buy-freeze` - Comprar freeze (10 coins)
+- `POST /coins/add?amount=N` - Adicionar coins (testes)
+
+## Sistema de Gamificação
+
+### XP (Experiência)
+- XP = minutos estudados + 5 XP por tarefa concluída
+- Level = calculado por curva: XP = 100 * level^1.5
+
+### Coins
+- +3 coins por pomodoro completado
+- +1 coin a cada 10 minutos de sessão manual
+- Custo de freeze: 10 coins
+
+### Streak
+- Baseado em dias distintos com sessões
+- Freezes: ganha 1 por semana (max 4)
+- Pode usar freeze para manter streak em dias sem atividade
+
+### Achievements
+Categorias:
+- **XP**: 100, 500, 1000, 5000, 10000 XP
+- **Streak**: 3, 7, 14, 30, 100 dias
+- **Pomodoro**: 1, 10, 50, 100, 500 pomodoros
+- **Tasks**: 1, 10, 50, 100, 500 tarefas
+- **Level**: 2, 5, 10, 25, 50
+- **Coins**: 10, 50, 100, 500, 1000 coins
 
 ## Funcionalidades Principais
 
@@ -110,6 +168,9 @@ cronograma/iniciar_cronograma.bat
 - Recuperação de timer ao retornar à página
 - Estatísticas do dia (sessões completadas, tempo total)
 - Meta de pomodoros por tarefa com progresso visual
+- Web Audio API para som persistente
+- Atualização do título da aba com timer
+- Botão "Encerrar agora"
 
 ### Áreas/Matérias
 - Criação com cor, categoria (subcategoria)
@@ -122,9 +183,18 @@ cronograma/iniciar_cronograma.bat
 - Prioridade (baixa, média, alta)
 - Meta de pomodoros opcional
 - Checklist de conclusão
-- Ao marcar como concluída, pede duração e cria sessão automaticamente
 - Ordenação por prioridade ou data
 - Filtro de busca por nome
+
+### Dashboard Layout
+- Sidebar fixa à esquerda (desktop)
+- Navegação por ícones
+- Mini stats (level, XP, streak)
+- Responsivo: sidebar reduz em tablet, vira barra inferior em mobile
+
+### Temas
+- 8 temas: dark, light, ocean, purple, forest, midnight, pastel, contrast
+- Seletor sincronizado entre header e sidebar
 
 ### Quadro de Horários
 - Visualização em grid dos horários presenciais
@@ -139,13 +209,16 @@ cronograma/iniciar_cronograma.bat
 ### Resumo/Estatísticas
 - Gráfico de pizza com horas por área (Chart.js)
 - Lista detalhada com total de minutos e horas
+- Filtro por período (data inicial e final)
 
 ## Arquivos Importantes
-- `cronograma/app/main.py` - API e lógica de banco
+- `cronograma/app/main.py` - API, banco, gamificação
 - `cronograma/app/static/app.js` - Lógica do frontend
+- `cronograma/app/static/store.js` - Estado global com gamificação
 - `cronograma/app/static/foco.js` - Módulo do timer Pomodoro
+- `cronograma/app/static/theme.js` - Gerenciador de temas
 - `cronograma/app/static/index.html` - Interface principal
-- `cronograma/app/static/style.css` - Estilos
+- `cronograma/app/static/style.css` - Estilos (dashboard, themes)
 - `cronograma/iniciar_cronograma.bat` - Script de inicialização
 
 ## Convenções de Código
@@ -155,24 +228,27 @@ cronograma/iniciar_cronograma.bat
 - Padrão PEP 8
 - SQLAlchemy ORM com declarative base
 - Pydantic para schemas de request/response
+- Validação de user_id em todos os endpoints PATCH/DELETE
 
 ### JavaScript
 - ES6+ (const/let, arrow functions, async/await)
 - Template literals para geração de HTML
 - camelCase para funções/variáveis
 - Módulo IIFE para o timer (FocoTimer)
+- Funções utilitárias: formatDate(), formatDuration()
 
 ### CSS
-- CSS custom properties para cores
+- CSS custom properties para cores (temas)
 - Mobile-first
 - Flexbox para layouts
+- Layout dashboard com sidebar
 
 ## Fluxo de Desenvolvimento
 
 ### Commits
 - Mensagens claras e descritivas
 - Verbo inicial: "Add", "Fix", "Update", "Remove"
-- Exemplo: "Add edit modal for study sessions"
+- Exemplo: "Add coins system and buy-freeze endpoint"
 
 ### Fazendo Alterações
 1. Backend em `main.py` - servidor recarrega com `--reload`
@@ -183,3 +259,11 @@ cronograma/iniciar_cronograma.bat
 - Imports falham: garantir que está no diretório `cronograma/app`
 - Página não carrega: verificar caminho no batch file
 - Dados faltando: verificar local do banco de dados
+
+## Bugs Corrigidos (Refatoração 2024)
+
+1. **XP inconsistente**: Mudou de 1 XP/min + 50 XP/task para minutos + 5 XP/task
+2. **Task PATCH criava sessões**: Removido - sessões só via endpoints próprios
+3. **Streak frágil**: Agora baseado em datas reais de sessões
+4. **Segurança**: user_id validado em todos endpoints PATCH/DELETE
+5. **Classe duplicada**: Removido SessaoCreate duplicado

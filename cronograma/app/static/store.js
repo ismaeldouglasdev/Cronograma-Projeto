@@ -470,6 +470,69 @@ const AppStore = (function() {
     _notify();
   }
 
+  // ============================================
+  // SINCRONIZAÇÃO COM BACKEND (SSOT)
+  // ============================================
+  async function syncFromBackend() {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return false;
+      
+      const response = await fetch('/gamification-summary', {
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
+      });
+      
+      if (!response.ok) {
+        console.warn('Falha ao buscar gamificação do backend:', response.status);
+        return false;
+      }
+      
+      const data = await response.json();
+      
+      // Atualizar estado com dados do backend
+      state.stats.totalXP = data.xp_total || 0;
+      state.stats.level = data.level || 1;
+      state.stats.currentStreak = data.current_streak || 0;
+      state.stats.longestStreak = data.longest_streak || 0;
+      state.stats.freezes = data.streak_freezes || 0;
+      state.stats.coins = data.coins || 0;
+      state.stats.totalPomodoros = data.total_pomodoros || 0;
+      state.stats.completedTasks = data.tarefas_concluidas || 0;
+      
+      // Converter achievements do backend para formato do store
+      state.achievements = {};
+      for (const [cat, achievements] of Object.entries(data.achievements || {})) {
+        state.achievements[cat] = (achievements || []).map(a => ({
+          id: a.id?.toString(),
+          title: a.nome,
+          description: a.descricao,
+          requirement: a.requisito,
+          unlocked: a.desbloqueado
+        }));
+        
+        // Marcar como desbloqueados
+        (achievements || []).forEach(a => {
+          if (a.desbloqueado) {
+            const achId = a.id?.toString();
+            if (achId && !state.unlockedAchievements.includes(achId)) {
+              state.unlockedAchievements.push(achId);
+            }
+          }
+        });
+      }
+      
+      _save();
+      _notify();
+      console.log('✅ Gamificação sincronizada com backend');
+      return true;
+    } catch (error) {
+      console.error('Erro ao sincronizar gamificação:', error);
+      return false;
+    }
+  }
+
   // API PÚBLICA
   return {
     init,
@@ -479,6 +542,7 @@ const AppStore = (function() {
     setTasks,
     setSessions,
     syncStatsFromData,
+    syncFromBackend,  // Nova função para sincronizar com backend
     addXP,
     addCoins,
     buyFreeze,

@@ -963,7 +963,9 @@ async function init() {
     AppStore.setAreas(areas);
     const allTasks = await get('/tasks');
     AppStore.setTasks(allTasks);
-    AppStore.syncStatsFromData();
+    
+    // Sincronizar com backend (SSOT - Fonte Única de Verdade)
+    await AppStore.syncFromBackend();
     
     // Renderizar gamificação com dados do store
     if (typeof renderGamification === 'function') {
@@ -1027,7 +1029,7 @@ function renderGamification() {
     
     // Renderizar conquistas por categoria
     const achievements = state.achievements;
-    const categorias = ['xp', 'streak', 'pomodoro', 'tasks', 'level'];
+    const categorias = ['xp', 'streak', 'pomodoro', 'tasks', 'level', 'coins'];
     
     categorias.forEach(catId => {
       const container = document.getElementById(`gami-badges-${catId}`);

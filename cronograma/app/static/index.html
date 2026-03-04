@@ -159,7 +159,6 @@
         </header>
     <!-- Áreas -->
     <section id="areas" class="panel active">
-      <h2>Áreas / Matérias</h2>
       <div class="areas-filters">
         <input type="text" id="search-areas" placeholder="Buscar por nome..." aria-label="Buscar por nome">
         <select id="filter-categoria" aria-label="Filtrar por categoria">
@@ -203,7 +202,6 @@
 
     <!-- Foco / Pomodoro -->
     <section id="foco" class="panel">
-      <h2>🎯 Modo Foco</h2>
       <p class="section-desc">Execute suas tarefas com concentração</p>
       
       <div class="foco-container">
@@ -304,7 +302,10 @@
                   <div class="gami-xp-fill-big" id="gami-xp-fill"></div>
                   <div class="gami-xp-glow"></div>
                 </div>
-                <div class="gami-xp-percent" id="gami-xp-percent">0%</div>
+                <div class="gami-xp-percent-wrap">
+                  <span class="gami-xp-percent-label">Progresso:</span>
+                  <span class="gami-xp-percent" id="gami-xp-percent">0%</span>
+                </div>
               </div>
               <div class="gami-streak-badge">
                 <span class="gami-streak-icon">🔥</span>
@@ -392,20 +393,26 @@
             </h3>
             <div class="gami-badges-grid" id="gami-badges-level"></div>
           </div>
+
+          <div class="gami-category" id="gami-cat-coins">
+            <h3 class="gami-category-title">
+              <span class="gami-cat-icon">💰</span>
+              Coins
+            </h3>
+            <div class="gami-badges-grid" id="gami-badges-coins"></div>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- Quadro de Horários -->
     <section id="horarios" class="panel">
-      <h2>Quadro de Horários</h2>
       <p class="section-desc">Seus horários de aulas presenciais por dia da semana</p>
       <div id="quadro-horarios" class="horarios-grid"></div>
     </section>
 
     <!-- Tarefas -->
     <section id="tasks" class="panel">
-      <h2>Tarefas / Entregas</h2>
       <div class="tasks-filters">
         <select id="sort-tasks" aria-label="Ordenar por">
           <option value="prioridade">Por Prioridade</option>
@@ -440,7 +447,7 @@
 
     <!-- Sessões -->
     <section id="sessoes" class="panel">
-      <h2>Registrar sessão de estudo</h2>
+      <p class="section-desc">Registre seu tempo de estudo</p>
       <form id="form-sessao" class="card form-card">
         <select name="area_id" required aria-label="Área">
           <option value="">Selecione a área</option>
