@@ -84,6 +84,15 @@ function formatDate(str) {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+function formatDuration(minutes) {
+  if (!minutes || minutes < 1) return "0min";
+  if (minutes < 60) return minutes + "min";
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (mins === 0) return hours + "h";
+  return hours + "h" + mins + "min";
+}
+
 function areaById(areas, id) {
   return areas.find((a) => a.id === id);
 }
