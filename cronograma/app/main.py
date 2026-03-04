@@ -202,11 +202,6 @@ class TaskResponse(BaseModel):
 
 
 class SessaoCreate(BaseModel):
-    class Config:
-        from_attributes = True
-
-
-class SessaoCreate(BaseModel):
     """Schema de entrada para registrar uma sessão de estudo."""
 
     area_id: int
@@ -270,6 +265,7 @@ class User(Base):
     last_activity_date = Column(String(20), nullable=True)
     streak_freezes = Column(Integer, default=0, nullable=True)
     last_freeze_grant_date = Column(String(20), nullable=True)
+    coins = Column(Integer, default=0, nullable=True)
 
 
 class Areas(Base):
@@ -468,6 +464,12 @@ with engine.connect() as conn:
         conn.commit()
     except Exception:
         pass
+    # Coins column
+    try:
+        conn.execute(text("ALTER TABLE users ADD COLUMN coins INTEGER DEFAULT 0"))
+        conn.commit()
+    except Exception:
+        pass
     # Achievements table
     try:
         conn.execute(
@@ -525,6 +527,12 @@ with engine.connect() as conn:
                 ("Level 10", "Atinga level 10", "level", 10, "arrow-up"),
                 ("Level 25", "Atinga level 25", "level", 25, "arrow-up"),
                 ("Level 50", "Atinga level 50", "level", 50, "arrow-up"),
+                # Coins achievements
+                ("Primeiras Moedas", "Acumule 10 coins", "coins", 10, "coin"),
+                ("Economizador", "Acumule 50 coins", "coins", 50, "coin"),
+                ("Poupador", "Acumule 100 coins", "coins", 100, "wallet"),
+                ("Investidor", "Acumule 500 coins", "coins", 500, "bank"),
+                ("Milionario", "Acumule 1000 coins", "coins", 1000, "gem"),
             ]
             for nome, desc, cat, req, icone in achievements_data:
                 conn.execute(
@@ -618,19 +626,22 @@ def xp_para_proximo_level(xp_total: int) -> tuple[int, int]:
 
 
 def calcular_xp_total(user_id: int, db: Session) -> int:
-    """Calcula XP total: 1 XP por minuto de sessao + 50 XP por tarefa concluida"""
+    """Calcula XP total: minutos de sessao + 5 XP por tarefa concluida (regra padronizada)"""
+    # XP por minutos estudados
     result = (
         db.query(func.sum(Sessoes.duracao_minutos))
         .filter(Sessoes.user_id == user_id)
         .scalar()
     )
     xp_sessoes = int(result or 0)
+
+    # XP por tarefas concluidas (5 XP por tarefa)
     result = (
         db.query(func.count(Tasks.id))
         .filter(Tasks.user_id == user_id, Tasks.concluida == True)
         .scalar()
     )
-    xp_tarefas = int(result or 0) * 50
+    xp_tarefas = int(result or 0) * 5
     return xp_sessoes + xp_tarefas
 
 
@@ -652,27 +663,67 @@ def contar_tarefas_concluidas(user_id: int, db: Session) -> int:
     return int(result or 0)
 
 
+def calcular_streak_from_sessoes(user_id: int, db: Session) -> int:
+    """Calcula streak baseado nas datas reais de sessões."""
+    # Get distinct session dates
+    result = (
+        db.query(func.count(func.distinct(Sessoes.data)))
+        .filter(Sessoes.user_id == user_id)
+        .scalar()
+    )
+    return int(result or 0)
+
+
 def atualizar_streak(user_id: int, db: Session) -> int:
-    """Atualiza a sequencia de dias do usuario"""
+    """Atualiza a sequencia de dias do usuario baseado em sessões reais."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         return 0
-    today = date.today().isoformat()
-    if user.last_activity_date == today:
-        return user.current_streak or 0
-    yesterday = (date.today() - timedelta(days=1)).isoformat()
-    if user.last_activity_date == yesterday:
+
+    today = date.today()
+    today_str = today.isoformat()
+
+    # Get distinct session dates for this user
+    session_dates = (
+        db.query(func.distinct(Sessoes.data))
+        .filter(Sessoes.user_id == user_id)
+        .order_by(Sessoes.data.desc())
+        .all()
+    )
+    session_dates = [s[0] for s in session_dates if s[0]]
+
+    if not session_dates:
+        # No sessions yet, reset streak
+        user.current_streak = 0
+        user.last_activity_date = today_str
+        db.commit()
+        return 0
+
+    # Check if there's a session today or yesterday
+    last_session_date = max(session_dates)  # Most recent session
+    days_since_last = (today - last_session_date).days
+
+    if days_since_last == 0:
+        # Already studied today, streak stays the same
+        pass
+    elif days_since_last == 1:
+        # Studied yesterday, increment streak
         user.current_streak = (user.current_streak or 0) + 1
-    elif user.last_activity_date is None or user.last_activity_date < yesterday:
-        if (user.streak_freezes or 0) > 0 and user.last_activity_date is not None:
-            user.streak_freezes = (user.streak_freezes or 0) - 1
-        else:
-            user.current_streak = 1
     else:
-        user.current_streak = 1
+        # Missed days
+        if (user.streak_freezes or 0) > 0 and user.last_activity_date is not None:
+            # Use a freeze
+            user.streak_freezes = (user.streak_freezes or 0) - 1
+            # Keep streak
+        else:
+            # Reset streak
+            user.current_streak = 1
+
+    # Update longest streak if needed
     if (user.current_streak or 0) > (user.longest_streak or 0):
         user.longest_streak = user.current_streak
-    user.last_activity_date = today
+
+    user.last_activity_date = today_str
     db.commit()
     return user.current_streak or 0
 
@@ -705,6 +756,7 @@ def verificar_conquistas(user_id: int, db: Session) -> list:
     streak = user.current_streak or 0
     pomodoros = contar_pomodoros(user_id, db)
     tarefas = contar_tarefas_concluidas(user_id, db)
+    coins = user.coins or 0
     unlocked_ids = [
         ua.achievement_id
         for ua in db.query(UserAchievement)
@@ -712,8 +764,8 @@ def verificar_conquistas(user_id: int, db: Session) -> list:
         .all()
     ]
     new_unlocks = []
-    categories = ["xp", "streak", "pomodoro", "tasks", "level"]
-    values = [xp_total, streak, pomodoros, tarefas, level]
+    categories = ["xp", "streak", "pomodoro", "tasks", "level", "coins"]
+    values = [xp_total, streak, pomodoros, tarefas, level, coins]
     for cat, val in zip(categories, values):
         achievements = db.query(Achievement).filter(Achievement.categoria == cat).all()
         for ach in achievements:
@@ -1177,8 +1229,13 @@ def criar_area(
 
 
 @app.patch("/areas/{area_id}", response_model=AreaResponse)
-def atualizar_area(area_id: int, body: AreaPatch, db: Session = Depends(get_db)):
-    area = db.query(Areas).filter(Areas.id == area_id).first()
+def atualizar_area(
+    area_id: int,
+    body: AreaPatch,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    area = db.query(Areas).filter(Areas.id == area_id, Areas.user_id == user_id).first()
     if not area:
         raise HTTPException(status_code=404, detail="Área não encontrada")
     if body.nome is not None:
@@ -1207,12 +1264,18 @@ def atualizar_area(area_id: int, body: AreaPatch, db: Session = Depends(get_db))
 
 
 @app.delete("/areas/{area_id}", status_code=204)
-def excluir_area(area_id: int, db: Session = Depends(get_db)):
-    area = db.query(Areas).filter(Areas.id == area_id).first()
+def excluir_area(
+    area_id: int,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    area = db.query(Areas).filter(Areas.id == area_id, Areas.user_id == user_id).first()
     if not area:
         raise HTTPException(status_code=404, detail="Área não encontrada")
-    db.query(Tasks).filter(Tasks.area_id == area_id).delete()
-    db.query(Sessoes).filter(Sessoes.area_id == area_id).delete()
+    db.query(Tasks).filter(Tasks.area_id == area_id, Tasks.user_id == user_id).delete()
+    db.query(Sessoes).filter(
+        Sessoes.area_id == area_id, Sessoes.user_id == user_id
+    ).delete()
     db.delete(area)
     db.commit()
     return None
@@ -1247,8 +1310,13 @@ def criar_task(
 
 
 @app.patch("/tasks/{task_id}", response_model=TaskResponse)
-def atualizar_task(task_id: int, body: TaskPatch, db: Session = Depends(get_db)):
-    task = db.query(Tasks).filter(Tasks.id == task_id).first()
+def atualizar_task(
+    task_id: int,
+    body: TaskPatch,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    task = db.query(Tasks).filter(Tasks.id == task_id, Tasks.user_id == user_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
 
@@ -1260,38 +1328,33 @@ def atualizar_task(task_id: int, body: TaskPatch, db: Session = Depends(get_db))
         setattr(task, "descricao", body.descricao)
     if body.data_entrega is not None:
         setattr(task, "data_entrega", body.data_entrega)
-
     if body.concluida is not None:
-        if (
-            body.concluida
-            and body.duracao_minutos is not None
-            and body.duracao_minutos > 0
-        ):
-            sessao = Sessoes(
-                area_id=task.area_id,
-                duracao_minutos=body.duracao_minutos,
-                data=date.today(),
-                task_id=task.id,
-            )
-            db.add(sessao)
-        elif not body.concluida:
-            db.query(Sessoes).filter(Sessoes.task_id == task_id).delete()
         setattr(task, "concluida", body.concluida)
     if body.duracao_minutos is not None:
         setattr(task, "duracao_minutos", body.duracao_minutos)
     if body.prioridade is not None:
         setattr(task, "prioridade", body.prioridade)
+    if body.meta_pomodoros is not None:
+        setattr(task, "meta_pomodoros", body.meta_pomodoros)
+    if body.pomodoros_concluidos is not None:
+        setattr(task, "pomodoros_concluidos", body.pomodoros_concluidos)
     db.commit()
     db.refresh(task)
     return task
 
 
 @app.delete("/tasks/{task_id}", status_code=204)
-def excluir_task(task_id: int, db: Session = Depends(get_db)):
-    task = db.query(Tasks).filter(Tasks.id == task_id).first()
+def excluir_task(
+    task_id: int,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    task = db.query(Tasks).filter(Tasks.id == task_id, Tasks.user_id == user_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
-    db.query(Sessoes).filter(Sessoes.task_id == task_id).delete()
+    db.query(Sessoes).filter(
+        Sessoes.task_id == task_id, Sessoes.user_id == user_id
+    ).delete()
     db.delete(task)
     db.commit()
     return None
@@ -1324,14 +1387,35 @@ def criar_sessao(
         data=data_sessao,
     )
     db.add(sessao)
+
+    # Add coins (1 coin per 10 minutes studied)
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        coins_earned = max(1, body.duracao_minutos // 10)
+        user.coins = (user.coins or 0) + coins_earned
+
     db.commit()
+
+    # Update streak and check achievements
+    atualizar_streak(user_id, db)
+    novas_conquistas = verificar_conquistas(user_id, db)
+
     db.refresh(sessao)
     return sessao
 
 
 @app.patch("/sessoes/{sessao_id}", response_model=SessaoResponse)
-def atualizar_sessao(sessao_id: int, body: SessaoPatch, db: Session = Depends(get_db)):
-    sessao = db.query(Sessoes).filter(Sessoes.id == sessao_id).first()
+def atualizar_sessao(
+    sessao_id: int,
+    body: SessaoPatch,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    sessao = (
+        db.query(Sessoes)
+        .filter(Sessoes.id == sessao_id, Sessoes.user_id == user_id)
+        .first()
+    )
     if not sessao:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
     if body.area_id is not None:
@@ -1346,8 +1430,16 @@ def atualizar_sessao(sessao_id: int, body: SessaoPatch, db: Session = Depends(ge
 
 
 @app.delete("/sessoes/{sessao_id}", status_code=204)
-def excluir_sessao(sessao_id: int, db: Session = Depends(get_db)):
-    sessao = db.query(Sessoes).filter(Sessoes.id == sessao_id).first()
+def excluir_sessao(
+    sessao_id: int,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    sessao = (
+        db.query(Sessoes)
+        .filter(Sessoes.id == sessao_id, Sessoes.user_id == user_id)
+        .first()
+    )
     if not sessao:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
     db.delete(sessao)
@@ -1371,6 +1463,11 @@ def completar_pomodoro(
     )
     db.add(sessao)
 
+    # Add coins for completing pomodoro (3 coins per pomodoro)
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        user.coins = (user.coins or 0) + 3
+
     if body.task_id:
         task = db.query(Tasks).filter(Tasks.id == body.task_id).first()
         if task:
@@ -1382,16 +1479,28 @@ def completar_pomodoro(
             )
 
     db.commit()
+
+    # Update streak and check achievements
+    atualizar_streak(user_id, db)
+    novas_conquistas = verificar_conquistas(user_id, db)
+
     db.refresh(sessao)
-    return sessao
+    return {
+        "sessao": sessao,
+        "novas_conquistas": novas_conquistas,
+        "coins": user.coins if user else 0,
+    }
 
 
 @app.get("/sessoes/resumo", response_model=List[HorasPorArea])
 def resumo_horas(
-    user_id: int = Depends(get_current_user), db: Session = Depends(get_db)
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """Retorna total de minutos/horas de estudo por área."""
-    rows = (
+    """Retorna total de minutos/horas de estudo por área. Pode filtrar por período."""
+    query = (
         db.query(
             Sessoes.area_id,
             Areas.nome,
@@ -1400,9 +1509,24 @@ def resumo_horas(
         )
         .join(Areas, (Sessoes.area_id == Areas.id) & (Areas.user_id == user_id))
         .filter(Sessoes.user_id == user_id)
-        .group_by(Sessoes.area_id)
-        .all()
     )
+
+    # Apply date filtering if provided
+    if start:
+        try:
+            start_date = datetime.strptime(start, "%Y-%m-%d").date()
+            query = query.filter(Sessoes.data >= start_date)
+        except ValueError:
+            pass  # Invalid date format, ignore
+
+    if end:
+        try:
+            end_date = datetime.strptime(end, "%Y-%m-%d").date()
+            query = query.filter(Sessoes.data <= end_date)
+        except ValueError:
+            pass  # Invalid date format, ignore
+
+    rows = query.group_by(Sessoes.area_id).all()
     return [
         HorasPorArea(
             area_id=r.area_id,
@@ -1433,7 +1557,7 @@ def gamification_summary(
     )
     unlocked_ids = [ua.achievement_id for ua in unlocked]
     all_achievements = {}
-    for cat in ["xp", "streak", "pomodoro", "tasks", "level"]:
+    for cat in ["xp", "streak", "pomodoro", "tasks", "level", "coins"]:
         achievements = db.query(Achievement).filter(Achievement.categoria == cat).all()
         all_achievements[cat] = [
             {
@@ -1461,9 +1585,65 @@ def gamification_summary(
         "current_streak": user.current_streak or 0,
         "longest_streak": user.longest_streak or 0,
         "streak_freezes": user.streak_freezes or 0,
+        "coins": user.coins or 0,
         "total_pomodoros": pomodoros,
         "tarefas_concluidas": tarefas,
         "achievements": all_achievements,
         "conquistas_desbloqueadas": len(unlocked_ids),
         "total_conquistas": db.query(Achievement).count(),
     }
+
+
+# --- Coins & Shop ---
+FREEZE_COST = 10  # Cost to buy a freeze
+
+
+@app.post("/coins/buy-freeze")
+def buy_freeze(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Compra um freeze usando coins."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    current_coins = user.coins or 0
+    current_freezes = user.streak_freezes or 0
+
+    if current_coins < FREEZE_COST:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Coins insuficientes. Você tem {current_coins} coins, precisa de {FREEZE_COST}.",
+        )
+
+    if current_freezes >= 4:
+        raise HTTPException(
+            status_code=400, detail="Limite máximo de freezes atingido (4)."
+        )
+
+    # Deduct coins and add freeze
+    user.coins = current_coins - FREEZE_COST
+    user.streak_freezes = current_freezes + 1
+    db.commit()
+
+    return {
+        "success": True,
+        "message": "Freeze comprado com sucesso!",
+        "coins": user.coins,
+        "freezes": user.streak_freezes,
+    }
+
+
+@app.post("/coins/add")
+def add_coins(
+    amount: int = 1,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Adiciona coins ao usuário (para testing/dev)."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    user.coins = (user.coins or 0) + amount
+    db.commit()
+
+    return {"coins": user.coins}
