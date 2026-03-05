@@ -626,14 +626,15 @@ def xp_para_proximo_level(xp_total: int) -> tuple[int, int]:
 
 
 def calcular_xp_total(user_id: int, db: Session) -> int:
-    """Calcula XP total: minutos de sessao + 5 XP por tarefa concluida (regra padronizada)"""
-    # XP por minutos estudados
+    """Calcula XP total: 10 XP por 30 min de sessao + 5 XP por tarefa concluida"""
+    # XP por minutos estudados (10 XP por 30 min = 1 XP a cada 3 min)
     result = (
         db.query(func.sum(Sessoes.duracao_minutos))
         .filter(Sessoes.user_id == user_id)
         .scalar()
     )
-    xp_sessoes = int(result or 0)
+    minutos = int(result or 0)
+    xp_sessoes = (minutos * 10) // 30  # 10 XP por 30 minutos
 
     # XP por tarefas concluidas (5 XP por tarefa)
     result = (

@@ -1765,14 +1765,9 @@ main {
 }
 
 .gami-xp-percent {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: rgba(0, 0, 0, 0.7);
-  z-index: 1;
+  color: var(--accent);
 }
 
 .gami-xp-percent-wrap {
@@ -1936,6 +1931,13 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.gami-badge-icon-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 8px;
 }
 
 .gami-badge:hover:not(.locked) {
