@@ -665,11 +665,7 @@ async function loadHorarios() {
   horariosLoaded = true;
 }
 
-let resumoLoaded = false;
-
 async function loadResumo() {
-  if (resumoLoaded) return;
-  
   try {
     const resumo = await get("/sessoes/resumo");
     
@@ -683,8 +679,6 @@ async function loadResumo() {
       document.getElementById("resumo-horas-total").textContent = "0";
       document.getElementById("resumo-sessoes-total").textContent = "0";
       document.getElementById("resumo-areas-total").textContent = "0";
-      
-      resumoLoaded = true;
       return;
     }
     
@@ -728,42 +722,34 @@ async function loadResumo() {
       chartResumo = null;
     }
     
-    // Renderizar gráfico de barras se Chart.js estiver disponível
+    // Renderizar gráfico de pizza/doughnut se Chart.js estiver disponível
     if (typeof Chart !== "undefined" && chartCanvas) {
       chartResumo = new Chart(chartCanvas, {
-        type: "bar",
+        type: "doughnut",
         data: {
           labels: resumo.map((r) => r.area_nome),
           datasets: [{
-            label: "Minutos",
             data: resumo.map((r) => r.total_minutos),
             backgroundColor: resumo.map((r) => r.area_cor || "#6366f1"),
-            borderRadius: 6,
+            borderWidth: 0,
           }],
         },
         options: {
           responsive: true,
           maintainAspectRatio: true,
-          indexAxis: 'y', // Gráfico de barras horizontal
           plugins: {
-            legend: { display: false },
-          },
-          scales: {
-            x: {
-              beginAtZero: true,
-              grid: { color: "rgba(255,255,255,0.06)" },
-              ticks: { color: "#9b9a97" },
-            },
-            y: {
-              grid: { display: false },
-              ticks: { color: "#9b9a97" },
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#9b9a97',
+                padding: 16,
+                usePointStyle: true,
+              }
             },
           },
         },
       });
     }
-    
-    resumoLoaded = true;
   } catch (e) {
     console.error("Erro ao carregar resumo:", e);
   }
@@ -1035,12 +1021,16 @@ function renderGamification() {
       const container = document.getElementById(`gami-badges-${catId}`);
       if (!container || !achievements[catId]) return;
       
-      container.innerHTML = achievements[catId].map(ach => `
-        <div class="gami-badge ${ach.unlocked ? 'unlocked' : 'locked'}" title="${ach.description}">
-          <span class="gami-badge-icon">${ach.title.split(' ')[0]}</span>
-          <span class="gami-badge-name">${ach.title.split(' ').slice(1).join(' ')}</span>
-        </div>
-      `).join('');
+      container.innerHTML = achievements[catId].map(ach => {
+        const iconName = ach.icon || 'star';
+        const imgSrc = `/static/icon_images/${iconName}.svg`;
+        return `
+          <div class="gami-badge ${ach.unlocked ? 'unlocked' : 'locked'}" title="${ach.description}">
+            <img class="gami-badge-icon-img" src="${imgSrc}" alt="${ach.title}" onerror="this.style.display='none'">
+            <span class="gami-badge-name">${ach.title}</span>
+          </div>
+        `;
+      }).join('');
     });
     
     return;

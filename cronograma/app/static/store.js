@@ -22,49 +22,49 @@ const AppStore = (function() {
   const FREEZE_GAIN_INTERVAL = 7; // Ganha 1 freeze por semana
   
   // ============================================
-  // DEFINIÇÃO DE CONQUISTAS
+  // DEFINIÇÃO DE CONQUISTAS (sem emojis)
   // ============================================
   const ACHIEVEMENTS = {
     xp: [
-      { id: 'xp_100', title: '🌱 Primeiros Passos', description: 'Ganhe 100 XP', requirement: 100 },
-      { id: 'xp_500', title: '🔥 Dedicado', description: 'Ganhe 500 XP', requirement: 500 },
-      { id: 'xp_1000', title: '⚡ Estudioso', description: 'Ganhe 1000 XP', requirement: 1000 },
-      { id: 'xp_5000', title: '💎 Mestre', description: 'Ganhe 5000 XP', requirement: 5000 },
-      { id: 'xp_10000', title: '👑 Lenda', description: 'Ganhe 10000 XP', requirement: 10000 },
+      { id: 'xp_100', title: 'Primeiros Passos', description: 'Ganhe 100 XP', requirement: 100, icon: 'seedling' },
+      { id: 'xp_500', title: 'Dedicado', description: 'Ganhe 500 XP', requirement: 500, icon: 'flame' },
+      { id: 'xp_1000', title: 'Estudioso', description: 'Ganhe 1000 XP', requirement: 1000, icon: 'bolt' },
+      { id: 'xp_5000', title: 'Mestre', description: 'Ganhe 5000 XP', requirement: 5000, icon: 'brain' },
+      { id: 'xp_10000', title: 'Lenda', description: 'Ganhe 10000 XP', requirement: 10000, icon: 'crown' },
     ],
     streak: [
-      { id: 'streak_3', title: '🔥 Início', description: '3 dias consecutivos', requirement: 3 },
-      { id: 'streak_7', title: '🔥🔥 Consistente', description: '7 dias consecutivos', requirement: 7 },
-      { id: 'streak_14', title: '🔥🔥🔥 Focado', description: '14 dias consecutivos', requirement: 14 },
-      { id: 'streak_30', title: '🔥🔥🔥🔥 Dedicado', description: '30 dias consecutivos', requirement: 30 },
-      { id: 'streak_100', title: '🔥🔥🔥🔥🔥 Lenda', description: '100 dias consecutivos', requirement: 100 },
+      { id: 'streak_3', title: 'Início', description: '3 dias consecutivos', requirement: 3, icon: 'flame' },
+      { id: 'streak_7', title: 'Consistente', description: '7 dias consecutivos', requirement: 7, icon: 'flame' },
+      { id: 'streak_14', title: 'Focado', description: '14 dias consecutivos', requirement: 14, icon: 'target' },
+      { id: 'streak_30', title: 'Dedicado', description: '30 dias consecutivos', requirement: 30, icon: 'medal' },
+      { id: 'streak_100', title: 'Lenda', description: '100 dias consecutivos', requirement: 100, icon: 'crown' },
     ],
     pomodoro: [
-      { id: 'pomo_1', title: '🍅 Primeiro', description: 'Complete 1 pomodoro', requirement: 1 },
-      { id: 'pomo_10', title: '🍅🍅 Aquecido', description: 'Complete 10 pomodoros', requirement: 10 },
-      { id: 'pomo_50', title: '🍅🍅🔥 Fogo', description: 'Complete 50 pomodoros', requirement: 50 },
-      { id: 'pomo_100', title: '🍅🔥🔥🔥 Mestre', description: 'Complete 100 pomodoros', requirement: 100 },
-      { id: 'pomo_500', title: '🍅⚡ Lendário', description: 'Complete 500 pomodoros', requirement: 500 },
+      { id: 'pomo_1', title: 'Primeiro', description: 'Complete 1 pomodoro', requirement: 1, icon: 'clock' },
+      { id: 'pomo_10', title: 'Aquecido', description: 'Complete 10 pomodoros', requirement: 10, icon: 'flame' },
+      { id: 'pomo_50', title: 'Fogo', description: 'Complete 50 pomodoros', requirement: 50, icon: 'bolt' },
+      { id: 'pomo_100', title: 'Mestre', description: 'Complete 100 pomodoros', requirement: 100, icon: 'medal' },
+      { id: 'pomo_500', title: 'Lendário', description: 'Complete 500 pomodoros', requirement: 500, icon: 'crown' },
     ],
     tasks: [
-      { id: 'task_1', title: '✅ Início', description: 'Complete 1 tarefa', requirement: 1 },
-      { id: 'task_10', title: '✅✅ Mover', description: 'Complete 10 tarefas', requirement: 10 },
-      { id: 'task_50', title: '✅✅🔥 Produtivo', description: 'Complete 50 tarefas', requirement: 50 },
-      { id: 'task_100', title: '✅🔥🔥 Expert', description: 'Complete 100 tarefas', requirement: 100 },
-      { id: 'task_500', title: '✅⚡ Lenda', description: 'Complete 500 tarefas', requirement: 500 },
+      { id: 'task_1', title: 'Início', description: 'Complete 1 tarefa', requirement: 1, icon: 'done' },
+      { id: 'task_10', title: 'Mover', description: 'Complete 10 tarefas', requirement: 10, icon: 'flame' },
+      { id: 'task_50', title: 'Produtivo', description: 'Complete 50 tarefas', requirement: 50, icon: 'bolt' },
+      { id: 'task_100', title: 'Expert', description: 'Complete 100 tarefas', requirement: 100, icon: 'medal' },
+      { id: 'task_500', title: 'Lenda', description: 'Complete 500 tarefas', requirement: 500, icon: 'crown' },
     ],
     level: [
-      { id: 'level_2', title: '⬆️ Level 2', description: 'Atinga level 2', requirement: 2 },
-      { id: 'level_5', title: '⬆️⬆️ Level 5', description: 'Atinga level 5', requirement: 5 },
-      { id: 'level_10', title: '⬆️⬆️⬆️ Level 10', description: 'Atinga level 10', requirement: 10 },
-      { id: 'level_25', title: '⬆️🔥 Level 25', description: 'Atinga level 25', requirement: 25 },
-      { id: 'level_50', title: '⚡⚡ Level 50', description: 'Atinga level 50', requirement: 50 },
+      { id: 'level_2', title: 'Level 2', description: 'Atinga level 2', requirement: 2, icon: 'arrow-up' },
+      { id: 'level_5', title: 'Level 5', description: 'Atinga level 5', requirement: 5, icon: 'arrow-up' },
+      { id: 'level_10', title: 'Level 10', description: 'Atinga level 10', requirement: 10, icon: 'growing-arrow' },
+      { id: 'level_25', title: 'Level 25', description: 'Atinga level 25', requirement: 25, icon: 'medal' },
+      { id: 'level_50', title: 'Level 50', description: 'Atinga level 50', requirement: 50, icon: 'crown' },
     ],
     coins: [
-      { id: 'coin_50', title: '💰 Iniciante', description: 'Acumule 50 coins', requirement: 50 },
-      { id: 'coin_200', title: '💰💰 Economizador', description: 'Acumule 200 coins', requirement: 200 },
-      { id: 'coin_500', title: '💰💰💰 Rico', description: 'Acumule 500 coins', requirement: 500 },
-      { id: 'coin_1000', title: '💎💎 Milionário', description: 'Acumule 1000 coins', requirement: 1000 },
+      { id: 'coin_50', title: 'Iniciante', description: 'Acumule 50 coins', requirement: 50, icon: 'gift' },
+      { id: 'coin_200', title: 'Economizador', description: 'Acumule 200 coins', requirement: 200, icon: 'blue-diamond' },
+      { id: 'coin_500', title: 'Rico', description: 'Acumule 500 coins', requirement: 500, icon: 'purple-gem' },
+      { id: 'coin_1000', title: 'Milionário', description: 'Acumule 1000 coins', requirement: 1000, icon: 'crown' },
     ]
   };
 
