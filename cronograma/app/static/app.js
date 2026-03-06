@@ -964,11 +964,8 @@ async function init() {
     FocoTimer.init(areas, tasks);
   }
   
-  // Inicializar gamificação
-  if (typeof Gamification !== "undefined") {
-    Gamification.init();
-    renderGamification();
-  }
+  // Inicializar gamificação via AppStore
+  renderGamification();
 }
 
 async function initApp() {
@@ -1035,65 +1032,4 @@ function renderGamification() {
     
     return;
   }
-  
-  // Fallback para Gamification antigo
-  if (typeof Gamification === "undefined") return;
-  
-  const progress = Gamification.getProgresso();
-  
-  // Atualizar elementos do hero
-  document.getElementById("gami-level").textContent = progress.level;
-  document.getElementById("gami-xp-current").textContent = progress.xp_atual;
-  document.getElementById("gami-xp-next").textContent = progress.xp_proximo;
-  document.getElementById("gami-xp-total").textContent = progress.xp_total;
-  document.getElementById("gami-streak").textContent = progress.streak_dias;
-  document.getElementById("gami-pomodoros").textContent = progress.pomodoros_total;
-  document.getElementById("gami-tarefas").textContent = progress.tarefas_concluidas;
-  document.getElementById("gami-areas").textContent = progress.areas_criadas;
-  
-  // Atualizar sidebar stats (fallback)
-  const sidebarLevel = document.getElementById("sidebar-level");
-  const sidebarXp = document.getElementById("sidebar-xp");
-  const sidebarStreak = document.getElementById("sidebar-streak");
-  if (sidebarLevel) sidebarLevel.textContent = progress.level;
-  if (sidebarXp) sidebarXp.textContent = progress.xp_total;
-  if (sidebarStreak) sidebarStreak.textContent = progress.streak_dias;
-  
-  // Barra de XP com percentual
-  const xpPercent = Math.min((progress.xp_atual / progress.xp_proximo) * 100, 100);
-  document.getElementById("gami-xp-fill").style.width = xpPercent + "%";
-  document.getElementById("gami-xp-percent").textContent = Math.round(xpPercent) + "%";
-  
-  // Categorias de badges: xp, streak, pomodoro, tasks, level
-  const categorias = [
-    { id: 'xp', key: 'xp' },
-    { id: 'streak', key: 'streak' },
-    { id: 'pomodoro', key: 'pomodoro' },
-    { id: 'tasks', key: 'tarefa' },
-    { id: 'level', key: 'level' }
-  ];
-  
-  categorias.forEach(cat => {
-    const container = document.getElementById(`gami-badges-${cat.id}`);
-    if (!container) return;
-    
-    // Filtrar badges desta categoria
-    const badgesDaCategoria = Gamification.BADGES.filter(b => b.tipo === cat.key || (cat.id === 'level' && b.tipo === 'level'));
-    
-    if (badgesDaCategoria.length === 0) {
-      // Se não há badges locais, tentar usar dados do backend
-      container.innerHTML = '<p class="gami-empty">Carregando conquistas...</p>';
-      return;
-    }
-    
-    container.innerHTML = badgesDaCategoria.map(badge => {
-      const unlocked = progress.badges.includes(badge.id);
-      return `
-        <div class="gami-badge ${unlocked ? 'unlocked' : 'locked'}" title="${badge.descricao}">
-          <span class="gami-badge-icon">${badge.nome.split(' ')[0]}</span>
-          <span class="gami-badge-name">${badge.nome.split(' ').slice(1).join(' ')}</span>
-        </div>
-      `;
-    }).join("");
-  });
 }

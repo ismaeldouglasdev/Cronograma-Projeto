@@ -523,7 +523,7 @@ const FocoTimer = (function() {
       }, 200);
       
     } catch (e) {
-      console.log('Audio error:', e);
+      console.error('Audio error:', e);
     }
   }
   
