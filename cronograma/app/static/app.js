@@ -1023,7 +1023,7 @@ function renderGamification() {
       
       container.innerHTML = achievements[catId].map(ach => {
         const iconName = ach.icon || 'star';
-        const imgSrc = `/static/icon_images/${iconName}.svg`;
+        const imgSrc = `/icon_images/${iconName}.png`;
         return `
           <div class="gami-badge ${ach.unlocked ? 'unlocked' : 'locked'}" title="${ach.description}">
             <img class="gami-badge-icon-img" src="${imgSrc}" alt="${ach.title}" onerror="this.style.display='none'">
