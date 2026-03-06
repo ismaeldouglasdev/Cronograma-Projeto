@@ -159,7 +159,6 @@ const AppStore = (function() {
         // Pulou dias - usar freeze se disponível
         if (state.stats.freezes > 0) {
           state.stats.freezes--;
-          console.log('🔒 Freeze usado! Restam: ' + state.stats.freezes);
         } else {
           // Perdeu streak
           state.stats.currentStreak = 1;
@@ -187,7 +186,6 @@ const AppStore = (function() {
       if (state.stats.freezes < MAX_FREEZES) {
         state.stats.freezes++;
         state.stats.lastFreezeGain = today;
-        console.log('🔒 Novo freeze ganho! Total: ' + state.stats.freezes);
       }
     }
   }
@@ -525,7 +523,6 @@ const AppStore = (function() {
       
       _save();
       _notify();
-      console.log('✅ Gamificação sincronizada com backend');
       return true;
     } catch (error) {
       console.error('Erro ao sincronizar gamificação:', error);

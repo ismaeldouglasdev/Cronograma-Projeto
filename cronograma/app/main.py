@@ -1,8 +1,10 @@
 from datetime import date, datetime, timedelta
-from pathlib import Path
 from typing import Optional, List
 import os
 import re
+import secrets
+import base64
+import time
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.staticfiles import StaticFiles
@@ -22,11 +24,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 import hashlib
-import secrets
-import uuid
-import base64
-import time
-import sqlite3
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./cronograma.db")
 
