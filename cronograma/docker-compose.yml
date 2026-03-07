@@ -1,0 +1,46 @@
+# ============================================
+# Cronograma - Docker Compose (Development)
+# ============================================
+# Uso:
+#   docker-compose up --build
+# ============================================
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: cronograma-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ../icon_images:/app/icon_images
+      - ./app/cronograma.db:/app/cronograma.db
+    environment:
+      - DATABASE_URL=sqlite:///./cronograma.db
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # PostgreSQL (optional - para produção)
+  # db:
+  #   image: postgres:16-alpine
+  #   container_name: cronograma-db
+  #   environment:
+  #     POSTGRES_USER: cronograma
+  #     POSTGRES_PASSWORD: cronograma
+  #     POSTGRES_DB: cronograma
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+# volumes:
+#   postgres_data:

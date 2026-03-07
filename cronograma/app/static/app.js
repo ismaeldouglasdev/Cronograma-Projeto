@@ -49,8 +49,13 @@ function populateSubcategoriasDatalist() {
 
 async function get(url) {
   const r = await fetch(API + url, { headers: getAuthHeader() });
-  if (!r.ok) throw new Error(r.statusText);
-  return r.json();
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(r.statusText || text || `HTTP ${r.status}`);
+  }
+  if (r.status === 204) return null;
+  const text = await r.text();
+  return text ? JSON.parse(text) : null;
 }
 
 async function post(url, body) {
@@ -59,8 +64,13 @@ async function post(url, body) {
     headers: { "Content-Type": "application/json", ...getAuthHeader() },
     body: JSON.stringify(body),
   });
-  if (!r.ok) throw new Error(r.statusText);
-  return r.json();
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(r.statusText || text || `HTTP ${r.status}`);
+  }
+  if (r.status === 204) return null;
+  const text = await r.text();
+  return text ? JSON.parse(text) : null;
 }
 
 async function patch(url, body) {
@@ -69,8 +79,13 @@ async function patch(url, body) {
     headers: { "Content-Type": "application/json", ...getAuthHeader() },
     body: JSON.stringify(body),
   });
-  if (!r.ok) throw new Error(r.statusText);
-  return r.json();
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(r.statusText || text || `HTTP ${r.status}`);
+  }
+  if (r.status === 204) return null;
+  const text = await r.text();
+  return text ? JSON.parse(text) : null;
 }
 
 async function delReq(url) {

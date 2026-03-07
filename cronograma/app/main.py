@@ -793,8 +793,14 @@ def verificar_conquistas(user_id: int, db: Session) -> list:
 app = FastAPI()
 
 STATIC_DIR = Path(__file__).parent / "static"
-
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+# Serve icon_images from parent directory (project root)
+ICON_IMAGES_DIR = Path(__file__).parent.parent / "icon_images"
+if ICON_IMAGES_DIR.exists():
+    app.mount(
+        "/icon_images", StaticFiles(directory=str(ICON_IMAGES_DIR)), name="icon_images"
+    )
 
 # --- Admin Migration Endpoint ---
 MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
@@ -1647,3 +1653,53 @@ def add_coins(
     db.commit()
 
     return {"coins": user.coins}
+
+
+@app.get("/debug/stats")
+def debug_stats(
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Endpoint de debug para verificar estatísticas brutas do banco."""
+    # Contar sessões
+    total_sessoes = (
+        db.query(func.count(Sessoes.id)).filter(Sessoes.user_id == user_id).scalar()
+        or 0
+    )
+
+    # Total de minutos
+    minutos_total = (
+        db.query(func.sum(Sessoes.duracao_minutos))
+        .filter(Sessoes.user_id == user_id)
+        .scalar()
+        or 0
+    )
+
+    # Tarefas totais
+    total_tarefas = (
+        db.query(func.count(Tasks.id)).filter(Tasks.user_id == user_id).scalar() or 0
+    )
+
+    # Tarefas concluídas
+    tarefas_concluidas = (
+        db.query(func.count(Tasks.id))
+        .filter(Tasks.user_id == user_id, Tasks.concluida == True)
+        .scalar()
+        or 0
+    )
+
+    # Calcular XP esperado
+    xp_sessoes = (minutos_total * 10) // 30
+    xp_tarefas = tarefas_concluidas * 5
+    xp_total_esperado = xp_sessoes + xp_tarefas
+
+    return {
+        "user_id": user_id,
+        "total_sessoes": total_sessoes,
+        "minutos_total": minutos_total,
+        "total_tarefas": total_tarefas,
+        "tarefas_concluidas": tarefas_concluidas,
+        "xp_por_sessoes": xp_sessoes,
+        "xp_por_tarefas": xp_tarefas,
+        "xp_total_calculado": xp_total_esperado,
+    }
