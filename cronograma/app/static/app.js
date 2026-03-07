@@ -675,6 +675,14 @@ async function loadResumo() {
     if (!resumo.length) {
       container.innerHTML = '<p class="resumo-empty">Nenhuma sessão registrada ainda.</p>';
       
+      // Empty state for chart
+      if (chartCanvas) {
+        const chartContainer = chartCanvas.parentElement;
+        if (chartContainer) {
+          chartContainer.innerHTML = '<div class="empty-state">Nenhum dado registrado para este período.</div>';
+        }
+      }
+      
       // Zeros quando não há dados
       document.getElementById("resumo-horas-total").textContent = "0";
       document.getElementById("resumo-sessoes-total").textContent = "0";
