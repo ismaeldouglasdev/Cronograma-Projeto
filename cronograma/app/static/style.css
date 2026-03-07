@@ -176,6 +176,32 @@
   box-sizing: border-box;
 }
 
+/* Custom Scrollbar - Sidebar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Hide scrollbar if not needed */
+.sidebar-nav {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
 body {
   font-family: "Segoe UI", system-ui, sans-serif;
   background: var(--bg);
@@ -1835,6 +1861,7 @@ main {
   align-items: center;
   gap: 1rem;
   transition: all 0.2s ease;
+  min-height: 80px;
 }
 
 .gami-metric-card:hover {
@@ -1847,6 +1874,7 @@ main {
   font-size: 2rem;
   width: 50px;
   height: 50px;
+  min-width: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1881,6 +1909,11 @@ main {
   font-weight: 700;
   color: var(--text);
   margin-bottom: 1rem;
+  padding-top: 1.5rem;
+}
+
+.gami-section-title:first-child {
+  padding-top: 0;
 }
 
 .gami-category {
@@ -1952,10 +1985,16 @@ main {
 
 .gami-badge.locked {
   opacity: 0.5;
+  filter: grayscale(1);
 }
 
 .gami-badge.locked .gami-badge-icon {
-  filter: grayscale(100%);
+  filter: grayscale(100%) brightness(0.7);
+}
+
+.gami-badge.locked .gami-badge-name {
+  color: var(--text-muted);
+  filter: grayscale(1);
 }
 
 .gami-badge.unlocked .gami-badge-icon {
@@ -1973,7 +2012,7 @@ main {
 .resumo-page {
   max-width: 1000px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.5rem 1rem;
 }
 
 /* Hero Metrics */
@@ -2117,6 +2156,16 @@ main {
   text-align: center;
   color: var(--text-muted);
   padding: 2rem;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 3rem 1rem;
+  font-size: 0.95rem;
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px dashed var(--border);
 }
 
 /* ========================================
@@ -2362,6 +2411,7 @@ main {
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
+  padding-top: 1.5rem;
   color: var(--text);
 }
 

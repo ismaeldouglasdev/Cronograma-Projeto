@@ -48,7 +48,7 @@ const AppStore = (function() {
     ],
     tasks: [
       { id: 'task_1', title: 'Início', description: 'Complete 1 tarefa', requirement: 1, icon: 'done-checkmark' },
-      { id: 'task_10', title: 'Mover', description: 'Complete 10 tarefas', requirement: 10, icon: 'flame' },
+      { id: 'task_10', title: 'Motivado', description: 'Complete 10 tarefas', requirement: 10, icon: 'flame' },
       { id: 'task_50', title: 'Produtivo', description: 'Complete 50 tarefas', requirement: 50, icon: 'rocket' },
       { id: 'task_100', title: 'Expert', description: 'Complete 100 tarefas', requirement: 100, icon: 'medal' },
       { id: 'task_500', title: 'Lenda', description: 'Complete 500 tarefas', requirement: 500, icon: 'crown' },

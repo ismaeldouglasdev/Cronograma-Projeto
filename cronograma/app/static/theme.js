@@ -36,8 +36,6 @@ const ThemeManager = (function() {
     
     updateUISelector(theme);
     dispatchEvent(theme);
-    
-    log('theme applied', theme);
   }
 
   function updateUISelector(theme) {
