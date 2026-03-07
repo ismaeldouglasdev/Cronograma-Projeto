@@ -489,7 +489,7 @@ const AppStore = (function() {
       
       const data = await response.json();
       
-      // Atualizar estado com dados do backend
+      // Forçar sobrescrita com dados do backend (fonte de verdade)
       state.stats.totalXP = data.xp_total || 0;
       state.stats.level = data.level || 1;
       state.stats.currentStreak = data.current_streak || 0;
@@ -498,6 +498,15 @@ const AppStore = (function() {
       state.stats.coins = data.coins || 0;
       state.stats.totalPomodoros = data.total_pomodoros || 0;
       state.stats.completedTasks = data.tarefas_concluidas || 0;
+      
+      // Forçar atualização do XP no nível atual
+      state.stats.xpForCurrentLevel = data.xp_atual_no_level || 0;
+      state.stats.xpForNextLevel = data.xp_para_proximo_level || 100;
+      
+      // Limpar localStorage para evitar dados obsoletos
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {}
       
       // Converter achievements do backend para formato do store
       state.achievements = {};
