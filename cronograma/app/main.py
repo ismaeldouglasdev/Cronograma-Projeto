@@ -334,6 +334,7 @@ class UserAchievement(Base):
 Base.metadata.create_all(engine)
 
 # Migrações
+print(f"[MIGRATIONS] Using database: {DATABASE_URL[:30]}...")
 with engine.connect() as conn:
     # Tabela de usuários
     try:
@@ -343,20 +344,80 @@ with engine.connect() as conn:
             )
         )
         conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(text("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 0"))
-        conn.commit()
-    except Exception:
-        pass
+        print("[MIGRATIONS] Users table OK")
+    except Exception as e:
+        print(f"[MIGRATIONS] Users table error: {e}")
     try:
         conn.execute(
-            text("ALTER TABLE users ADD COLUMN verification_token VARCHAR(255)")
+            text(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT 0"
+            )
         )
         conn.commit()
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[MIGRATIONS] is_verified: {e}")
+    try:
+        conn.execute(
+            text(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255)"
+            )
+        )
+        conn.commit()
+    except Exception as e:
+        print(f"[MIGRATIONS] verification_token: {e}")
+    try:
+        conn.execute(
+            text(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS current_streak INTEGER DEFAULT 0"
+            )
+        )
+        conn.commit()
+    except Exception as e:
+        print(f"[MIGRATIONS] current_streak: {e}")
+    try:
+        conn.execute(
+            text(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS longest_streak INTEGER DEFAULT 0"
+            )
+        )
+        conn.commit()
+    except Exception as e:
+        print(f"[MIGRATIONS] longest_streak: {e}")
+    try:
+        conn.execute(
+            text(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_activity_date VARCHAR(20)"
+            )
+        )
+        conn.commit()
+    except Exception as e:
+        print(f"[MIGRATIONS] last_activity_date: {e}")
+    try:
+        conn.execute(
+            text(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS streak_freezes INTEGER DEFAULT 0"
+            )
+        )
+        conn.commit()
+    except Exception as e:
+        print(f"[MIGRATIONS] streak_freezes: {e}")
+    try:
+        conn.execute(
+            text(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_freeze_grant_date VARCHAR(20)"
+            )
+        )
+        conn.commit()
+    except Exception as e:
+        print(f"[MIGRATIONS] last_freeze_grant_date: {e}")
+    try:
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN IF NOT EXISTS coins INTEGER DEFAULT 0")
+        )
+        conn.commit()
+        print("[MIGRATIONS] coins column added")
+    except Exception as e:
+        print(f"[MIGRATIONS] coins: {e}")
     try:
         conn.execute(text("ALTER TABLE tasks ADD COLUMN duracao_minutos INTEGER"))
         conn.commit()
