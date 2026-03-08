@@ -278,10 +278,16 @@ const AppStore = (function() {
 
   function _load() {
     try {
-      // Limpar localStorage antigo para evitar dados inconsistentes
-      // O backend é a fonte de verdade
-      localStorage.removeItem(STORAGE_KEY);
-      
+      // Limpar apenas dados de gamificação do localStorage
+      // O backend é a fonte de verdade para XP, tasks, streak, etc.
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Manter achievements desbloqueados se houver
+        if (parsed.unlockedAchievements) {
+          state.unlockedAchievements = parsed.unlockedAchievements;
+        }
+      }
       state._loaded = true;
     } catch (e) {
       console.error('Erro ao carregar estado:', e);

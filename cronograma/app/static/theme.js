@@ -4,6 +4,9 @@ const ThemeManager = (function() {
   let currentTheme = 'dark';
   let initialized = false;
 
+  // Dummy log function (disabled for production)
+  function log() {}
+
   function getStoredTheme() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
