@@ -1703,3 +1703,55 @@ def debug_stats(
         "xp_por_tarefas": xp_tarefas,
         "xp_total_calculado": xp_total_esperado,
     }
+
+
+@app.post("/admin/recalculate-xp")
+def recalculate_all_xp(
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Recalcula XP de todos os usuários (ação administrativa)."""
+    users = db.query(User).all()
+    results = []
+
+    for user in users:
+        # Calcular minutos totais
+        minutos_result = (
+            db.query(func.sum(Sessoes.duracao_minutos))
+            .filter(Sessoes.user_id == user.id)
+            .scalar()
+        )
+        minutos = int(minutos_result or 0)
+
+        # Calcular tarefas concluídas
+        tarefas_result = (
+            db.query(func.count(Tasks.id))
+            .filter(Tasks.user_id == user.id, Tasks.concluida == True)
+            .scalar()
+        )
+        tarefas = int(tarefas_result or 0)
+
+        # Calcular XP: 10 XP por 30 min + 5 XP por tarefa
+        xp_sessoes = (minutos * 10) // 30
+        xp_tarefas = tarefas * 5
+        xp_total = xp_sessoes + xp_tarefas
+
+        # Calcular level
+        level = 1
+        xp_temp = xp_total
+        while xp_temp >= int(100 * (level**1.5)):
+            xp_temp -= int(100 * (level**1.5))
+            level += 1
+
+        results.append(
+            {
+                "user_id": user.id,
+                "email": user.email,
+                "minutos": minutos,
+                "tarefas_concluidas": tarefas,
+                "xp_total": xp_total,
+                "level": level,
+            }
+        )
+
+    return {"results": results, "message": "XP recalculado com sucesso"}
