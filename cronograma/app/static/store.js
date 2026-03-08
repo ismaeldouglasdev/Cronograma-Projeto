@@ -278,12 +278,10 @@ const AppStore = (function() {
 
   function _load() {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        state.stats = { ...state.stats, ...parsed.stats };
-        state.unlockedAchievements = parsed.unlockedAchievements || [];
-      }
+      // Limpar localStorage antigo para evitar dados inconsistentes
+      // O backend é a fonte de verdade
+      localStorage.removeItem(STORAGE_KEY);
+      
       state._loaded = true;
     } catch (e) {
       console.error('Erro ao carregar estado:', e);
@@ -343,14 +341,15 @@ const AppStore = (function() {
   }
 
   function syncStatsFromData() {
-    const completedTasks = state.tasks.filter(t => t.concluida).length;
+    // Não recalcular localmente - usar dados do backend (fonte confiável)
+    // O backend já calcula corretamente: XP por sessões + XP por tarefas concluídas
+    
+    // Apenas sincroniza contagem de sessões localmente (para uso offline)
     const totalSessions = state.sessions.length;
     
-    if (completedTasks > state.stats.completedTasks) {
-      state.stats.completedTasks = completedTasks;
-    }
-    
-    // Recalcular streak baseado em datas das sessões
+    // Não atualizar completedTasks aqui - confiar no backend
+    // O backend retorna tarefas_concluidas correto
+  }
     if (totalSessions > 0) {
       const dates = [...new Set(state.sessions.map(s => s.data))].sort().reverse();
       if (dates.length > 0) {
