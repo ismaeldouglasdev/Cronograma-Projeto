@@ -1,5 +1,8 @@
 let API = "";
 
+// Chart instance for resumo page
+let chartResumo = null;
+
 // Auto-detect API URL based on current location
 (function() {
   const loc = window.location;
