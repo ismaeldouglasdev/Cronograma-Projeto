@@ -26,6 +26,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 import hashlib
+import uuid
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./cronograma.db")
 
@@ -553,7 +554,8 @@ with engine.connect() as conn:
     # Seed achievements
     try:
         result = conn.execute(text("SELECT COUNT(*) FROM achievements"))
-        count = result.fetchone()[0]
+        row = result.fetchone()
+        count = row[0] if row else 0
         if count == 0:
             achievements_data = [
                 ("Primeiros Passos", "Ganhe 100 XP", "xp", 100, "star"),
@@ -755,9 +757,9 @@ def atualizar_streak(user_id: int, db: Session) -> int:
 
     if not session_dates:
         # No sessions yet, reset streak
-        user.current_streak = 0
-        user.last_activity_date = today_str
-        db.commit()
+        user.current_streak = 0 # type: ignore[assignment]
+        user.last_activity_date = today_str # type: ignore[assignment]
+        db.commit() 
         return 0
 
     # Check if there's a session today or yesterday
@@ -769,7 +771,7 @@ def atualizar_streak(user_id: int, db: Session) -> int:
         pass
     elif days_since_last == 1:
         # Studied yesterday, increment streak
-        user.current_streak = (user.current_streak or 0) + 1
+        user.current_streak = (user.current_streak or 0) + 1 # type: ignore[assignment]
     else:
         # Missed days
         if (user.streak_freezes or 0) > 0 and user.last_activity_date is not None:
@@ -784,7 +786,7 @@ def atualizar_streak(user_id: int, db: Session) -> int:
     if (user.current_streak or 0) > (user.longest_streak or 0):
         user.longest_streak = user.current_streak
 
-    user.last_activity_date = today_str
+    user.last_activity_date = today_str # type: ignore[assignment]
     db.commit()
     return user.current_streak or 0
 
@@ -801,8 +803,8 @@ def atualizar_freezes(user_id: int, db: Session) -> int:
         days_since = (date.today() - last_date).days
         if days_since < 7:
             return user.streak_freezes or 0
-    user.streak_freezes = min((user.streak_freezes or 0) + 1, 4)
-    user.last_freeze_grant_date = today
+    user.streak_freezes = min((user.streak_freezes or 0) + 1, 4) # type: ignore[assignment]
+    user.last_freeze_grant_date = today # type: ignore[assignment]
     db.commit()
     return user.streak_freezes or 0
 
@@ -1243,8 +1245,8 @@ def verify_email_post(body: VerifyEmailRequest, db: Session = Depends(get_db)):
         if not user:
             return {"success": False, "message": "Token inválido ou expirado"}
 
-        user.is_verified = True
-        user.verification_token = None
+        user.is_verified = True # type: ignore[assignment]
+        user.verification_token = None # type: ignore[assignment]
         db.commit()
 
         print(f"[DEBUG AUTH] User verified via manual token: {user.email}")
@@ -1459,7 +1461,7 @@ def criar_sessao(
     user = db.query(User).filter(User.id == user_id).first()
     if user:
         coins_earned = max(1, body.duracao_minutos // 10)
-        user.coins = (user.coins or 0) + coins_earned
+        user.coins = (user.coins or 0) + coins_earned # type: ignore[assignment]
 
     db.commit()
 
@@ -1816,3 +1818,4 @@ def recalculate_all_xp(
         )
 
     return {"results": results, "message": "XP recalculado com sucesso"}
+
