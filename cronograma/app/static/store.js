@@ -15,7 +15,7 @@ const AppStore = (function() {
   const COINS_POR_TAREFA = 2;
   const COINS_POR_POMODORO = 3;
   const COINS_POR_STREAK_DIA = 1;
-  const FREEZE_COST = 50; // Custo para comprar freeze
+  const FREEZE_COST = 10; // Custo para comprar freeze
   
   // Freezes
   const MAX_FREEZES = 4;
@@ -96,30 +96,34 @@ const AppStore = (function() {
   };
 
   // ============================================
-  // HELPERS DE NÍVEL
+  // HELPERS DE NÍVEL (fórmula: XP = 100 * level^1.5)
   // ============================================
+  function xpForLevel(level) {
+    return Math.floor(100 * Math.pow(level, 1.5));
+  }
+
   function calculateLevel(xp) {
     let level = 1;
-    let remainingXP = xp;
-    while (remainingXP >= level * 500) {
-      remainingXP -= level * 500;
+    while (true) {
+      const xpNeeded = xpForLevel(level);
+      if (xp < xpNeeded) break;
+      xp -= xpNeeded;
       level++;
     }
     return level;
   }
 
   function getXPForCurrentLevel(xp) {
-    let level = 1;
-    let remaining = xp;
-    while (remaining >= level * 500 && level < 100) {
-      remaining -= level * 500;
-      level++;
+    const level = calculateLevel(xp);
+    let xpAtLevel = xp;
+    for (let l = 1; l < level; l++) {
+      xpAtLevel -= xpForLevel(l);
     }
-    return remaining;
+    return Math.max(0, xpAtLevel);
   }
 
   function getXPForNextLevel(level) {
-    return level * 500;
+    return xpForLevel(level);
   }
 
   // ============================================
@@ -347,42 +351,7 @@ const AppStore = (function() {
   }
 
   function syncStatsFromData() {
-    // Não recalcular localmente - usar dados do backend (fonte confiável)
-    // O backend já calcula corretamente: XP por sessões + XP por tarefas concluídas
-    
-    // Apenas sincroniza contagem de sessões localmente (para uso offline)
-    const totalSessions = state.sessions.length;
-    
-    // Não atualizar completedTasks aqui - confiar no backend
-    // O backend retorna tarefas_concluidas correto
-  }
-    if (totalSessions > 0) {
-      const dates = [...new Set(state.sessions.map(s => s.data))].sort().reverse();
-      if (dates.length > 0) {
-        const today = getDateString();
-        const lastSessionDate = dates[0];
-        const daysDiff = getDaysDifference(lastSessionDate, today);
-        
-        if (daysDiff <= 1) {
-          let streak = 0;
-          let checkDate = new Date(lastSessionDate);
-          
-          for (let i = 0; i < dates.length; i++) {
-            const expectedDate = getDateString(new Date(checkDate.getTime() - i * 86400000));
-            if (dates.includes(expectedDate)) {
-              streak++;
-            } else {
-              break;
-            }
-          }
-          
-          if (streak > state.stats.currentStreak) {
-            state.stats.currentStreak = streak;
-          }
-        }
-      }
-    }
-    
+    console.warn('syncStatsFromData is deprecated, use syncFromBackend()');
     checkAchievements();
     _save();
     _notify();
@@ -478,7 +447,7 @@ const AppStore = (function() {
   // ============================================
   async function syncFromBackend() {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('cronograma_token');
       if (!token) return false;
       
       const response = await fetch('/gamification-summary', {
@@ -503,10 +472,6 @@ const AppStore = (function() {
       state.stats.coins = data.coins || 0;
       state.stats.totalPomodoros = data.total_pomodoros || 0;
       state.stats.completedTasks = data.tarefas_concluidas || 0;
-      
-      // Forçar atualização do XP no nível atual
-      state.stats.xpForCurrentLevel = data.xp_atual_no_level || 0;
-      state.stats.xpForNextLevel = data.xp_para_proximo_level || 100;
       
       // Limpar localStorage para evitar dados obsoletos
       try {

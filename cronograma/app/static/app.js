@@ -16,6 +16,11 @@ let chartResumo = null;
 let cachedAreas = null;
 let allAreas = [];
 
+function parseIntSafe(value) {
+  const result = parseInt(value, 10);
+  return isNaN(result) ? null : result;
+}
+
 function getToken() {
   return localStorage.getItem("cronograma_token");
 }
@@ -220,9 +225,9 @@ function renderAreasGrid(areas) {
       await delReq(`/areas/${btn.dataset.id}`);
       horariosLoaded = false;
       const areas2 = await loadAreas();
-      loadTasks(areas2);
-      loadSessoes(areas2);
-      loadResumo();
+      await loadTasks(areas2);
+      await loadSessoes(areas2);
+      await loadResumo();
     });
   });
 }
@@ -281,10 +286,12 @@ async function loadTasks(areas) {
       }
     )
     .join("");
-  ul.querySelectorAll(".item-body").forEach((body, i) => {
+  ul.querySelectorAll(".item-body").forEach((body) => {
     body.addEventListener("click", (e) => {
       if (e.target.closest(".item-check") || e.target.closest(".btn-del")) return;
-      openTaskModal(tasks[i], areas);
+      const taskId = parseInt(body.dataset.id || body.closest('[data-id]')?.dataset.id, 10);
+      const task = sortedTasks.find(t => t.id === taskId);
+      if (task) openTaskModal(task, areas);
     });
   });
   ul.querySelectorAll(".item-check").forEach((btn) => {
@@ -293,7 +300,7 @@ async function loadTasks(areas) {
       const done = btn.dataset.done === "true";
       if (!done) {
         const minutos = prompt("Quantos minutos você dedicou a esta tarefa?");
-        if (minutos === null) return;
+        if (minutos === null || minutos.trim() === "") return;
         const n = parseInt(minutos, 10);
         if (isNaN(n) || n < 1) {
           alert("Informe um número válido de minutos.");
@@ -302,16 +309,16 @@ async function loadTasks(areas) {
         await patch(`/tasks/${id}`, { concluida: true, duracao_minutos: n });
         const areas2 = await loadAreas();
         cachedAreas = areas2;
-        loadTasks(areas2);
-        loadSessoes(areas2);
-        loadResumo();
+        await loadTasks(areas2);
+        await loadSessoes(areas2);
+        await loadResumo();
       } else {
         await patch(`/tasks/${id}`, { concluida: false });
         const areas2 = await loadAreas();
         cachedAreas = areas2;
-        loadTasks(areas2);
-        loadSessoes(areas2);
-        loadResumo();
+        await loadTasks(areas2);
+        await loadSessoes(areas2);
+        await loadResumo();
       }
     });
   });
@@ -322,7 +329,7 @@ async function loadTasks(areas) {
       await delReq(`/tasks/${btn.dataset.id}`);
       const freshAreas = await loadAreas();
       cachedAreas = freshAreas;
-      loadTasks(freshAreas);
+      await loadTasks(freshAreas);
     });
   });
 }
@@ -330,7 +337,7 @@ async function loadTasks(areas) {
 async function loadSessoes(areas) {
   const sessoes = await get("/sessoes");
   const ul = document.getElementById("lista-sessoes");
-  if (!sessoes.length) {
+  if (!sessoes || !sessoes.length) {
     ul.innerHTML = '<li class="resumo-empty">Nenhuma sessão registrada.</li>';
     return;
   }
@@ -340,7 +347,7 @@ async function loadSessoes(areas) {
     <li>
       <span class="item-dot" style="background:${areaCor(areas, s.area_id)}"></span>
       <div class="item-body" data-id="${s.id}">
-        <div class="item-title">${areaNome(areas, s.area_id)}</div>
+        <div class="item-title">${escapeHtml(areaNome(areas, s.area_id))}</div>
         <div class="item-meta">${s.duracao_minutos} min · ${formatDate(s.data)}</div>
       </div>
       <button class="btn-del" data-id="${s.id}" data-type="sessao" title="Excluir">×</button>
@@ -361,8 +368,8 @@ async function loadSessoes(areas) {
       if (!confirm("Excluir esta sessão?")) return;
       await delReq(`/sessoes/${btn.dataset.id}`);
       const freshAreas = await loadAreas();
-      loadSessoes(freshAreas);
-      loadResumo();
+      await loadSessoes(freshAreas);
+      await loadResumo();
     });
   });
 }
@@ -577,11 +584,11 @@ function initModal() {
     const fd = new FormData(e.target);
     const id = fd.get("id");
     const concluida = fd.get("concluida") === "true";
-    const duracao = fd.get("duracao_minutos") ? parseInt(fd.get("duracao_minutos"), 10) : null;
-    const prioridade = fd.get("prioridade") ? parseInt(fd.get("prioridade"), 10) : null;
-    const metaPomodoros = fd.get("meta_pomodoros") ? parseInt(fd.get("meta_pomodoros"), 10) : null;
+    const duracao = parseIntSafe(fd.get("duracao_minutos"));
+    const prioridade = parseIntSafe(fd.get("prioridade"));
+    const metaPomodoros = parseIntSafe(fd.get("meta_pomodoros"));
     const data = {
-      area_id: parseInt(fd.get("area_id"), 10),
+      area_id: parseIntSafe(fd.get("area_id")),
       titulo: fd.get("titulo"),
       descricao: fd.get("descricao") || null,
       data_entrega: fd.get("data_entrega"),
@@ -614,8 +621,8 @@ function initModal() {
     const fd = new FormData(e.target);
     const id = fd.get("id");
     const data = {
-      area_id: parseInt(fd.get("area_id"), 10),
-      duracao_minutos: parseInt(fd.get("duracao_minutos"), 10),
+      area_id: parseIntSafe(fd.get("area_id")),
+      duracao_minutos: parseIntSafe(fd.get("duracao_minutos")),
       data: fd.get("data"),
     };
     await patch(`/sessoes/${id}`, data);
@@ -712,12 +719,12 @@ async function loadResumo() {
     const totalMinutos = resumo.reduce((sum, r) => sum + r.total_minutos, 0);
     const totalHoras = (totalMinutos / 60).toFixed(1);
     const totalSessoes = resumo.length;
-    const totalAreas = resumo.length;
+    const uniqueAreaIds = new Set(resumo.map(r => r.area_id)).size;
     
     // Atualizar métricas principais
     document.getElementById("resumo-horas-total").textContent = totalHoras;
     document.getElementById("resumo-sessoes-total").textContent = totalSessoes;
-    document.getElementById("resumo-areas-total").textContent = totalAreas;
+    document.getElementById("resumo-areas-total").textContent = uniqueAreaIds;
     
     // Encontrar o máximo para as barras
     const maxMinutos = Math.max(...resumo.map(r => r.total_minutos));
@@ -927,10 +934,10 @@ async function init() {
     e.preventDefault();
     const fd = new FormData(e.target);
     const data = fd.get("data_entrega");
-    const prioridade = fd.get("prioridade") ? parseInt(fd.get("prioridade"), 10) : null;
-    const metaPomodoros = fd.get("meta_pomodoros") ? parseInt(fd.get("meta_pomodoros"), 10) : null;
+    const prioridade = parseIntSafe(fd.get("prioridade"));
+    const metaPomodoros = parseIntSafe(fd.get("meta_pomodoros"));
     await post("/tasks", {
-      area_id: parseInt(fd.get("area_id"), 10),
+      area_id: parseIntSafe(fd.get("area_id")),
       titulo: fd.get("titulo"),
       descricao: fd.get("descricao")?.trim() || null,
       data_entrega: data,
@@ -954,8 +961,8 @@ async function init() {
     const fd = new FormData(e.target);
     const dataVal = fd.get("data");
     await post("/sessoes", {
-      area_id: parseInt(fd.get("area_id"), 10),
-      duracao_minutos: parseInt(fd.get("duracao_minutos"), 10),
+      area_id: parseIntSafe(fd.get("area_id")),
+      duracao_minutos: parseIntSafe(fd.get("duracao_minutos")),
       data: dataVal || null,
     });
     e.target.reset();
@@ -978,11 +985,6 @@ async function init() {
     
     // Sincronizar com backend (SSOT - Fonte Única de Verdade)
     await AppStore.syncFromBackend();
-    
-    // Renderizar gamificação com dados do store
-    if (typeof renderGamification === 'function') {
-      renderGamification();
-    }
   }
   
   if (typeof FocoTimer !== "undefined") {
@@ -990,8 +992,10 @@ async function init() {
     FocoTimer.init(areas, tasks);
   }
   
-  // Inicializar gamificação via AppStore
-  renderGamification();
+  // Inicializar gamificação
+  if (typeof renderGamification === 'function') {
+    renderGamification();
+  }
 }
 
 async function initApp() {

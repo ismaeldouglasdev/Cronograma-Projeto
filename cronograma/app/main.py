@@ -100,14 +100,6 @@ class VerifyEmailRequest(BaseModel):
     token: str
 
 
-engine = create_engine(
-    "sqlite:///./cronograma.db",
-    connect_args={"check_same_thread": False},
-)
-
-Base = declarative_base()
-
-
 class AreaCreate(BaseModel):
     """Schema de entrada para criar uma área."""
 
@@ -334,6 +326,30 @@ class UserAchievement(Base):
 
 Base.metadata.create_all(engine)
 
+
+def column_exists(conn, table: str, column: str) -> bool:
+    """Check if column exists in table."""
+    try:
+        result = conn.execute(text(f"PRAGMA table_info({table})"))
+        columns = [row[1] for row in result.fetchall()]
+        return column in columns
+    except Exception:
+        return False
+
+
+def add_column_if_not_exists(conn, table: str, column: str, definition: str):
+    """Add column if it doesn't exist (SQLite compatible)."""
+    if not column_exists(conn, table, column):
+        try:
+            conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {definition}"))
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"[MIGRATIONS] Failed to add {column}: {e}")
+            return False
+    return False
+
+
 # Migrações
 print(f"[MIGRATIONS] Using database: {DATABASE_URL[:30]}...")
 with engine.connect() as conn:
@@ -348,77 +364,16 @@ with engine.connect() as conn:
         print("[MIGRATIONS] Users table OK")
     except Exception as e:
         print(f"[MIGRATIONS] Users table error: {e}")
-    try:
-        conn.execute(
-            text(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT 0"
-            )
-        )
-        conn.commit()
-    except Exception as e:
-        print(f"[MIGRATIONS] is_verified: {e}")
-    try:
-        conn.execute(
-            text(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255)"
-            )
-        )
-        conn.commit()
-    except Exception as e:
-        print(f"[MIGRATIONS] verification_token: {e}")
-    try:
-        conn.execute(
-            text(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS current_streak INTEGER DEFAULT 0"
-            )
-        )
-        conn.commit()
-    except Exception as e:
-        print(f"[MIGRATIONS] current_streak: {e}")
-    try:
-        conn.execute(
-            text(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS longest_streak INTEGER DEFAULT 0"
-            )
-        )
-        conn.commit()
-    except Exception as e:
-        print(f"[MIGRATIONS] longest_streak: {e}")
-    try:
-        conn.execute(
-            text(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_activity_date VARCHAR(20)"
-            )
-        )
-        conn.commit()
-    except Exception as e:
-        print(f"[MIGRATIONS] last_activity_date: {e}")
-    try:
-        conn.execute(
-            text(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS streak_freezes INTEGER DEFAULT 0"
-            )
-        )
-        conn.commit()
-    except Exception as e:
-        print(f"[MIGRATIONS] streak_freezes: {e}")
-    try:
-        conn.execute(
-            text(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_freeze_grant_date VARCHAR(20)"
-            )
-        )
-        conn.commit()
-    except Exception as e:
-        print(f"[MIGRATIONS] last_freeze_grant_date: {e}")
-    try:
-        conn.execute(
-            text("ALTER TABLE users ADD COLUMN IF NOT EXISTS coins INTEGER DEFAULT 0")
-        )
-        conn.commit()
-        print("[MIGRATIONS] coins column added")
-    except Exception as e:
-        print(f"[MIGRATIONS] coins: {e}")
+
+    # User columns
+    add_column_if_not_exists(conn, "users", "is_verified", "BOOLEAN DEFAULT 0")
+    add_column_if_not_exists(conn, "users", "verification_token", "VARCHAR(255)")
+    add_column_if_not_exists(conn, "users", "current_streak", "INTEGER DEFAULT 0")
+    add_column_if_not_exists(conn, "users", "longest_streak", "INTEGER DEFAULT 0")
+    add_column_if_not_exists(conn, "users", "last_activity_date", "VARCHAR(20)")
+    add_column_if_not_exists(conn, "users", "streak_freezes", "INTEGER DEFAULT 0")
+    add_column_if_not_exists(conn, "users", "last_freeze_grant_date", "VARCHAR(20)")
+    add_column_if_not_exists(conn, "users", "coins", "INTEGER DEFAULT 0")
     try:
         conn.execute(text("ALTER TABLE tasks ADD COLUMN duracao_minutos INTEGER"))
         conn.commit()
@@ -480,54 +435,6 @@ with engine.connect() as conn:
         conn.execute(
             text("ALTER TABLE tasks ADD COLUMN pomodoros_concluidos INTEGER DEFAULT 0")
         )
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(text("ALTER TABLE sessoes ADD COLUMN task_id INTEGER"))
-        conn.commit()
-    except Exception:
-        pass
-
-    # Gamification migrations
-    try:
-        conn.execute(
-            text("ALTER TABLE users ADD COLUMN current_streak INTEGER DEFAULT 0")
-        )
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(
-            text("ALTER TABLE users ADD COLUMN longest_streak INTEGER DEFAULT 0")
-        )
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(
-            text("ALTER TABLE users ADD COLUMN last_activity_date VARCHAR(20)")
-        )
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(
-            text("ALTER TABLE users ADD COLUMN streak_freezes INTEGER DEFAULT 0")
-        )
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(
-            text("ALTER TABLE users ADD COLUMN last_freeze_grant_date VARCHAR(20)")
-        )
-        conn.commit()
-    except Exception:
-        pass
-    # Coins column
-    try:
-        conn.execute(text("ALTER TABLE users ADD COLUMN coins INTEGER DEFAULT 0"))
         conn.commit()
     except Exception:
         pass
@@ -757,9 +664,9 @@ def atualizar_streak(user_id: int, db: Session) -> int:
 
     if not session_dates:
         # No sessions yet, reset streak
-        user.current_streak = 0 # type: ignore[assignment]
-        user.last_activity_date = today_str # type: ignore[assignment]
-        db.commit() 
+        user.current_streak = 0  # type: ignore[assignment]
+        user.last_activity_date = today_str  # type: ignore[assignment]
+        db.commit()
         return 0
 
     # Check if there's a session today or yesterday
@@ -771,7 +678,7 @@ def atualizar_streak(user_id: int, db: Session) -> int:
         pass
     elif days_since_last == 1:
         # Studied yesterday, increment streak
-        user.current_streak = (user.current_streak or 0) + 1 # type: ignore[assignment]
+        user.current_streak = (user.current_streak or 0) + 1  # type: ignore[assignment]
     else:
         # Missed days
         if (user.streak_freezes or 0) > 0 and user.last_activity_date is not None:
@@ -786,7 +693,7 @@ def atualizar_streak(user_id: int, db: Session) -> int:
     if (user.current_streak or 0) > (user.longest_streak or 0):
         user.longest_streak = user.current_streak
 
-    user.last_activity_date = today_str # type: ignore[assignment]
+    user.last_activity_date = today_str  # type: ignore[assignment]
     db.commit()
     return user.current_streak or 0
 
@@ -803,8 +710,8 @@ def atualizar_freezes(user_id: int, db: Session) -> int:
         days_since = (date.today() - last_date).days
         if days_since < 7:
             return user.streak_freezes or 0
-    user.streak_freezes = min((user.streak_freezes or 0) + 1, 4) # type: ignore[assignment]
-    user.last_freeze_grant_date = today # type: ignore[assignment]
+    user.streak_freezes = min((user.streak_freezes or 0) + 1, 4)  # type: ignore[assignment]
+    user.last_freeze_grant_date = today  # type: ignore[assignment]
     db.commit()
     return user.streak_freezes or 0
 
@@ -870,8 +777,11 @@ MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
 
 
 @app.post("/admin/init")
-def init_database():
-    """Initialize database tables"""
+def init_database(user_id: int = Depends(get_current_user)):
+    """Initialize database tables (requires auth)"""
+    if not MIGRATION_SECRET:
+        raise HTTPException(status_code=500, detail="MIGRATION_SECRET not configured")
+
     pg_url = os.environ.get("DATABASE_URL", "")
     if not pg_url or "sqlite" in pg_url:
         raise HTTPException(status_code=500, detail="PostgreSQL not configured")
@@ -953,9 +863,13 @@ class ImportData(BaseModel):
 
 
 @app.post("/admin/import")
-def import_data(data: ImportData, secret: str = ""):
+def import_data(
+    data: ImportData, secret: str = "", user_id: int = Depends(get_current_user)
+):
     """Import data from JSON (for migration from SQLite)"""
-    if MIGRATION_SECRET and secret != MIGRATION_SECRET:
+    if not MIGRATION_SECRET:
+        raise HTTPException(status_code=500, detail="MIGRATION_SECRET not configured")
+    if secret != MIGRATION_SECRET:
         raise HTTPException(status_code=403, detail="Invalid secret")
 
     pg_url = os.environ.get("DATABASE_URL", "")
@@ -1063,13 +977,11 @@ def import_data(data: ImportData, secret: str = ""):
     return report
 
 
-# --- Admin Migration Endpoint ---
-MIGRATION_SECRET = os.environ.get("MIGRATION_SECRET", "")
-
-
 @app.post("/admin/migrate")
-def migrate_data(secret: str = ""):
-    if MIGRATION_SECRET and secret != MIGRATION_SECRET:
+def migrate_data(secret: str = "", user_id: int = Depends(get_current_user)):
+    if not MIGRATION_SECRET:
+        raise HTTPException(status_code=500, detail="MIGRATION_SECRET not configured")
+    if secret != MIGRATION_SECRET:
         raise HTTPException(status_code=403, detail="Invalid secret")
 
     report = {"tables": [], "errors": []}
@@ -1245,8 +1157,8 @@ def verify_email_post(body: VerifyEmailRequest, db: Session = Depends(get_db)):
         if not user:
             return {"success": False, "message": "Token inválido ou expirado"}
 
-        user.is_verified = True # type: ignore[assignment]
-        user.verification_token = None # type: ignore[assignment]
+        user.is_verified = True  # type: ignore[assignment]
+        user.verification_token = None  # type: ignore[assignment]
         db.commit()
 
         print(f"[DEBUG AUTH] User verified via manual token: {user.email}")
@@ -1448,6 +1360,14 @@ def criar_sessao(
     user_id: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    area = (
+        db.query(Areas)
+        .filter(Areas.id == body.area_id, Areas.user_id == user_id)
+        .first()
+    )
+    if not area:
+        raise HTTPException(status_code=404, detail="Área não encontrada")
+
     data_sessao = body.data or date.today()
     sessao = Sessoes(
         user_id=user_id,
@@ -1461,7 +1381,7 @@ def criar_sessao(
     user = db.query(User).filter(User.id == user_id).first()
     if user:
         coins_earned = max(1, body.duracao_minutos // 10)
-        user.coins = (user.coins or 0) + coins_earned # type: ignore[assignment]
+        user.coins = (user.coins or 0) + coins_earned  # type: ignore[assignment]
 
     db.commit()
 
@@ -1523,6 +1443,14 @@ def completar_pomodoro(
     db: Session = Depends(get_db),
 ):
     """Cria uma sessão de estudo ao completar um pomodoro."""
+    area = (
+        db.query(Areas)
+        .filter(Areas.id == body.area_id, Areas.user_id == user_id)
+        .first()
+    )
+    if not area:
+        raise HTTPException(status_code=404, detail="Área não encontrada")
+
     sessao = Sessoes(
         user_id=user_id,
         area_id=body.area_id,
@@ -1707,7 +1635,12 @@ def add_coins(
     user_id: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Adiciona coins ao usuário (para testing/dev)."""
+    """Adiciona coins ao usuário (para testing/dev). Limite: 100 por chamada."""
+    if amount > 100:
+        raise HTTPException(
+            status_code=400, detail="Limite máximo de 100 coins por chamada"
+        )
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
@@ -1818,4 +1751,3 @@ def recalculate_all_xp(
         )
 
     return {"results": results, "message": "XP recalculado com sucesso"}
-
