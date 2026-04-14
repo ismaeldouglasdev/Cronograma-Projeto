@@ -287,6 +287,8 @@ const FocoTimer = (function() {
     clearState();
   }
   
+  let lastSaveTime = 0;
+  
   function tick() {
     if (startTimestamp) {
       const elapsed = Math.floor((Date.now() - startTimestamp) / 1000);
@@ -303,7 +305,11 @@ const FocoTimer = (function() {
       onTimerComplete();
     } else {
       animationFrameId = requestAnimationFrame(tick);
-      saveState();
+      const now = Date.now();
+      if (now - lastSaveTime > 5000) {
+        saveState();
+        lastSaveTime = now;
+      }
     }
   }
   
@@ -452,22 +458,6 @@ const FocoTimer = (function() {
     }
   }
   
-  function playBeep() {
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-      gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.15);
-    } catch (e) {
-      console.log("Audio not supported");
-    }
-  }
-  
   function refreshTasks(tasks) {
     cachedTasks = tasks;
     populateTaskSelect();
@@ -564,16 +554,14 @@ const FocoTimer = (function() {
         task_id: currentTaskId || null,
       });
       
-      // Update AppStore with XP
-      if (typeof AppStore !== 'undefined') {
-        AppStore.addXP('pomodoro', minutes);
-      }
-      
       loadTodayStats();
       updateProgressDisplay();
       
       if (typeof loadSessoes === "function") loadSessoes(cachedAreas);
       if (typeof loadResumo === "function") loadResumo();
+      if (typeof AppStore !== 'undefined') {
+        AppStore.syncFromBackend();
+      }
       
     } catch (e) {
       console.error('Erro ao registrar sessão:', e);
