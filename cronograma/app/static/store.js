@@ -486,6 +486,7 @@ const AppStore = (function() {
           title: a.nome,
           description: a.descricao,
           requirement: a.requisito,
+          icon: a.icone,
           unlocked: a.desbloqueado
         }));
         
