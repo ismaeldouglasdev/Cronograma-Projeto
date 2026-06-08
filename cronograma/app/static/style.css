@@ -2581,3 +2581,255 @@ main {
   }
 }
 
+/* ========== POMODORO COMPLETE MODAL ========== */
+@keyframes pomoSlideUp {
+  from { transform: translateY(60px) scale(0.9); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes pomoPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+@keyframes pomoShine {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes pomoPopIn {
+  0%   { transform: scale(0); opacity: 0; }
+  70%  { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes pomoFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+@keyframes pomoCountUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(400px) rotate(720deg); opacity: 0; }
+}
+@keyframes pomoModalBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Backdrop */
+#modal-pomo-complete.pomo-backdrop {
+  background: rgba(0,0,0,0.6);
+  animation: pomoModalBackdropIn 0.3s ease-out;
+}
+
+/* Content card */
+.pomo-modal-content {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2rem 1.5rem 1.5rem;
+  max-width: 380px;
+  width: 92%;
+  text-align: center;
+  animation: pomoSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  z-index: 101;
+}
+
+.pomo-modal-header {
+  margin-bottom: 1rem;
+}
+
+.pomo-modal-icon {
+  font-size: 3rem;
+  animation: pomoPulse 1.2s ease-in-out infinite, pomoFloat 2s ease-in-out infinite;
+  margin-bottom: 0.25rem;
+}
+
+.pomo-modal-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.pomo-modal-duration {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Rewards cards */
+.pomo-modal-rewards {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.pomo-reward-card {
+  flex: 1;
+  max-width: 140px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem 0.5rem;
+  animation: pomoCountUp 0.5s ease-out both;
+}
+
+.pomo-reward-card:nth-child(1) { animation-delay: 0.2s; }
+.pomo-reward-card:nth-child(2) { animation-delay: 0.35s; }
+
+.pomo-reward-card.coins {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.pomo-reward-card.xp {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.pomo-reward-icon {
+  font-size: 1.6rem;
+  margin-bottom: 0.3rem;
+}
+
+.pomo-reward-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.pomo-reward-card.coins .pomo-reward-value {
+  color: #f59e0b;
+}
+
+.pomo-reward-card.xp .pomo-reward-value {
+  color: #a78bfa;
+}
+
+.pomo-reward-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+/* Achievements section */
+.pomo-modal-achievements {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 12px;
+}
+
+.pomo-achievements-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  color: var(--accent);
+}
+
+.pomo-achievement-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.pomo-achievement-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  animation: pomoPopIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.pomo-achievement-badge:nth-child(1) { animation-delay: 0.5s; }
+.pomo-achievement-badge:nth-child(2) { animation-delay: 0.6s; }
+.pomo-achievement-badge:nth-child(3) { animation-delay: 0.7s; }
+
+/* Streak & Level info */
+.pomo-modal-streak,
+.pomo-modal-level {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  animation: pomoCountUp 0.4s ease-out both;
+  animation-delay: 0.5s;
+}
+
+.pomo-modal-level strong,
+.pomo-modal-streak strong {
+  color: var(--text);
+}
+
+/* Button */
+.pomo-modal-btn {
+  width: 100%;
+  padding: 0.9rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  background-size: 200% auto;
+  color: #000;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  animation: pomoShine 2s linear infinite;
+}
+
+.pomo-modal-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.pomo-modal-btn:active {
+  transform: translateY(0);
+}
+
+/* Confetti container */
+.pomo-confetti-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.pomo-confetti-piece {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  top: -10px;
+  animation: confettiFall 2.5s ease-in forwards;
+}
+
+.pomo-confetti-piece:nth-child(1) { left: 10%; background: #f59e0b; animation-delay: 0s; animation-duration: 2.2s; }
+.pomo-confetti-piece:nth-child(2) { left: 25%; background: #8b5cf6; animation-delay: 0.2s; animation-duration: 2.5s; }
+.pomo-confetti-piece:nth-child(3) { left: 40%; background: #22c55e; animation-delay: 0.1s; animation-duration: 2s; }
+.pomo-confetti-piece:nth-child(4) { left: 55%; background: #ef4444; animation-delay: 0.3s; animation-duration: 2.8s; }
+.pomo-confetti-piece:nth-child(5) { left: 70%; background: #3b82f6; animation-delay: 0.15s; animation-duration: 2.3s; }
+.pomo-confetti-piece:nth-child(6) { left: 85%; background: #f59e0b; animation-delay: 0.25s; animation-duration: 2.6s; }
+.pomo-confetti-piece:nth-child(7) { left: 50%; background: #ec4899; animation-delay: 0.05s; animation-duration: 2.1s; }
+.pomo-confetti-piece:nth-child(8) { left: 15%; background: #06b6d4; animation-delay: 0.35s; animation-duration: 2.4s; }
+
+/* Make modal open/close smooth */
+#modal-pomo-complete {
+  align-items: center;
+}
+
+#modal-pomo-complete .pomo-backdrop {
+  animation: pomoModalBackdropIn 0.3s ease-out;
+}
+

@@ -612,6 +612,50 @@
     </div>
   </div>
 
+  <!-- Pomodoro Complete Modal -->
+  <div id="modal-pomo-complete" class="modal" aria-hidden="true">
+    <div class="modal-backdrop pomo-backdrop"></div>
+    <div class="pomo-modal-content" id="pomo-modal-inner">
+      <div class="pomo-confetti-container" id="pomo-confetti"></div>
+      <div class="pomo-modal-header">
+        <div class="pomo-modal-icon">🎯</div>
+        <h2>Pomodoro Concluído!</h2>
+      </div>
+      <div class="pomo-modal-body">
+        <div class="pomo-modal-duration">
+          ⏱️ <span id="pomo-modal-duracao">25</span> min de foco
+        </div>
+        <div class="pomo-modal-rewards">
+          <div class="pomo-reward-card coins">
+            <div class="pomo-reward-icon">🪙</div>
+            <div class="pomo-reward-value" id="pomo-modal-coins">+3</div>
+            <div class="pomo-reward-label">Moedas</div>
+          </div>
+          <div class="pomo-reward-card xp">
+            <div class="pomo-reward-icon">⭐</div>
+            <div class="pomo-reward-value" id="pomo-modal-xp">+0</div>
+            <div class="pomo-reward-label">XP</div>
+          </div>
+        </div>
+        <div id="pomo-modal-achievements" class="pomo-modal-achievements" style="display:none">
+          <div class="pomo-achievements-title">🏆 Novas Conquistas</div>
+          <div id="pomo-modal-achievement-list" class="pomo-achievement-list"></div>
+        </div>
+        <div class="pomo-modal-streak" id="pomo-modal-streak" style="display:none">
+          🔥 Streak: <strong><span id="pomo-modal-streak-count">0</span> dias</strong>
+        </div>
+        <div class="pomo-modal-level" id="pomo-modal-level" style="display:none">
+          🎊 Subiu para o <strong>Nível <span id="pomo-modal-level-num">1</span></strong>!
+        </div>
+      </div>
+      <div class="pomo-modal-footer">
+        <button class="pomo-modal-btn" onclick="FocoTimer.closePomoModal()">
+          Continuar 🚀
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div><!-- End main-app -->
 
   <script src="/static/theme.js"></script>
