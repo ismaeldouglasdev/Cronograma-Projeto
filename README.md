@@ -1,97 +1,95 @@
+# Cronograma de Estudos
 
-<p align="center">
-  <h1 align="center">📅 Cronograma de Estudos Gamificado</h1>
-  <p align="center">Sistema full-stack com mecânicas de gamificação para melhorar hábitos de estudo e produtividade</p>
-</p>
+Sistema completo de gerenciamento de estudos com timer Pomodoro integrado, tracking de horas, quadro de horários de aulas e gamificação.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white" alt="Flask">
-  <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
-  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript">
-  <img src="https://img.shields.io/badge/GPL--3.0-blue?style=for-the-badge" alt="License">
-</p>
+## Stack
 
----
+- **Backend:** FastAPI + SQLAlchemy + SQLite
+- **Frontend:** Vanilla JS + Chart.js
+- **Runtime:** Python 3.8+
 
-## 📋 Sobre o Projeto
+## Funcionalidades
 
-Sistema full-stack de cronograma de estudos com **gamificação** (níveis, progressão, consistência) para aumentar a produtividade nos estudos. Foco em comportamento do usuário, retenção e disciplina.
+- **Timer Pomodoro** — Foco de 25min com descanso de 5min, seleção de área/tarefa
+- **Áreas/Matérias** — Cadastro com cor, categoria, tipo (online/presencial)
+- **Tarefas** — CRUD com prioridade, data de entrega, meta de pomodoros
+- **Sessões de Estudo** — Registro manual de tempo por área
+- **Gamificação** — XP, coins, streak, achievements, níveis
+- **Quadro de Horários** — Grid semanal das aulas presenciais
+- **Resumo/Estatísticas** — Gráfico de pizza com horas por área (Chart.js)
+- **8 Temas** — Dark, light, ocean, purple, forest, midnight, pastel, contrast
 
-### 🎯 Funcionalidades
+## Como Rodar
 
-- 🎮 **Mecânicas de gamificação** — Níveis, progressão, recompensas e consistência
-- 📊 **Acompanhamento visual** — Gráficos e estatísticas de desempenho
-- 🏆 **Sistema de conquistas** — Medalhas e ícones de progresso
-- 🔥 **Sequência de dias** — Streak de consistência para manter o hábito
-- 📱 **Interface responsiva** — Acesso de qualquer dispositivo
-
----
-
-## 🚀 Tecnologias
-
-| Camada | Tecnologia |
-|--------|-----------|
-| **Backend** | Python + Flask |
-| **Banco** | PostgreSQL (produção) / SQLite (desenvolvimento) |
-| **Frontend** | HTML, CSS, JavaScript |
-| **Infra** | Docker, Docker Compose |
-| **Deploy** | Heroku (Procfile + runtime.txt) |
-
----
-
-## 🛠️ Como Rodar
-
-### Com Docker (recomendado)
+### 1. Ativar ambiente virtual
 
 ```bash
-docker-compose up --build
+source .venv/bin/activate
 ```
 
-### Manualmente
+### 2. Iniciar servidor
 
 ```bash
-# Instalar dependências
-pip install -r cronograma/requirements.txt
-
-# Configurar banco
-cd cronograma
-python migrate_to_pg.py
-
-# Rodar
-python app/main.py
+cd cronograma/app
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-> No Windows, use `iniciar_cronograma.bat` para iniciar rapidamente.
+### 3. Acessar
 
----
+Abra http://localhost:8000 no navegador.
 
-## 🏗️ Estrutura
+## Estrutura do Projeto
 
 ```
-Cronograma-Projeto/
+Cronograma(Projeto)/
 ├── cronograma/
-│   ├── app/                  # Código principal da aplicação
-│   ├── static/               # Arquivos estáticos (CSS, JS, imagens)
-│   ├── main.py               # Ponto de entrada
-│   ├── requirements.txt      # Dependências Python
-│   ├── Dockerfile            # Build Docker
-│   └── docker-compose.yml    # Orquestração de serviços
-├── icon_images/              # Ícones do sistema de gamificação
-├── AGENTS.md                 # Documentação do projeto
-├── LICENSE                   # GPL-3.0
+│   ├── app/
+│   │   ├── main.py              # API FastAPI + banco + gamificação
+│   │   ├── static/
+│   │   │   ├── index.html       # Interface principal
+│   │   │   ├── style.css        # Estilos + temas
+│   │   │   ├── app.js           # Lógica do frontend
+│   │   │   ├── store.js         # Estado global + gamificação
+│   │   │   ├── foco.js          # Timer Pomodoro
+│   │   │   ├── auth.js          # Autenticação
+│   │   │   └── theme.js         # Gerenciador de temas
+│   │   └── cronograma.db        # Banco SQLite
+│   ├── requirements.txt
+│   ├── docker-compose.yml
+│   └── Dockerfile
+├── icon_images/                 # Ícones do projeto
 └── README.md
 ```
 
----
+## API Endpoints
 
-## 📄 Licença
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| POST | `/auth/register` | Registrar usuário |
+| POST | `/auth/login` | Login (retorna JWT) |
+| GET | `/areas` | Listar áreas |
+| POST | `/areas` | Criar área |
+| PATCH | `/areas/{id}` | Atualizar área |
+| DELETE | `/areas/{id}` | Deletar área |
+| GET | `/tasks` | Listar tarefas |
+| POST | `/tasks` | Criar tarefa |
+| PATCH | `/tasks/{id}` | Atualizar tarefa |
+| DELETE | `/tasks/{id}` | Deletar tarefa |
+| GET | `/sessoes` | Listar sessões |
+| POST | `/sessoes` | Criar sessão |
+| GET | `/sessoes/resumo` | Resumo por período |
+| POST | `/pomodoro/completar` | Completar pomodoro |
+| GET | `/gamification-summary` | Resumo de gamificação |
+| POST | `/coins/buy-freeze` | Comprar freeze (10 coins) |
 
-Este projeto é licenciado sob a [GNU General Public License v3.0](LICENSE).
+## Gamificação
 
----
+- **XP:** minutos estudados + 5 XP por tarefa concluída
+- **Level:** `XP = 100 × level^1.5`
+- **Coins:** +3 por pomodoro, +1 a cada 10min de sessão
+- **Streak:** dias consecutivos com estudo (freezes disponíveis)
+- **Achievements:** categorias XP, streak, pomodoro, tasks, level, coins
 
-<p align="center">
-  Feito com ❤️ por <a href="https://github.com/ismaeldouglasdev">Ismael Douglas</a>
-</p>
+## Licença
+
+MIT

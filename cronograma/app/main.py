@@ -28,13 +28,9 @@ from sqlalchemy.orm import Session, declarative_base, sessionmaker
 import hashlib
 import uuid
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./cronograma.db")
+DATABASE_URL = "sqlite:///./cronograma.db"
 
-engine_kwargs = (
-    {"connect_args": {"check_same_thread": False}}
-    if "sqlite" in DATABASE_URL
-    else {"pool_pre_ping": True}
-)
+engine_kwargs = {"connect_args": {"check_same_thread": False}}
 engine = create_engine(DATABASE_URL, **engine_kwargs)
 
 Base = declarative_base()
@@ -673,9 +669,8 @@ def atualizar_streak(user_id: int, db: Session) -> int:
     last_session_date = max(session_dates)  # Most recent session
     days_since_last = (today - last_session_date).days
 
-    if days_since_last == 0:
-        # Already studied today, streak stays the same
-        pass
+    if days_since_last == 0 and (user.current_streak or 0) == 0:
+        user.current_streak = 1  # type: ignore[assignment]
     elif days_since_last == 1:
         # Studied yesterday, increment streak
         user.current_streak = (user.current_streak or 0) + 1  # type: ignore[assignment]
@@ -1436,7 +1431,7 @@ def excluir_sessao(
     return None
 
 
-@app.post("/pomodoro/completar", response_model=SessaoResponse)
+@app.post("/pomodoro/completar")
 def completar_pomodoro(
     body: PomodoroComplete,
     user_id: int = Depends(get_current_user),
