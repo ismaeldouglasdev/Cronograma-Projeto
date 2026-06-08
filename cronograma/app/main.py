@@ -667,6 +667,8 @@ def atualizar_streak(user_id: int, db: Session) -> int:
 
     # Check if there's a session today or yesterday
     last_session_date = max(session_dates)  # Most recent session
+    if isinstance(last_session_date, str):
+        last_session_date = date.fromisoformat(last_session_date)
     days_since_last = (today - last_session_date).days
 
     if days_since_last == 0 and (user.current_streak or 0) == 0:

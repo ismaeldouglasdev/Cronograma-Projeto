@@ -6,7 +6,7 @@ const FocoTimer = (function() {
   let tempoRestante = 25 * 60;
   let duracaoTotal = 25 * 60;
   let startTimestamp = null;
-  let animationFrameId = null;
+  let intervalId = null;
   let currentAreaId = null;
   let currentTaskId = null;
   let cachedAreas = null;
@@ -15,7 +15,12 @@ const FocoTimer = (function() {
   
   // Persistent audio - works in background
   let audioContext = null;
-  let oscillator = null;
+
+  // Notification permission tracking
+  let notifPermissionRequested = false;
+
+  // Last API response data for modal
+  let lastPomoData = null;
   
   const elements = {
     timerTime: document.getElementById("foco-timer-time"),
@@ -48,6 +53,21 @@ const FocoTimer = (function() {
     loadTodayStats();
     attachEventListeners();
     checkActiveTimer();
+    attachModalHandlers();
+  }
+
+  function attachModalHandlers() {
+    var modal = document.getElementById("modal-pomo-complete");
+    if (!modal) return;
+    var backdrop = modal.querySelector(".modal-backdrop");
+    if (backdrop) {
+      backdrop.addEventListener("click", closePomoModal);
+    }
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Escape" && modal.classList.contains("open")) {
+        closePomoModal();
+      }
+    });
   }
   
   function populateAreaSelect() {
@@ -121,7 +141,7 @@ const FocoTimer = (function() {
             elements.minutesInput.disabled = true;
             elements.areaSelect.disabled = true;
             elements.taskSelect.disabled = true;
-            tick();
+            startTick();
             saveState();
           }
         }
@@ -226,15 +246,16 @@ const FocoTimer = (function() {
       elements.areaSelect.disabled = true;
       elements.taskSelect.disabled = true;
       
-      tick();
+      requestNotificationPermission();
+      startTick();
       saveState();
     }
   }
   
   function handlePause() {
     if (state === "running") {
-      cancelAnimationFrame(animationFrameId);
-      animationFrameId = null;
+      clearInterval(intervalId);
+      intervalId = null;
       const elapsed = Math.floor((Date.now() - startTimestamp) / 1000);
       duracaoTotal = tempoRestante;
       startTimestamp = null;
@@ -246,7 +267,7 @@ const FocoTimer = (function() {
       startTimestamp = Date.now();
       duracaoTotal = tempoRestante;
       elements.pauseBtn.textContent = "⏸ Pausar";
-      tick();
+      startTick();
       saveState();
     }
   }
@@ -263,7 +284,7 @@ const FocoTimer = (function() {
   function handleSkip() {
     if (isBreak) {
       if (!confirm("Pular o descanso?")) return;
-      cancelAnimationFrame(animationFrameId);
+      clearInterval(intervalId);
       playBeep();
       alert("Descanso finalizado! Ready para mais um pomodoro?");
       resetTimer();
@@ -271,8 +292,8 @@ const FocoTimer = (function() {
   }
   
   function resetTimer() {
-    cancelAnimationFrame(animationFrameId);
-    animationFrameId = null;
+    clearInterval(intervalId);
+    intervalId = null;
     startTimestamp = null;
     isBreak = false;
     state = "idle";
@@ -287,8 +308,6 @@ const FocoTimer = (function() {
     clearState();
   }
   
-  let lastSaveTime = 0;
-  
   function tick() {
     if (startTimestamp) {
       const elapsed = Math.floor((Date.now() - startTimestamp) / 1000);
@@ -298,23 +317,25 @@ const FocoTimer = (function() {
     updateTabTitle();
     
     if (tempoRestante <= 0) {
-      cancelAnimationFrame(animationFrameId);
-      animationFrameId = null;
+      clearInterval(intervalId);
+      intervalId = null;
       startTimestamp = null;
       document.title = originalTitle;
       onTimerComplete();
     } else {
-      animationFrameId = requestAnimationFrame(tick);
-      const now = Date.now();
-      if (now - lastSaveTime > 5000) {
-        saveState();
-        lastSaveTime = now;
-      }
+      saveState();
     }
+  }
+
+  function startTick() {
+    if (intervalId) return;
+    tick();
+    intervalId = setInterval(tick, 1000);
   }
   
   function onTimerComplete() {
     playBeep();
+    showDesktopNotification();
     
     if (!isBreak) {
       completarPomodoro();
@@ -323,11 +344,11 @@ const FocoTimer = (function() {
         startBreak();
       } else {
         state = "idle";
-        alert("Pomodoro concluído! +" + (duracaoTotal / 60) + "min registrados.");
         resetTimer();
       }
     } else {
-      alert("Tempo de descanso acabou! Ready para mais um pomodoro?");
+      state = "idle";
+      showDesktopNotification("Descanso Concluído", "Hora de voltar ao foco!");
       resetTimer();
     }
   }
@@ -338,11 +359,13 @@ const FocoTimer = (function() {
     const duracao = Math.round(duracaoTotal / 60);
     
     try {
-      await post("/pomodoro/completar", {
+      const data = await post("/pomodoro/completar", {
         area_id: currentAreaId,
         duracao_minutos: duracao,
         task_id: currentTaskId || null,
       });
+      
+      const xpGanho = Math.floor(duracao * 10 / 30);
       
       loadTodayStats();
       updateProgressDisplay();
@@ -353,10 +376,144 @@ const FocoTimer = (function() {
       if (typeof loadResumo === "function") {
         loadResumo();
       }
+      
+      lastPomoData = {
+        duracao: duracao,
+        coins: (data && data.coins) ? data.coins - 3 + 3 : 3,
+        coinsGanhos: 3,
+        xpGanho: xpGanho,
+        novasConquistas: (data && data.novas_conquistas) ? data.novas_conquistas : [],
+      };
+      
+      showPomoCompleteModal();
     } catch (err) {
       console.error("Erro ao salvar pomodoro:", err);
+      lastPomoData = {
+        duracao: Math.round(duracaoTotal / 60),
+        coins: 0,
+        coinsGanhos: 0,
+        xpGanho: 0,
+        novasConquistas: [],
+      };
+      showPomoCompleteModal();
     }
   }
+
+  // --- Notification API ---
+  function requestNotificationPermission() {
+    if (notifPermissionRequested) return;
+    notifPermissionRequested = true;
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }
+
+  function showDesktopNotification(title, body) {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+      try {
+        new Notification(title || "Pomodoro Concluído!", {
+          body: body || ((duracaoTotal / 60) + " min de foco registrados. 🎯"),
+          icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>",
+          badge: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍅</text></svg>",
+        });
+      } catch (e) {
+        console.log("Notification error:", e);
+      }
+    }
+  }
+
+  // --- Completion Modal ---
+  function showPomoCompleteModal() {
+    const modal = document.getElementById("modal-pomo-complete");
+    if (!modal || !lastPomoData) return;
+    
+    const d = lastPomoData;
+    
+    document.getElementById("pomo-modal-duracao").textContent = d.duracao;
+    document.getElementById("pomo-modal-coins").textContent = "+" + d.coinsGanhos;
+    document.getElementById("pomo-modal-xp").textContent = "+" + d.xpGanho;
+    
+    const achContainer = document.getElementById("pomo-modal-achievements");
+    const achList = document.getElementById("pomo-modal-achievement-list");
+    if (d.novasConquistas && d.novasConquistas.length > 0) {
+      achContainer.style.display = "block";
+      achList.innerHTML = d.novasConquistas.map(function(ach) {
+        return '<div class="pomo-achievement-badge">' +
+          (ach.icone === "star" ? "⭐" :
+           ach.icone === "fire" ? "🔥" :
+           ach.icone === "clock" ? "⏰" :
+           ach.icone === "check" ? "✅" :
+           ach.icone === "arrow-up" ? "⬆️" :
+           ach.icone === "crown" ? "👑" :
+           ach.icone === "medal" ? "🏅" :
+           ach.icone === "trophy" ? "🏆" : "🎖️") +
+          " " + escapeHtml(ach.nome) + "</div>";
+      }).join("");
+    } else {
+      achContainer.style.display = "none";
+    }
+    
+    spawnConfetti();
+    playSuccessSound();
+    modal.classList.add("open");
+  }
+
+  function closePomoModal() {
+    const modal = document.getElementById("modal-pomo-complete");
+    if (modal) modal.classList.remove("open");
+    lastPomoData = null;
+  }
+
+  function spawnConfetti() {
+    const container = document.getElementById("pomo-confetti");
+    if (!container) return;
+    container.innerHTML = "";
+    for (var i = 0; i < 8; i++) {
+      var piece = document.createElement("div");
+      piece.className = "pomo-confetti-piece";
+      piece.style.left = (10 + Math.random() * 80) + "%";
+      piece.style.background = ["#f59e0b","#8b5cf6","#22c55e","#ef4444","#3b82f6","#ec4899","#06b6d4","#f97316"][i % 8];
+      piece.style.animationDuration = (2 + Math.random() * 1) + "s";
+      piece.style.animationDelay = (Math.random() * 0.5) + "s";
+      container.appendChild(piece);
+    }
+    setTimeout(function() { if (container) container.innerHTML = ""; }, 3500);
+  }
+
+  function playSuccessSound() {
+    try {
+      var ctx = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+      audioContext = ctx;
+      if (ctx.state === "suspended") ctx.resume();
+      
+      var now = ctx.currentTime;
+      // Play a cheerful ascending arpeggio
+      [523, 659, 784, 1047].forEach(function(freq, i) {
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = "sine";
+        gain.gain.setValueAtTime(0.2, now + i * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.12 + 0.3);
+        osc.start(now + i * 0.12);
+        osc.stop(now + i * 0.12 + 0.3);
+      });
+    } catch (e) {
+      console.error("Success sound error:", e);
+    }
+  }
+
+  document.addEventListener("visibilitychange", function() {
+    if (document.hidden) return;
+    loadTodayStats();
+    if (typeof AppStore !== "undefined") {
+      AppStore.syncFromBackend();
+    }
+  });
   
   function startBreak() {
     isBreak = true;
@@ -370,7 +527,7 @@ const FocoTimer = (function() {
     updateButtons();
     elements.taskSelect.disabled = true;
     
-    tick();
+    startTick();
     saveState();
   }
   
@@ -579,6 +736,7 @@ const FocoTimer = (function() {
     isActive,
     loadTodayStats,
     endManually,
+    closePomoModal,
   };
 })();
 
