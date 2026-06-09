@@ -4,7 +4,7 @@ __pycache__/
 .env
 .venv
 venv/
-cronograma.db
+# cronograma.db removido — necessário para Docker build conter dados do DB
 .ruff_cache/
 .DS_Store
 *.log
