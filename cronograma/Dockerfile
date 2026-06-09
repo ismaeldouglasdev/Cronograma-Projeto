@@ -19,6 +19,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copiar código
 COPY app/ ./app/
 
+# Copiar banco de dados pré-populado para o local correto
+COPY app/cronograma.db .
+
 # Expor porta
 EXPOSE 8000
 
