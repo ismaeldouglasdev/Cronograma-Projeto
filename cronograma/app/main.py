@@ -12,6 +12,7 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response, JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import (
     Column,
@@ -759,6 +760,19 @@ def verificar_conquistas(user_id: int, db: Session) -> list:
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://meu-portfolio-ebon-omega.vercel.app",
+        "https://meu-portfolio.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "HEAD", "OPTIONS"],
+    allow_headers=["*"],
+)
+
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
@@ -1167,7 +1181,15 @@ def verify_email_post(body: VerifyEmailRequest, db: Session = Depends(get_db)):
 
 
 @app.get("/")
-def index():
+def landing():
+    return FileResponse(
+        STATIC_DIR / "landing.html",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+    )
+
+
+@app.get("/app")
+def app_index():
     return FileResponse(
         STATIC_DIR / "index.html",
         headers={"Cache-Control": "no-cache, no-store, must-revalidate"},

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cronograma — Seu Plano de Estudos Gamificado</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f12;
+      color: #e8e6e3;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    a { color: #f59e0b; text-decoration: none; }
+    a:hover { color: #fbbf24; }
+
+    /* Nav */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid #2d2d35;
+    }
+    .nav-logo {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #e8e6e3;
+    }
+    .nav-logo span { color: #f59e0b; }
+    .nav-links { display: flex; gap: 1rem; align-items: center; }
+    .nav-links a {
+      font-size: 0.85rem;
+      color: #9b9a97;
+      padding: 0.4rem 1rem;
+      border: 1px solid #2d2d35;
+      transition: all 0.2s;
+    }
+    .nav-links a:hover {
+      color: #e8e6e3;
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.1);
+    }
+    .btn-primary {
+      background: #f59e0b;
+      color: #0f0f12 !important;
+      border-color: #f59e0b !important;
+      font-weight: 600;
+    }
+    .btn-primary:hover {
+      background: #fbbf24 !important;
+      border-color: #fbbf24 !important;
+    }
+
+    /* Hero */
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+    .hero-icon { font-size: 3.5rem; margin-bottom: 1.5rem; }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 0.75rem;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: clamp(1rem, 2vw, 1.15rem);
+      color: #9b9a97;
+      max-width: 520px;
+      margin: 0 auto 2rem;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .hero-actions a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.75rem 1.75rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: 1px solid #2d2d35;
+      transition: all 0.2s;
+    }
+    .hero-actions a:hover { transform: translateY(-1px); }
+    .hero-actions .btn-ghost { color: #9b9a97; }
+    .hero-actions .btn-ghost:hover {
+      color: #e8e6e3;
+      border-color: #e8e6e3;
+    }
+
+    /* Features */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      max-width: 700px;
+      width: 100%;
+      margin-top: 3.5rem;
+      text-align: left;
+    }
+    .feature-card {
+      padding: 1.25rem;
+      border: 1px solid #2d2d35;
+      background: #1a1a20;
+    }
+    .feature-card .icon { font-size: 1.3rem; margin-bottom: 0.5rem; }
+    .feature-card h3 { font-size: 0.9rem; margin-bottom: 0.3rem; }
+    .feature-card p {
+      font-size: 0.78rem;
+      color: #9b9a97;
+      line-height: 1.5;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 1.5rem 2rem;
+      border-top: 1px solid #2d2d35;
+      font-size: 0.75rem;
+      color: #6e6e73;
+    }
+
+    /* Accent glow */
+    .hero-glow {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 600px;
+      height: 600px;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    @media (max-width: 480px) {
+      .nav { padding: 0.75rem 1rem; flex-direction: column; gap: 0.75rem; }
+      .hero { padding: 2.5rem 1rem; }
+      .features { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="hero-glow"></div>
+
+  <nav class="nav">
+    <div class="nav-logo"><span>📚</span> Cronograma</div>
+    <div class="nav-links">
+      <a href="/app">Entrar</a>
+      <a href="/app" class="btn-primary">Acessar</a>
+    </div>
+  </nav>
+
+  <main class="hero">
+    <div class="hero-icon">📚</div>
+    <h1>Seus estudos<br><span>com disciplina</span></h1>
+    <p>
+      Organize suas matérias, acompanhe tarefas, foque com Pomodoro e evolua
+      com um sistema de gamificação que transforma sua rotina de estudos.
+    </p>
+    <div class="hero-actions">
+      <a href="/app" class="btn-primary">Acessar Cronograma →</a>
+      <a href="/app" class="btn-ghost">Já tenho conta</a>
+    </div>
+
+    <div class="features">
+      <div class="feature-card">
+        <div class="icon">🎯</div>
+        <h3>Matérias & Tarefas</h3>
+        <p>Organize suas disciplinas, defina prioridades e acompanhe prazos de entrega.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🍅</div>
+        <h3>Timer Pomodoro</h3>
+        <p>Foco total com sessões cronometradas, notificações e meta de pomodoros por tarefa.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🏆</div>
+        <h3>Gamificação</h3>
+        <p>Ganhe XP, suba de nível, acumule moedas, conquiste achievements e mantenha seu streak.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📊</div>
+        <h3>Estatísticas</h3>
+        <p>Visualize horas por matéria, nível atual e evolução diária com gráficos.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    Cronograma de Estudos &mdash; Projeto Open Source
+  </footer>
+</body>
+</html>
