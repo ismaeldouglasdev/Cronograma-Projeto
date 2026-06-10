@@ -2411,7 +2411,7 @@ main {
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
-  padding-top: 1.5rem;
+  padding-top: 0;
   color: var(--text);
 }
 
@@ -2424,7 +2424,7 @@ main {
 .dashboard-main > .panel {
   flex: 1;
   padding: 1.5rem;
-  padding-top: 5rem;
+  padding-top: 4rem;
 }
 
 /* Responsive: Mobile */
@@ -2492,7 +2492,7 @@ main {
 
   .dashboard-main > .panel {
     padding: 1rem 1.25rem;
-    padding-top: 4.5rem;
+    padding-top: 4rem;
   }
 }
 
