@@ -1265,6 +1265,10 @@ main {
   cursor: not-allowed;
 }
 
+#foco .section-desc {
+  margin-top: -1.5rem;
+}
+
 .foco-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
