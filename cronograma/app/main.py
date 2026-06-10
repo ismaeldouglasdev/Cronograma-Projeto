@@ -29,9 +29,12 @@ from sqlalchemy.orm import Session, declarative_base, sessionmaker
 import hashlib
 import uuid
 
-DATABASE_URL = "sqlite:///./cronograma.db"
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./cronograma.db")
 
-engine_kwargs = {"connect_args": {"check_same_thread": False}}
+if "sqlite" in DATABASE_URL:
+    engine_kwargs = {"connect_args": {"check_same_thread": False}}
+else:
+    engine_kwargs = {}
 engine = create_engine(DATABASE_URL, **engine_kwargs)
 
 Base = declarative_base()
@@ -244,16 +247,16 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    created_at = Column(String(20), nullable=True)
+    created_at = Column(String(30), nullable=True)
     is_verified = Column(Boolean, default=False, nullable=True)
     verification_token = Column(String(255), nullable=True)
 
     # Gamification fields
     current_streak = Column(Integer, default=0, nullable=True)
     longest_streak = Column(Integer, default=0, nullable=True)
-    last_activity_date = Column(String(20), nullable=True)
+    last_activity_date = Column(String(30), nullable=True)
     streak_freezes = Column(Integer, default=0, nullable=True)
-    last_freeze_grant_date = Column(String(20), nullable=True)
+    last_freeze_grant_date = Column(String(30), nullable=True)
     coins = Column(Integer, default=0, nullable=True)
 
 
@@ -318,7 +321,7 @@ class UserAchievement(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     achievement_id = Column(Integer, ForeignKey("achievements.id"), nullable=False)
-    unlocked_at = Column(String(20), nullable=True)
+    unlocked_at = Column(String(30), nullable=True)
 
 
 Base.metadata.create_all(engine)
@@ -347,169 +350,170 @@ def add_column_if_not_exists(conn, table: str, column: str, definition: str):
     return False
 
 
-# Migrações
-print(f"[MIGRATIONS] Using database: {DATABASE_URL[:30]}...")
-with engine.connect() as conn:
-    # Tabela de usuários
-    try:
-        conn.execute(
-            text(
-                "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, email VARCHAR(255) UNIQUE NOT NULL, password_hash VARCHAR(255) NOT NULL, created_at VARCHAR(20), is_verified BOOLEAN DEFAULT 0, verification_token VARCHAR(255))"
-            )
-        )
-        conn.commit()
-        print("[MIGRATIONS] Users table OK")
-    except Exception as e:
-        print(f"[MIGRATIONS] Users table error: {e}")
-
-    # User columns
-    add_column_if_not_exists(conn, "users", "is_verified", "BOOLEAN DEFAULT 0")
-    add_column_if_not_exists(conn, "users", "verification_token", "VARCHAR(255)")
-    add_column_if_not_exists(conn, "users", "current_streak", "INTEGER DEFAULT 0")
-    add_column_if_not_exists(conn, "users", "longest_streak", "INTEGER DEFAULT 0")
-    add_column_if_not_exists(conn, "users", "last_activity_date", "VARCHAR(20)")
-    add_column_if_not_exists(conn, "users", "streak_freezes", "INTEGER DEFAULT 0")
-    add_column_if_not_exists(conn, "users", "last_freeze_grant_date", "VARCHAR(20)")
-    add_column_if_not_exists(conn, "users", "coins", "INTEGER DEFAULT 0")
-    try:
-        conn.execute(text("ALTER TABLE tasks ADD COLUMN duracao_minutos INTEGER"))
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(text("ALTER TABLE sessoes ADD COLUMN task_id INTEGER"))
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(
-            text("ALTER TABLE areas ADD COLUMN tipo VARCHAR(20) DEFAULT 'online'")
-        )
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(text("ALTER TABLE areas ADD COLUMN dia_semana VARCHAR(20)"))
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(text("ALTER TABLE areas ADD COLUMN horario VARCHAR(50)"))
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(text("ALTER TABLE areas ADD COLUMN sala VARCHAR(50)"))
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(text("ALTER TABLE areas ADD COLUMN bloco VARCHAR(50)"))
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(text("ALTER TABLE areas ADD COLUMN professor VARCHAR(255)"))
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(text("ALTER TABLE areas ADD COLUMN subcategoria VARCHAR(100)"))
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(text("ALTER TABLE tasks ADD COLUMN prioridade INTEGER"))
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(text("ALTER TABLE tasks ADD COLUMN meta_pomodoros INTEGER"))
-        conn.commit()
-    except Exception:
-        pass
-    try:
-        conn.execute(
-            text("ALTER TABLE tasks ADD COLUMN pomodoros_concluidos INTEGER DEFAULT 0")
-        )
-        conn.commit()
-    except Exception:
-        pass
-    # Achievements table
-    try:
-        conn.execute(
-            text(
-                "CREATE TABLE IF NOT EXISTS achievements (id INTEGER PRIMARY KEY, nome VARCHAR(255) NOT NULL, descricao VARCHAR(500) NOT NULL, categoria VARCHAR(50) NOT NULL, requisito INTEGER NOT NULL, icone VARCHAR(50))"
-            )
-        )
-        conn.commit()
-    except Exception:
-        pass
-    # User achievements table
-    try:
-        conn.execute(
-            text(
-                "CREATE TABLE IF NOT EXISTS user_achievements (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, achievement_id INTEGER NOT NULL, unlocked_at VARCHAR(20))"
-            )
-        )
-        conn.commit()
-    except Exception:
-        pass
-    # Seed achievements
-    try:
-        result = conn.execute(text("SELECT COUNT(*) FROM achievements"))
-        row = result.fetchone()
-        count = row[0] if row else 0
-        if count == 0:
-            achievements_data = [
-                ("Primeiros Passos", "Ganhe 100 XP", "xp", 100, "star"),
-                ("Dedicado", "Ganhe 500 XP", "xp", 500, "star"),
-                ("Estudioso", "Ganhe 1000 XP", "xp", 1000, "star"),
-                ("Mestre do Conhecimento", "Ganhe 5000 XP", "xp", 5000, "star"),
-                ("Lenda da Disciplina", "Ganhe 10000 XP", "xp", 10000, "crown"),
-                ("Inicio da Jornada", "3 dias de sequencia", "streak", 3, "fire"),
-                ("Consistente", "7 dias de sequencia", "streak", 7, "fire"),
-                ("Focado", "14 dias de sequencia", "streak", 14, "fire"),
-                ("Dedicado", "30 dias de sequencia", "streak", 30, "fire"),
-                ("Invencivel", "100 dias de sequencia", "streak", 100, "crown"),
-                ("Primeiro Pomodoro", "Complete 1 pomodoro", "pomodoro", 1, "clock"),
-                ("Aquecendo", "Complete 10 pomodoros", "pomodoro", 10, "clock"),
-                ("Produtivo", "Complete 50 pomodoros", "pomodoro", 50, "clock"),
-                ("Workaholic", "Complete 100 pomodoros", "pomodoro", 100, "clock"),
-                (
-                    "Maquina de Estudo",
-                    "Complete 500 pomodoros",
-                    "pomodoro",
-                    500,
-                    "trophy",
-                ),
-                ("Primeira Tarefa", "Complete 1 tarefa", "tasks", 1, "check"),
-                ("Comecando", "Complete 10 tarefas", "tasks", 10, "check"),
-                ("Organizado", "Complete 50 tarefas", "tasks", 50, "check"),
-                ("Profissional", "Complete 100 tarefas", "tasks", 100, "check"),
-                ("Mestre das Tarefas", "Complete 500 tarefas", "tasks", 500, "medal"),
-                ("Level 2", "Atinga level 2", "level", 2, "arrow-up"),
-                ("Level 5", "Atinga level 5", "level", 5, "arrow-up"),
-                ("Level 10", "Atinga level 10", "level", 10, "arrow-up"),
-                ("Level 25", "Atinga level 25", "level", 25, "arrow-up"),
-                ("Level 50", "Atinga level 50", "level", 50, "arrow-up"),
-                # Coins achievements
-                ("Primeiras Moedas", "Acumule 10 coins", "coins", 10, "coin"),
-                ("Economizador", "Acumule 50 coins", "coins", 50, "coin"),
-                ("Poupador", "Acumule 100 coins", "coins", 100, "wallet"),
-                ("Investidor", "Acumule 500 coins", "coins", 500, "bank"),
-                ("Milionario", "Acumule 1000 coins", "coins", 1000, "gem"),
-            ]
-            for nome, desc, cat, req, icone in achievements_data:
-                conn.execute(
-                    text(
-                        "INSERT INTO achievements (nome, descricao, categoria, requisito, icone) VALUES (:n, :d, :c, :r, :i)"
-                    ),
-                    {"n": nome, "d": desc, "c": cat, "r": req, "i": icone},
+# Migrações (SQLite apenas — PostgreSQL usa ORM)
+if "sqlite" in DATABASE_URL:
+    print(f"[MIGRATIONS] Using database: {DATABASE_URL[:30]}...")
+    with engine.connect() as conn:
+        # Tabela de usuários
+        try:
+            conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, email VARCHAR(255) UNIQUE NOT NULL, password_hash VARCHAR(255) NOT NULL, created_at VARCHAR(20), is_verified BOOLEAN DEFAULT 0, verification_token VARCHAR(255))"
                 )
+            )
             conn.commit()
-    except Exception:
-        pass
+            print("[MIGRATIONS] Users table OK")
+        except Exception as e:
+            print(f"[MIGRATIONS] Users table error: {e}")
+
+        # User columns
+        add_column_if_not_exists(conn, "users", "is_verified", "BOOLEAN DEFAULT 0")
+        add_column_if_not_exists(conn, "users", "verification_token", "VARCHAR(255)")
+        add_column_if_not_exists(conn, "users", "current_streak", "INTEGER DEFAULT 0")
+        add_column_if_not_exists(conn, "users", "longest_streak", "INTEGER DEFAULT 0")
+        add_column_if_not_exists(conn, "users", "last_activity_date", "VARCHAR(20)")
+        add_column_if_not_exists(conn, "users", "streak_freezes", "INTEGER DEFAULT 0")
+        add_column_if_not_exists(conn, "users", "last_freeze_grant_date", "VARCHAR(20)")
+        add_column_if_not_exists(conn, "users", "coins", "INTEGER DEFAULT 0")
+        try:
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN duracao_minutos INTEGER"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE sessoes ADD COLUMN task_id INTEGER"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(
+                text("ALTER TABLE areas ADD COLUMN tipo VARCHAR(20) DEFAULT 'online'")
+            )
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE areas ADD COLUMN dia_semana VARCHAR(20)"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE areas ADD COLUMN horario VARCHAR(50)"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE areas ADD COLUMN sala VARCHAR(50)"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE areas ADD COLUMN bloco VARCHAR(50)"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE areas ADD COLUMN professor VARCHAR(255)"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE areas ADD COLUMN subcategoria VARCHAR(100)"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN prioridade INTEGER"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN meta_pomodoros INTEGER"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(
+                text("ALTER TABLE tasks ADD COLUMN pomodoros_concluidos INTEGER DEFAULT 0")
+            )
+            conn.commit()
+        except Exception:
+            pass
+        # Achievements table
+        try:
+            conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS achievements (id INTEGER PRIMARY KEY, nome VARCHAR(255) NOT NULL, descricao VARCHAR(500) NOT NULL, categoria VARCHAR(50) NOT NULL, requisito INTEGER NOT NULL, icone VARCHAR(50))"
+                )
+            )
+            conn.commit()
+        except Exception:
+            pass
+        # User achievements table
+        try:
+            conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS user_achievements (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, achievement_id INTEGER NOT NULL, unlocked_at VARCHAR(20))"
+                )
+            )
+            conn.commit()
+        except Exception:
+            pass
+        # Seed achievements
+        try:
+            result = conn.execute(text("SELECT COUNT(*) FROM achievements"))
+            row = result.fetchone()
+            count = row[0] if row else 0
+            if count == 0:
+                achievements_data = [
+                    ("Primeiros Passos", "Ganhe 100 XP", "xp", 100, "star"),
+                    ("Dedicado", "Ganhe 500 XP", "xp", 500, "star"),
+                    ("Estudioso", "Ganhe 1000 XP", "xp", 1000, "star"),
+                    ("Mestre do Conhecimento", "Ganhe 5000 XP", "xp", 5000, "star"),
+                    ("Lenda da Disciplina", "Ganhe 10000 XP", "xp", 10000, "crown"),
+                    ("Inicio da Jornada", "3 dias de sequencia", "streak", 3, "fire"),
+                    ("Consistente", "7 dias de sequencia", "streak", 7, "fire"),
+                    ("Focado", "14 dias de sequencia", "streak", 14, "fire"),
+                    ("Dedicado", "30 dias de sequencia", "streak", 30, "fire"),
+                    ("Invencivel", "100 dias de sequencia", "streak", 100, "crown"),
+                    ("Primeiro Pomodoro", "Complete 1 pomodoro", "pomodoro", 1, "clock"),
+                    ("Aquecendo", "Complete 10 pomodoros", "pomodoro", 10, "clock"),
+                    ("Produtivo", "Complete 50 pomodoros", "pomodoro", 50, "clock"),
+                    ("Workaholic", "Complete 100 pomodoros", "pomodoro", 100, "clock"),
+                    (
+                        "Maquina de Estudo",
+                        "Complete 500 pomodoros",
+                        "pomodoro",
+                        500,
+                        "trophy",
+                    ),
+                    ("Primeira Tarefa", "Complete 1 tarefa", "tasks", 1, "check"),
+                    ("Comecando", "Complete 10 tarefas", "tasks", 10, "check"),
+                    ("Organizado", "Complete 50 tarefas", "tasks", 50, "check"),
+                    ("Profissional", "Complete 100 tarefas", "tasks", 100, "check"),
+                    ("Mestre das Tarefas", "Complete 500 tarefas", "tasks", 500, "medal"),
+                    ("Level 2", "Atinga level 2", "level", 2, "arrow-up"),
+                    ("Level 5", "Atinga level 5", "level", 5, "arrow-up"),
+                    ("Level 10", "Atinga level 10", "level", 10, "arrow-up"),
+                    ("Level 25", "Atinga level 25", "level", 25, "arrow-up"),
+                    ("Level 50", "Atinga level 50", "level", 50, "arrow-up"),
+                    # Coins achievements
+                    ("Primeiras Moedas", "Acumule 10 coins", "coins", 10, "coin"),
+                    ("Economizador", "Acumule 50 coins", "coins", 50, "coin"),
+                    ("Poupador", "Acumule 100 coins", "coins", 100, "wallet"),
+                    ("Investidor", "Acumule 500 coins", "coins", 500, "bank"),
+                    ("Milionario", "Acumule 1000 coins", "coins", 1000, "gem"),
+                ]
+                for nome, desc, cat, req, icone in achievements_data:
+                    conn.execute(
+                        text(
+                            "INSERT INTO achievements (nome, descricao, categoria, requisito, icone) VALUES (:n, :d, :c, :r, :i)"
+                        ),
+                        {"n": nome, "d": desc, "c": cat, "r": req, "i": icone},
+                    )
+                conn.commit()
+        except Exception:
+            pass
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
