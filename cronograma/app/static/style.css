@@ -499,7 +499,7 @@ main {
 
 .section-desc {
   color: var(--text-muted);
-  margin: -0.5rem 0 1rem;
+  margin: 0 0 1rem;
   font-size: 0.9rem;
 }
 
@@ -2421,9 +2421,10 @@ main {
   gap: 0.5rem;
 }
 
-.dashboard-main main.panel {
+.dashboard-main > .panel {
   flex: 1;
-  padding: 1rem 1.5rem;
+  padding: 1.5rem;
+  padding-top: 5rem;
 }
 
 /* Responsive: Mobile */
@@ -2489,8 +2490,9 @@ main {
     font-size: 1.25rem;
   }
 
-  .dashboard-main main.panel {
-    padding: 1rem;
+  .dashboard-main > .panel {
+    padding: 1rem 1.25rem;
+    padding-top: 4.5rem;
   }
 }
 
@@ -2557,8 +2559,9 @@ main {
     font-size: 1.1rem;
   }
 
-  .dashboard-main main.panel {
+  .dashboard-main > .panel {
     padding: 0.75rem;
+    padding-top: 4rem;
   }
 
   /* Reduce form inputs on mobile */
