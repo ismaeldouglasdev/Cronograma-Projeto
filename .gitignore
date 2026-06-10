@@ -1,1 +1,7 @@
 OpenCode.html
+
+# Local SQLite databases (fallback for Neon PostgreSQL)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
