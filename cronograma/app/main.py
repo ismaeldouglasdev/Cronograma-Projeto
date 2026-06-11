@@ -1103,22 +1103,17 @@ def register(body: UserRegister, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Email já cadastrado")
 
-    verification_token = generate_verification_token()
-
     user = User(
         email=body.email,
         password_hash=hash_password(body.password),
         created_at=datetime.utcnow().isoformat(),
-        is_verified=False,
-        verification_token=verification_token,
+        is_verified=True,
     )
     db.add(user)
     db.commit()
     db.refresh(user)
 
-    print(f"[DEBUG AUTH] User created: {user.email} (id={user.id})")
-
-    sendVerificationEmail(user, verification_token)
+    print(f"[DEBUG AUTH] User created (auto-verified): {user.email} (id={user.id})")
 
     token = create_access_token(user.id)
     return TokenResponse(access_token=token)
@@ -1129,12 +1124,6 @@ def login(body: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
-
-    if user.is_verified is False:
-        print(f"[DEBUG AUTH] Login blocked (not verified): {user.email}")
-        raise HTTPException(
-            status_code=403, detail="Conta não verificada. Verifique seu email."
-        )
 
     print(f"[DEBUG AUTH] Login success: {user.email}")
     token = create_access_token(user.id)
