@@ -8,13 +8,11 @@ const i18n = {
   'pt-BR': {
     // Landing page
     landing: {
-      nav_entrar: 'Entrar',
-      nav_acessar: 'Acessar',
+      nav_acessar: 'Acessar Cronograma',
       hero_title: 'Seus estudos',
       hero_title_highlight: 'com disciplina',
       hero_desc: 'Organize suas mat\u00e9rias, acompanhe tarefas, foque com Pomodoro e evolua com um sistema de gamifica\u00e7\u00e3o que transforma sua rotina de estudos.',
       hero_cta: 'Acessar Cronograma \u2192',
-      hero_ghost: 'J\u00e1 tenho conta',
       feature1_title: 'Mat\u00e9rias & Tarefas',
       feature1_desc: 'Organize suas disciplinas, defina prioridades e acompanhe prazos de entrega.',
       feature2_title: 'Timer Pomodoro',
@@ -293,13 +291,11 @@ const i18n = {
 
   'en': {
     landing: {
-      nav_entrar: 'Sign In',
-      nav_acessar: 'Access',
+      nav_acessar: 'Access Cronograma',
       hero_title: 'Your studies,',
       hero_title_highlight: 'with discipline',
       hero_desc: 'Organize your subjects, track tasks, focus with Pomodoro, and level up with a gamification system that transforms your study routine.',
       hero_cta: 'Access Cronograma \u2192',
-      hero_ghost: 'I already have an account',
       feature1_title: 'Subjects & Tasks',
       feature1_desc: 'Organize your disciplines, set priorities, and track deadlines.',
       feature2_title: 'Pomodoro Timer',
