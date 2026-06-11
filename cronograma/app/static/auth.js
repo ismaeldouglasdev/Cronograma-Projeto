@@ -185,7 +185,7 @@ const Auth = (function() {
           await login(fd.get("email"), fd.get("password"));
           e.target.reset();
         } catch (err) {
-          alert(err.message);
+          alert(typeof translateBackendError === 'function' ? translateBackendError(err.message) : err.message);
         }
       });
     }
@@ -206,7 +206,7 @@ const Auth = (function() {
           await register(fd.get("email"), password);
           e.target.reset();
         } catch (err) {
-          alert(err.message);
+          alert(typeof translateBackendError === 'function' ? translateBackendError(err.message) : err.message);
         }
       });
     }
@@ -225,7 +225,7 @@ const Auth = (function() {
             showLoginScreen();
           }
         } catch (err) {
-          alert(err.message);
+          alert(typeof translateBackendError === 'function' ? translateBackendError(err.message) : err.message);
         }
       });
 
