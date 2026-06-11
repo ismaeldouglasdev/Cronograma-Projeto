@@ -108,7 +108,7 @@ const Auth = (function() {
         showVerifyScreen();
         throw new Error(error.detail);
       }
-      throw new Error(error.detail || "Erro ao fazer login");
+      throw new Error(error.detail || (typeof t === 'function' ? t('auth.login_error') : 'Erro ao fazer login'));
     }
     
     const data = await response.json();
@@ -131,7 +131,7 @@ const Auth = (function() {
     
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || "Erro ao criar conta");
+      throw new Error(error.detail || (typeof t === 'function' ? t('auth.register_error') : 'Erro ao criar conta'));
     }
     
     const data = await response.json();
@@ -150,7 +150,7 @@ const Auth = (function() {
     
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || "Erro ao verificar email");
+      throw new Error(error.message || (typeof t === 'function' ? t('auth.verify_error') : 'Erro ao verificar email'));
     }
     
     return await response.json();
@@ -194,7 +194,7 @@ const Auth = (function() {
         const confirmPassword = fd.get("confirm_password");
         
         if (password !== confirmPassword) {
-          alert("As senhas não coincidem");
+          alert(typeof t === 'function' ? t('auth.passwords_dont_match') : 'As senhas n\u00e3o coincidem');
           return;
         }
         
@@ -211,13 +211,13 @@ const Auth = (function() {
       verifyBtn.addEventListener("click", async () => {
         const token = verificationTokenInput.value.trim();
         if (!token) {
-          alert("Por favor, insira o token de verificação");
+          alert(typeof t === 'function' ? t('auth.enter_token') : 'Por favor, insira o token de verifica\u00e7\u00e3o');
           return;
         }
         try {
           const result = await verifyEmail(token);
           if (result.success) {
-            alert("Email verificado com sucesso! Agora você pode fazer login.");
+            alert(typeof t === 'function' ? t('auth.email_verified') : 'Email verificado com sucesso! Agora voc\u00ea pode fazer login.');
             showLoginScreen();
           }
         } catch (err) {

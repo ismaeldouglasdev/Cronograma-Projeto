@@ -154,6 +154,25 @@
       z-index: -1;
     }
 
+    .lang-switch {
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: none;
+      border: 1px solid #3d3d45;
+      color: #9b9a97;
+      padding: 0.25rem 0.5rem;
+      border-radius: 3px;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+    .lang-switch:hover {
+      color: #e8e6e3;
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.1);
+    }
+
     @media (max-width: 480px) {
       .nav { padding: 0.75rem 1rem; flex-direction: column; gap: 0.75rem; }
       .hero { padding: 2.5rem 1rem; }
@@ -167,59 +186,62 @@
   <nav class="nav">
     <div class="nav-logo"><span>📚</span> Cronograma</div>
     <div class="nav-links">
-      <a href="/app">Entrar</a>
-      <a href="/app" class="btn-primary">Acessar</a>
+      <button class="lang-switch" onclick="toggleLang()" title="Switch language">PT</button>
+      <a href="/app" data-i18n="landing.nav_entrar">Entrar</a>
+      <a href="/app" class="btn-primary" data-i18n="landing.nav_acessar">Acessar</a>
     </div>
   </nav>
 
   <main class="hero">
     <div class="hero-icon">📚</div>
-    <h1>Seus estudos<br><span>com disciplina</span></h1>
-    <p>
+    <h1><span data-i18n="landing.hero_title">Seus estudos</span><br><span data-i18n="landing.hero_title_highlight">com disciplina</span></h1>
+    <p data-i18n="landing.hero_desc">
       Organize suas matérias, acompanhe tarefas, foque com Pomodoro e evolua
       com um sistema de gamificação que transforma sua rotina de estudos.
     </p>
     <div class="hero-actions">
-      <a href="/app" class="btn-primary">Acessar Cronograma →</a>
-      <a href="/app" class="btn-ghost">Já tenho conta</a>
+      <a href="/app" class="btn-primary" data-i18n="landing.hero_cta">Acessar Cronograma →</a>
+      <a href="/app" class="btn-ghost" data-i18n="landing.hero_ghost">Já tenho conta</a>
     </div>
 
       <div class="features">
         <div class="feature-card">
           <div class="icon">🎯</div>
-          <h3>Matérias & Tarefas</h3>
-          <p>Organize suas disciplinas, defina prioridades e acompanhe prazos de entrega.</p>
+          <h3 data-i18n="landing.feature1_title">Matérias & Tarefas</h3>
+          <p data-i18n="landing.feature1_desc">Organize suas disciplinas, defina prioridades e acompanhe prazos de entrega.</p>
         </div>
         <div class="feature-card">
           <div class="icon">🍅</div>
-          <h3>Timer Pomodoro</h3>
-          <p>Foco total com sessões cronometradas, notificações e meta de pomodoros por tarefa.</p>
+          <h3 data-i18n="landing.feature2_title">Timer Pomodoro</h3>
+          <p data-i18n="landing.feature2_desc">Foco total com sessões cronometradas, notificações e meta de pomodoros por tarefa.</p>
         </div>
         <div class="feature-card">
           <div class="icon">🏆</div>
-          <h3>Gamificação</h3>
-          <p>Ganhe XP, suba de nível, acumule moedas, conquiste achievements e mantenha seu streak.</p>
+          <h3 data-i18n="landing.feature3_title">Gamificação</h3>
+          <p data-i18n="landing.feature3_desc">Ganhe XP, suba de nível, acumule moedas, conquiste achievements e mantenha seu streak.</p>
         </div>
         <div class="feature-card">
           <div class="icon">📊</div>
-          <h3>Estatísticas</h3>
-          <p>Visualize horas por matéria, nível atual e evolução diária com gráficos.</p>
+          <h3 data-i18n="landing.feature4_title">Estatísticas</h3>
+          <p data-i18n="landing.feature4_desc">Visualize horas por matéria, nível atual e evolução diária com gráficos.</p>
         </div>
         <div class="feature-card">
           <div class="icon">📅</div>
-          <h3>Quadro de Horários</h3>
-          <p>Monte sua grade semanal com aulas presenciais e online, com sala, horário e professor.</p>
+          <h3 data-i18n="landing.feature5_title">Quadro de Horários</h3>
+          <p data-i18n="landing.feature5_desc">Monte sua grade semanal com aulas presenciais e online, com sala, horário e professor.</p>
         </div>
         <div class="feature-card">
           <div class="icon">🔥</div>
-          <h3>Streak & Moedas</h3>
-          <p>Mantenha a sequência de estudos, ganhe moedas, compre freezes e não perca o ritmo.</p>
+          <h3 data-i18n="landing.feature6_title">Streak & Moedas</h3>
+          <p data-i18n="landing.feature6_desc">Mantenha a sequência de estudos, ganhe moedas, compre freezes e não perca o ritmo.</p>
         </div>
     </div>
   </main>
 
-  <footer class="footer">
+  <footer class="footer" data-i18n="landing.footer">
     Cronograma de Estudos &mdash; Projeto Open Source
   </footer>
+
+  <script src="/static/i18n.js"></script>
 </body>
 </html>

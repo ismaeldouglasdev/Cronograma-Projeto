@@ -73,7 +73,7 @@ const FocoTimer = (function() {
   function populateAreaSelect() {
     if (!elements.areaSelect) return;
     const opts = cachedAreas.map((a) => `<option value="${a.id}">${escapeHtml(a.nome)}</option>`).join("");
-    elements.areaSelect.innerHTML = '<option value="">Selecione a área</option>' + opts;
+    elements.areaSelect.innerHTML = '<option value="">' + (typeof t === 'function' ? t('foco.select_area') : 'Selecione a \u00e1rea') + '</option>' + opts;
     
     if (currentAreaId) {
       elements.areaSelect.value = currentAreaId;
@@ -83,14 +83,14 @@ const FocoTimer = (function() {
   
   function populateTaskSelect() {
     if (!elements.taskSelect || !currentAreaId) {
-      elements.taskSelect.innerHTML = '<option value="">Selecione uma tarefa</option>';
+      elements.taskSelect.innerHTML = '<option value="">' + (typeof t === 'function' ? t('foco.select_tarefa') : 'Selecione uma tarefa') + '</option>';
       elements.taskSelect.disabled = true;
       return;
     }
     
     const areaTasks = cachedTasks.filter(t => t.area_id === currentAreaId && !t.concluida);
     if (areaTasks.length === 0) {
-      elements.taskSelect.innerHTML = '<option value="">Nenhuma tarefa pendente</option>';
+      elements.taskSelect.innerHTML = '<option value="">' + (typeof t === 'function' ? t('foco.nenhuma_tarefa_pendente') : 'Nenhuma tarefa pendente') + '</option>';
       elements.taskSelect.disabled = true;
       return;
     }
@@ -102,7 +102,7 @@ const FocoTimer = (function() {
       return `<option value="${t.id}">${escapeHtml(t.titulo)}${metaText}</option>`;
     }).join("");
     
-    elements.taskSelect.innerHTML = '<option value="">Nenhuma tarefa específica</option>' + opts;
+    elements.taskSelect.innerHTML = '<option value="">' + (typeof t === 'function' ? t('foco.nenhuma_tarefa_especifica') : 'Nenhuma tarefa espec\u00edfica') + '</option>' + opts;
     elements.taskSelect.disabled = false;
     
     if (currentTaskId) {
@@ -229,14 +229,14 @@ const FocoTimer = (function() {
   function handleStart() {
     if (state === "idle") {
       if (!currentAreaId) {
-        alert("Selecione uma área para iniciar o foco!");
+        alert(typeof t === 'function' ? t('foco.alert_select_area') : 'Selecione uma \u00e1rea para iniciar o foco!');
         return;
       }
       tempoRestante = (parseInt(elements.minutesInput.value, 10) || 25) * 60;
       duracaoTotal = tempoRestante;
       startTimestamp = Date.now();
       isBreak = false;
-      elements.timerLabel.textContent = "Foco";
+      elements.timerLabel.textContent = typeof t === 'function' ? t('foco.timer_foco') : 'Foco';
     }
     
     if (state !== "running") {
@@ -260,13 +260,13 @@ const FocoTimer = (function() {
       duracaoTotal = tempoRestante;
       startTimestamp = null;
       state = "paused";
-      elements.pauseBtn.textContent = "▶ Continuar";
+      elements.pauseBtn.textContent = typeof t === 'function' ? t('foco.btn_continuar') : '\u25b6 Continuar';
       saveState();
     } else if (state === "paused") {
       state = "running";
       startTimestamp = Date.now();
       duracaoTotal = tempoRestante;
-      elements.pauseBtn.textContent = "⏸ Pausar";
+      elements.pauseBtn.textContent = typeof t === 'function' ? t('foco.btn_pausar') : '\u23f8 Pausar';
       startTick();
       saveState();
     }
@@ -274,7 +274,7 @@ const FocoTimer = (function() {
   
   function handleReset() {
     if (state === "running" || state === "paused") {
-      if (!confirm("Tem certeza que deseja cancelar a sessão de foco?")) {
+      if (!confirm(typeof t === 'function' ? t('foco.confirm_cancel') : 'Tem certeza que deseja cancelar a sess\u00e3o de foco?')) {
         return;
       }
     }
@@ -283,10 +283,10 @@ const FocoTimer = (function() {
   
   function handleSkip() {
     if (isBreak) {
-      if (!confirm("Pular o descanso?")) return;
+      if (!confirm(typeof t === 'function' ? t('foco.confirm_pular_descanso') : 'Pular o descanso?')) return;
       clearInterval(intervalId);
       playBeep();
-      alert("Descanso finalizado! Ready para mais um pomodoro?");
+      alert(typeof t === 'function' ? t('foco.alert_descanso_fim') : 'Descanso finalizado! Pronto para mais um pomodoro?');
       resetTimer();
     }
   }
@@ -299,7 +299,7 @@ const FocoTimer = (function() {
     state = "idle";
     tempoRestante = (parseInt(elements.minutesInput.value, 10) || 25) * 60;
     duracaoTotal = tempoRestante;
-    elements.timerLabel.textContent = "Foco";
+    elements.timerLabel.textContent = typeof t === 'function' ? t('foco.timer_foco') : 'Foco';
     updateDisplay();
     updateButtons();
     elements.minutesInput.disabled = false;
@@ -348,7 +348,10 @@ const FocoTimer = (function() {
       }
     } else {
       state = "idle";
-      showDesktopNotification("Descanso Concluído", "Hora de voltar ao foco!");
+      showDesktopNotification(
+        typeof t === 'function' ? t('foco.notif_descanso_titulo') : 'Descanso Conclu\u00eddo',
+        typeof t === 'function' ? t('foco.notif_descanso_corpo') : 'Hora de voltar ao foco!'
+      );
       resetTimer();
     }
   }
@@ -413,8 +416,10 @@ const FocoTimer = (function() {
     if (!("Notification" in window)) return;
     if (Notification.permission === "granted") {
       try {
-        new Notification(title || "Pomodoro Concluído!", {
-          body: body || ((duracaoTotal / 60) + " min de foco registrados. 🎯"),
+        var defaultTitle = typeof t === 'function' ? t('foco.notif_pomodoro_titulo') : 'Pomodoro Conclu\u00eddo!';
+        var defaultBody = (duracaoTotal / 60) + ' ' + (typeof t === 'function' ? t('foco.notif_pomodoro_corpo').replace('{minutos}', duracaoTotal / 60) : (duracaoTotal / 60) + ' min de foco registrados. \ud83c\udfaf');
+        new Notification(title || defaultTitle, {
+          body: body || defaultBody,
           icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>",
           badge: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍅</text></svg>",
         });
@@ -520,7 +525,7 @@ const FocoTimer = (function() {
     tempoRestante = (parseInt(elements.breakMinutesInput.value, 10) || 5) * 60;
     duracaoTotal = tempoRestante;
     startTimestamp = Date.now();
-    elements.timerLabel.textContent = "Descanso";
+    elements.timerLabel.textContent = typeof t === 'function' ? t('foco.timer_descanso') : 'Descanso';
     state = "running";
     
     updateDisplay();
@@ -558,13 +563,13 @@ const FocoTimer = (function() {
     } else if (state === "running") {
       elements.startBtn.style.display = "none";
       elements.pauseBtn.style.display = "inline-block";
-      elements.pauseBtn.textContent = "⏸ Pausar";
+      elements.pauseBtn.textContent = typeof t === 'function' ? t('foco.btn_pausar') : '\u23f8 Pausar';
       elements.resetBtn.style.display = "inline-block";
       elements.skipBtn.style.display = isBreak ? "inline-block" : "none";
     } else if (state === "paused") {
       elements.startBtn.style.display = "none";
       elements.pauseBtn.style.display = "inline-block";
-      elements.pauseBtn.textContent = "▶ Continuar";
+      elements.pauseBtn.textContent = typeof t === 'function' ? t('foco.btn_continuar') : '\u25b6 Continuar';
       elements.resetBtn.style.display = "inline-block";
       elements.skipBtn.style.display = "none";
     }
@@ -680,7 +685,8 @@ const FocoTimer = (function() {
       const mins = Math.floor(tempoRestante / 60);
       const secs = tempoRestante % 60;
       const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-      const label = isBreak ? "Descanso" : "Foco";
+      const _t = typeof t === 'function' ? t : (k => k === 'foco.timer_foco' ? 'Foco' : 'Descanso');
+      const label = isBreak ? _t('foco.timer_descanso') : _t('foco.timer_foco');
       document.title = `⏳ ${timeStr} - ${label}`;
     } else {
       document.title = originalTitle;
@@ -693,7 +699,7 @@ const FocoTimer = (function() {
     
     const elapsed = Math.floor((duracaoTotal - tempoRestante) / 60);
     if (elapsed < 1) {
-      alert("Sessão muito curta para registrar.");
+      alert(typeof t === 'function' ? t('foco.alert_sessao_curta') : 'Sess\u00e3o muito curta para registrar.');
       return;
     }
     
