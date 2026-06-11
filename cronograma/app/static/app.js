@@ -576,7 +576,7 @@ function initModal() {
       cachedAreas = areasUpdated;
       loadTasks(areasUpdated);
     } catch (err) {
-      alert((typeof t === 'function' ? t('geral.erro_salvar') : 'Erro ao salvar: ') + err.message);
+      alert((typeof t === 'function' ? t('geral.erro_salvar') : 'Erro ao salvar: ') + (typeof translateBackendError === 'function' ? translateBackendError(err.message) : err.message));
     }
   });
 

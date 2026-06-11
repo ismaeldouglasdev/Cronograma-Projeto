@@ -8,6 +8,7 @@ const i18n = {
   'pt-BR': {
     // Landing page
     landing: {
+      page_title: 'Cronograma — Seu Plano de Estudos Gamificado',
       nav_acessar: 'Acessar Cronograma',
       hero_title: 'Seus estudos',
       hero_title_highlight: 'com disciplina',
@@ -30,6 +31,7 @@ const i18n = {
 
     // Auth forms
     auth: {
+      page_title: 'Cronograma - Meus Estudos',
       cronograma_title: 'Cronograma',
       cronograma_subtitle: 'Organize seus estudos',
       login_title: 'Entrar',
@@ -287,10 +289,28 @@ const i18n = {
       pt: 'PT',
       en: 'EN',
     },
+
+    // Backend validation errors
+    validation: {
+      password_length: 'Senha deve ter pelo menos 8 caracteres',
+      password_letter: 'Senha deve conter pelo menos uma letra',
+      password_number: 'Senha deve conter pelo menos um número',
+      password_special: 'Senha deve conter pelo menos um caractere especial',
+      invalid_email: 'Email inválido',
+      email_exists: 'Email já cadastrado',
+      invalid_credentials: 'Credenciais inválidas',
+      area_not_found: 'Área não encontrada',
+      task_not_found: 'Tarefa não encontrada',
+      session_not_found: 'Sessão não encontrada',
+      user_not_found: 'Usuário não encontrado',
+      max_freezes: 'Limite máximo de freezes atingido (4).',
+      max_coins: 'Limite máximo de 100 coins por chamada',
+    },
   },
 
   'en': {
     landing: {
+      page_title: 'Cronograma — Your Gamified Study Planner',
       nav_acessar: 'Access Cronograma',
       hero_title: 'Your studies,',
       hero_title_highlight: 'with discipline',
@@ -312,6 +332,7 @@ const i18n = {
     },
 
     auth: {
+      page_title: 'Cronograma - My Studies',
       cronograma_title: 'Cronograma',
       cronograma_subtitle: 'Organize your studies',
       login_title: 'Sign In',
@@ -554,6 +575,22 @@ const i18n = {
       pt: 'PT',
       en: 'EN',
     },
+
+    validation: {
+      password_length: 'Password must be at least 8 characters',
+      password_letter: 'Password must contain at least one letter',
+      password_number: 'Password must contain at least one number',
+      password_special: 'Password must contain at least one special character',
+      invalid_email: 'Invalid email',
+      email_exists: 'Email already registered',
+      invalid_credentials: 'Invalid credentials',
+      area_not_found: 'Area not found',
+      task_not_found: 'Task not found',
+      session_not_found: 'Session not found',
+      user_not_found: 'User not found',
+      max_freezes: 'Maximum freeze limit reached (4).',
+      max_coins: 'Maximum of 100 coins per call',
+    },
   },
 };
 
@@ -596,6 +633,30 @@ function t(key) {
     }
   }
   return value;
+}
+
+/**
+ * Translate backend error messages (Portuguese) to current language
+ */
+function translateBackendError(detail) {
+  if (!detail || typeof detail !== 'string') return detail;
+  const map = {
+    'Senha deve ter pelo menos 8 caracteres': 'validation.password_length',
+    'Senha deve conter pelo menos uma letra': 'validation.password_letter',
+    'Senha deve conter pelo menos um número': 'validation.password_number',
+    'Senha deve conter pelo menos um caractere especial': 'validation.password_special',
+    'Email inválido': 'validation.invalid_email',
+    'Email já cadastrado': 'validation.email_exists',
+    'Credenciais inválidas': 'validation.invalid_credentials',
+    'Área não encontrada': 'validation.area_not_found',
+    'Tarefa não encontrada': 'validation.task_not_found',
+    'Sessão não encontrada': 'validation.session_not_found',
+    'Usuário não encontrado': 'validation.user_not_found',
+    'Limite máximo de freezes atingido (4).': 'validation.max_freezes',
+    'Limite máximo de 100 coins por chamada': 'validation.max_coins',
+  };
+  const key = map[detail];
+  return key ? t(key) : detail;
 }
 
 /**
@@ -676,6 +737,7 @@ if (typeof document !== 'undefined') {
 // Export for use in other scripts
 if (typeof window !== 'undefined') {
   window.t = t;
+  window.translateBackendError = translateBackendError;
   window.setLang = setLang;
   window.toggleLang = toggleLang;
   window.getCurrentLang = getCurrentLang;
