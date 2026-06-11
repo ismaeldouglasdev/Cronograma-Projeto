@@ -6,6 +6,48 @@
   <title>Cronograma - Meus Estudos</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
   <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .lang-switch {
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: none;
+      border: 1px solid #3d3d45;
+      color: #9b9a97;
+      padding: 0.2rem 0.45rem;
+      border-radius: 3px;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+      line-height: 1;
+      margin-left: 0.5rem;
+    }
+    .lang-switch:hover {
+      color: #e8e6e3;
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.1);
+    }
+    .lang-switch-auth {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: none;
+      border: 1px solid #3d3d45;
+      color: #9b9a97;
+      padding: 0.2rem 0.45rem;
+      border-radius: 3px;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+    .lang-switch-auth:hover {
+      color: #e8e6e3;
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.1);
+    }
+  </style>
   <script>
     (function() {
       var themes = ['dark', 'light', 'ocean'];
@@ -24,41 +66,42 @@
   <!-- Login Screen -->
   <div id="login-screen" class="login-screen">
     <div class="login-container">
+      <button class="lang-switch-auth" onclick="toggleLang()" title="Switch language">PT</button>
       <div class="login-header">
         <span class="login-icon">📚</span>
         <h1>Cronograma</h1>
-        <p>Organize seus estudos</p>
+        <p data-i18n="auth.cronograma_subtitle">Organize seus estudos</p>
       </div>
 
       <div id="login-form-container">
         <form id="login-form" class="auth-form">
-          <h2>Entrar</h2>
-          <input type="email" name="email" placeholder="Email" required>
-          <input type="password" name="password" placeholder="Senha" required>
-          <button type="submit">Entrar</button>
-          <p class="auth-switch">Não tem conta? <a href="#" id="show-register">Cadastrar</a></p>
+          <h2 data-i18n="auth.login_title">Entrar</h2>
+          <input type="email" name="email" data-i18n-placeholder="auth.email_placeholder" placeholder="Email" required>
+          <input type="password" name="password" data-i18n-placeholder="auth.password_placeholder" placeholder="Senha" required>
+          <button type="submit" data-i18n="auth.login_btn">Entrar</button>
+          <p class="auth-switch" data-i18n="auth.nao_tem_conta">Não tem conta? <a href="#" id="show-register">Cadastrar</a></p>
         </form>
       </div>
 
       <div id="register-form-container" style="display: none;">
         <form id="register-form" class="auth-form">
-          <h2>Criar conta</h2>
-          <input type="email" name="email" placeholder="Email" required>
-          <input type="password" name="password" placeholder="Senha" required>
-          <input type="password" name="confirm_password" placeholder="Confirmar senha" required>
-          <button type="submit">Cadastrar</button>
-          <p class="auth-switch">Já tem conta? <a href="#" id="show-login">Entrar</a></p>
+          <h2 data-i18n="auth.register_title">Criar conta</h2>
+          <input type="email" name="email" data-i18n-placeholder="auth.email_placeholder" placeholder="Email" required>
+          <input type="password" name="password" data-i18n-placeholder="auth.password_placeholder" placeholder="Senha" required>
+          <input type="password" name="confirm_password" data-i18n-placeholder="auth.confirm_placeholder" placeholder="Confirmar senha" required>
+          <button type="submit" data-i18n="auth.register_btn">Cadastrar</button>
+          <p class="auth-switch" data-i18n="auth.ja_tem_conta">Já tem conta? <a href="#" id="show-login">Entrar</a></p>
         </form>
       </div>
 
       <div id="verify-email-container" style="display: none;">
         <div class="auth-form">
-          <h2>Verificar Email</h2>
-          <p class="verify-info">Conta criada! Por favor, verifique seu email.</p>
-          <p class="verify-info-small">Copie o token que aparece no console do servidor e cole abaixo:</p>
-          <input type="text" id="verification-token" placeholder="Cole o token de verificação aqui" required>
-          <button type="button" id="verify-btn">Verificar</button>
-          <p class="auth-switch">Já verificado? <a href="#" id="show-login-verify">Entrar</a></p>
+          <h2 data-i18n="auth.verify_title">Verificar Email</h2>
+          <p class="verify-info" data-i18n="auth.verify_info">Conta criada! Por favor, verifique seu email.</p>
+          <p class="verify-info-small" data-i18n="auth.verify_info_small">Copie o token que aparece no console do servidor e cole abaixo:</p>
+          <input type="text" id="verification-token" data-i18n-placeholder="auth.token_placeholder" placeholder="Cole o token de verificação aqui" required>
+          <button type="button" id="verify-btn" data-i18n="auth.verify_btn">Verificar</button>
+          <p class="auth-switch" data-i18n="auth.ja_verificado">Já verificado? <a href="#" id="show-login-verify">Entrar</a></p>
         </div>
       </div>
     </div>
@@ -79,7 +122,7 @@
         <div class="sidebar-user">
           <div class="sidebar-user-level">
             <span class="level-badge" id="sidebar-level">1</span>
-            <span class="level-label">Nível</span>
+            <span class="level-label" data-i18n="sidebar.nivel">Nível</span>
           </div>
           <div class="sidebar-user-stats">
             <div class="sidebar-stat">
@@ -96,31 +139,31 @@
         <nav class="sidebar-nav">
           <button class="sidebar-link active" data-tab="areas">
             <span class="sidebar-icon">📁</span>
-            <span class="sidebar-text">Áreas</span>
+            <span class="sidebar-text" data-i18n="sidebar.areas">Áreas</span>
           </button>
           <button class="sidebar-link" data-tab="foco">
             <span class="sidebar-icon">🎯</span>
-            <span class="sidebar-text">Foco</span>
+            <span class="sidebar-text" data-i18n="sidebar.foco">Foco</span>
           </button>
           <button class="sidebar-link" data-tab="gamificacao">
             <span class="sidebar-icon">🏆</span>
-            <span class="sidebar-text">Gamificação</span>
+            <span class="sidebar-text" data-i18n="sidebar.gamificacao">Gamificação</span>
           </button>
           <button class="sidebar-link" data-tab="horarios">
             <span class="sidebar-icon">📅</span>
-            <span class="sidebar-text">Horários</span>
+            <span class="sidebar-text" data-i18n="sidebar.horarios">Horários</span>
           </button>
           <button class="sidebar-link" data-tab="tasks">
             <span class="sidebar-icon">✅</span>
-            <span class="sidebar-text">Tarefas</span>
+            <span class="sidebar-text" data-i18n="sidebar.tarefas">Tarefas</span>
           </button>
           <button class="sidebar-link" data-tab="sessoes">
             <span class="sidebar-icon">⏱️</span>
-            <span class="sidebar-text">Sessões</span>
+            <span class="sidebar-text" data-i18n="sidebar.sessoes">Sessões</span>
           </button>
           <button class="sidebar-link" data-tab="resumo">
             <span class="sidebar-icon">📊</span>
-            <span class="sidebar-text">Resumo</span>
+            <span class="sidebar-text" data-i18n="sidebar.resumo">Resumo</span>
           </button>
         </nav>
         
@@ -135,14 +178,17 @@
             <option value="pastel">🎨 Pastel</option>
             <option value="contrast">⬛ High Contrast</option>
           </select>
-          <button id="logout-btn-sidebar" class="logout-btn">Sair</button>
+          <div style="display:flex;align-items:center;gap:0.35rem;">
+            <button class="lang-switch" onclick="toggleLang()" title="Switch language">PT</button>
+            <button id="logout-btn-sidebar" class="logout-btn" data-i18n="sidebar.sair">Sair</button>
+          </div>
         </div>
       </aside>
       
       <!-- Main Content -->
       <main class="dashboard-main">
         <header class="dashboard-header">
-          <h1 class="page-title" id="page-title">Áreas</h1>
+          <h1 class="page-title" id="page-title" data-i18n="pages.areas">Áreas</h1>
           <div class="header-controls">
             <select id="theme-select" class="theme-select" aria-label="Selecionar tema" style="display: none;">
               <option value="dark">🌙 Escuro</option>
@@ -154,55 +200,55 @@
               <option value="pastel">🎨 Pastel</option>
               <option value="contrast">⬛ High Contrast</option>
             </select>
-            <button id="logout-btn" class="logout-btn" style="display: none;">Sair</button>
+            <button id="logout-btn" class="logout-btn" style="display: none;" data-i18n="sidebar.sair">Sair</button>
           </div>
         </header>
     <!-- Áreas -->
     <section id="areas" class="panel active">
       <div class="areas-filters">
-        <input type="text" id="search-areas" placeholder="Buscar por nome..." aria-label="Buscar por nome">
-        <select id="filter-categoria" aria-label="Filtrar por categoria">
-          <option value="">Todas as categorias</option>
+        <input type="text" id="search-areas" data-i18n-placeholder="areas.search_placeholder" placeholder="Buscar por nome..." data-i18n-aria="areas.search_placeholder" aria-label="Buscar por nome">
+        <select id="filter-categoria" data-i18n-aria="areas.filter_label" aria-label="Filtrar por categoria">
+          <option value="" data-i18n="areas.todas_categorias">Todas as categorias</option>
         </select>
       </div>
       <form id="form-area" class="card form-card">
         <div class="input-with-color">
-          <input type="text" name="nome" id="area-nome" placeholder="Nome (ex: Matemática)" required aria-label="Nome da área">
-          <label class="color-picker-wrap" title="Cor" for="area-cor">
+          <input type="text" name="nome" id="area-nome" data-i18n-placeholder="areas.nome_placeholder" placeholder="Nome (ex: Matemática)" required data-i18n-aria="areas.nome_placeholder" aria-label="Nome da área">
+          <label class="color-picker-wrap" data-i18n-title="modal.fechar" title="Cor" for="area-cor">
             <span class="color-square" id="color-preview"></span>
             <input type="color" name="cor" id="area-cor" value="#6366f1" class="color-input">
           </label>
         </div>
-        <input type="text" name="subcategoria" id="subcategoria-input" list="subcategoria-list" placeholder="Categoria (opcional)" aria-label="Categoria">
+        <input type="text" name="subcategoria" id="subcategoria-input" list="subcategoria-list" data-i18n-placeholder="areas.categoria_placeholder" placeholder="Categoria (opcional)" data-i18n-aria="areas.categoria_placeholder" aria-label="Categoria">
         <datalist id="subcategoria-list"></datalist>
-        <select name="tipo" id="tipo-aula" aria-label="Tipo de aula">
-          <option value="online">Online</option>
-          <option value="presencial">Presencial</option>
+        <select name="tipo" id="tipo-aula" data-i18n-aria="areas.tipo_aula" aria-label="Tipo de aula">
+          <option value="online" data-i18n="areas.online">Online</option>
+          <option value="presencial" data-i18n="areas.presencial">Presencial</option>
         </select>
         <div id="campos-presencial" class="campos-presencial" style="display:none;">
-          <select name="dia_semana" id="dia-semana" aria-label="Dia da semana">
-            <option value="">Dia da semana</option>
-            <option value="segunda">Segunda-feira</option>
-            <option value="terca">Terça-feira</option>
-            <option value="quarta">Quarta-feira</option>
-            <option value="quinta">Quinta-feira</option>
-            <option value="sexta">Sexta-feira</option>
-            <option value="sabado">Sábado</option>
-            <option value="domingo">Domingo</option>
+          <select name="dia_semana" id="dia-semana" data-i18n-aria="areas.dia_semana" aria-label="Dia da semana">
+            <option value="" data-i18n="areas.dia_semana">Dia da semana</option>
+            <option value="segunda" data-i18n="horarios.dias.segunda">Segunda-feira</option>
+            <option value="terca" data-i18n="horarios.dias.terca">Terça-feira</option>
+            <option value="quarta" data-i18n="horarios.dias.quarta">Quarta-feira</option>
+            <option value="quinta" data-i18n="horarios.dias.quinta">Quinta-feira</option>
+            <option value="sexta" data-i18n="horarios.dias.sexta">Sexta-feira</option>
+            <option value="sabado" data-i18n="horarios.dias.sabado">Sábado</option>
+            <option value="domingo" data-i18n="horarios.dias.domingo">Domingo</option>
           </select>
-          <input type="text" name="horario" id="area-horario" placeholder="Horário (ex: 19:00 - 20:40)" aria-label="Horário">
-          <input type="text" name="sala" id="area-sala" placeholder="Sala (ex: 206)" aria-label="Sala">
-          <input type="text" name="bloco" id="area-bloco" placeholder="Bloco (ex: E)" aria-label="Bloco">
-          <input type="text" name="professor" id="area-professor" placeholder="Professor (ex: Andre)" aria-label="Professor">
+          <input type="text" name="horario" id="area-horario" data-i18n-placeholder="areas.hora_placeholder" placeholder="Horário (ex: 19:00 - 20:40)" data-i18n-aria="areas.hora_placeholder" aria-label="Horário">
+          <input type="text" name="sala" id="area-sala" data-i18n-placeholder="areas.sala_placeholder" placeholder="Sala (ex: 206)" data-i18n-aria="areas.sala_placeholder" aria-label="Sala">
+          <input type="text" name="bloco" id="area-bloco" data-i18n-placeholder="areas.bloco_placeholder" placeholder="Bloco (ex: E)" data-i18n-aria="areas.bloco_placeholder" aria-label="Bloco">
+          <input type="text" name="professor" id="area-professor" data-i18n-placeholder="areas.professor_placeholder" placeholder="Professor (ex: Andre)" data-i18n-aria="areas.professor_placeholder" aria-label="Professor">
         </div>
-        <button type="submit">Adicionar</button>
+        <button type="submit" data-i18n="areas.btn_adicionar">Adicionar</button>
       </form>
       <div id="lista-areas" class="areas-grid"></div>
     </section>
 
     <!-- Foco / Pomodoro -->
     <section id="foco" class="panel">
-      <p class="section-desc">Execute suas tarefas com concentração</p>
+      <p class="section-desc" data-i18n="foco.section_desc">Execute suas tarefas com concentração</p>
       
       <div class="foco-container">
         <div class="foco-timer-section">
@@ -213,64 +259,64 @@
             </svg>
             <div class="foco-timer-display">
               <span id="foco-timer-time">25:00</span>
-              <span id="foco-timer-label">Foco</span>
+              <span id="foco-timer-label" data-i18n="foco.timer_foco">Foco</span>
             </div>
           </div>
           
           <div class="foco-controls">
-            <button id="foco-start" class="foco-btn foco-start">▶ Iniciar</button>
-            <button id="foco-pause" class="foco-btn foco-pause" style="display:none;">⏸ Pausar</button>
-            <button id="foco-end" class="foco-btn foco-end" style="display:none;">⏹ Encerrar</button>
-            <button id="foco-reset" class="foco-btn foco-reset">🔄 Reset</button>
-            <button id="foco-skip" class="foco-btn foco-reset" style="display:none;">⏭️ Pular</button>
+            <button id="foco-start" class="foco-btn foco-start" data-i18n="foco.btn_iniciar">▶ Iniciar</button>
+            <button id="foco-pause" class="foco-btn foco-pause" style="display:none;" data-i18n="foco.btn_pausar">⏸ Pausar</button>
+            <button id="foco-end" class="foco-btn foco-end" style="display:none;" data-i18n="foco.btn_encerrar">⏹ Encerrar</button>
+            <button id="foco-reset" class="foco-btn foco-reset" data-i18n="foco.btn_reset">🔄 Reset</button>
+            <button id="foco-skip" class="foco-btn foco-reset" style="display:none;" data-i18n="foco.btn_pular">⏭️ Pular</button>
           </div>
         </div>
         
         <div class="foco-config-section">
           <div class="foco-config">
-            <label for="foco-area">Área</label>
+            <label for="foco-area" data-i18n="foco.label_area">Área</label>
             <select id="foco-area">
-              <option value="">Selecione a área</option>
+              <option value="" data-i18n="foco.select_area">Selecione a área</option>
             </select>
             
-            <label for="foco-task">Tarefa (opcional)</label>
+            <label for="foco-task" data-i18n="foco.label_tarefa">Tarefa (opcional)</label>
             <select id="foco-task" disabled>
-              <option value="">Selecione uma tarefa</option>
+              <option value="" data-i18n="foco.select_tarefa">Selecione uma tarefa</option>
             </select>
             
             <div class="foco-time-config">
               <div class="foco-time-input">
-                <label for="foco-minutes">Foco</label>
+                <label for="foco-minutes" data-i18n="foco.label_foco">Foco</label>
                 <div class="foco-input-group">
                   <input type="number" id="foco-minutes" value="25" min="5" max="90">
-                  <span>min</span>
+                  <span data-i18n="foco.label_min">min</span>
                 </div>
               </div>
               
               <div class="foco-time-input">
-                <label for="foco-break-minutes">Descanso</label>
+                <label for="foco-break-minutes" data-i18n="foco.label_descanso">Descanso</label>
                 <div class="foco-input-group">
                   <input type="number" id="foco-break-minutes" value="5" min="1" max="30">
-                  <span>min</span>
+                  <span data-i18n="foco.label_min">min</span>
                 </div>
               </div>
             </div>
             
             <div class="foco-auto-break">
               <input type="checkbox" id="foco-auto-break" checked>
-              <label for="foco-auto-break">Descanso automático</label>
+              <label for="foco-auto-break" data-i18n="foco.label_descanso_auto">Descanso automático</label>
             </div>
           </div>
           
           <div class="foco-stats">
             <div class="foco-today">
-              <h4>Hoje</h4>
-              <p><span id="foco-sessions-count">0</span> sessões</p>
-              <p><span id="foco-total-time">0</span>min</p>
+              <h4 data-i18n="foco.hoje">Hoje</h4>
+              <p><span id="foco-sessions-count">0</span> <span data-i18n="foco.sessoes_count">sessões</span></p>
+              <p><span id="foco-total-time">0</span><span data-i18n="foco.label_min">min</span></p>
             </div>
             <div class="foco-task-progress" id="foco-task-progress" style="display:none;">
-              <h4>Meta da tarefa</h4>
-              <p><span id="foco-task-pomodoros">0</span> / <span id="foco-task-meta">0</span> pomodoros</p>
+              <h4 data-i18n="foco.meta_tarefa">Meta da tarefa</h4>
+              <p><span id="foco-task-pomodoros">0</span> / <span id="foco-task-meta">0</span> <span data-i18n="foco.pomodoros">pomodoros</span></p>
               <div class="foco-progress-bar">
                 <div class="foco-progress-fill" id="foco-progress-fill"></div>
               </div>
@@ -287,13 +333,13 @@
         <div class="gami-hero">
           <div class="gami-hero-content">
             <div class="gami-level-badge">
-              <span class="gami-level-label-small">NÍVEL</span>
+              <span class="gami-level-label-small" data-i18n="gamificacao.nivel_label">NÍVEL</span>
               <span class="gami-level-num-big" id="gami-level">1</span>
             </div>
             <div class="gami-hero-info">
               <div class="gami-xp-container">
                 <div class="gami-xp-header">
-                  <span class="gami-xp-label">Experiência</span>
+                  <span class="gami-xp-label" data-i18n="gamificacao.experiencia">Experiência</span>
                   <span class="gami-xp-values">
                     <span id="gami-xp-current">0</span> / <span id="gami-xp-next">100</span> XP
                   </span>
@@ -303,7 +349,7 @@
                   <div class="gami-xp-glow"></div>
                 </div>
                 <div class="gami-xp-percent-wrap">
-                  <span class="gami-xp-percent-label">Progresso:</span>
+                  <span class="gami-xp-percent-label" data-i18n="gamificacao.progresso">Progresso:</span>
                   <span class="gami-xp-percent" id="gami-xp-percent">0%</span>
                 </div>
               </div>
@@ -311,7 +357,7 @@
                 <span class="gami-streak-icon">🔥</span>
                 <div class="gami-streak-info">
                   <span class="gami-streak-num" id="gami-streak">0</span>
-                  <span class="gami-streak-label">dias seguidos</span>
+                  <span class="gami-streak-label" data-i18n="gamificacao.dias_seguidos">dias seguidos</span>
                 </div>
               </div>
             </div>
@@ -324,40 +370,40 @@
             <div class="gami-metric-icon">🍅</div>
             <div class="gami-metric-content">
               <span class="gami-metric-num" id="gami-pomodoros">0</span>
-              <span class="gami-metric-label">Pomodoros</span>
+              <span class="gami-metric-label" data-i18n="gamificacao.pomodoros">Pomodoros</span>
             </div>
           </div>
           <div class="gami-metric-card">
             <div class="gami-metric-icon">✅</div>
             <div class="gami-metric-content">
               <span class="gami-metric-num" id="gami-tarefas">0</span>
-              <span class="gami-metric-label">Tarefas</span>
+              <span class="gami-metric-label" data-i18n="gamificacao.tarefas">Tarefas</span>
             </div>
           </div>
           <div class="gami-metric-card">
             <div class="gami-metric-icon">📚</div>
             <div class="gami-metric-content">
               <span class="gami-metric-num" id="gami-areas">0</span>
-              <span class="gami-metric-label">Áreas</span>
+              <span class="gami-metric-label" data-i18n="gamificacao.areas">Áreas</span>
             </div>
           </div>
           <div class="gami-metric-card">
             <div class="gami-metric-icon">⭐</div>
             <div class="gami-metric-content">
               <span class="gami-metric-num" id="gami-xp-total">0</span>
-              <span class="gami-metric-label">XP Total</span>
+              <span class="gami-metric-label" data-i18n="gamificacao.xp_total">XP Total</span>
             </div>
           </div>
         </div>
 
         <!-- Conquistas por Categoria -->
         <div class="gami-achievements">
-          <h2 class="gami-section-title">Conquistas</h2>
+          <h2 class="gami-section-title" data-i18n="gamificacao.conquistas">Conquistas</h2>
           
           <div class="gami-category" id="gami-cat-xp">
             <h3 class="gami-category-title">
               <span class="gami-cat-icon">⭐</span>
-              Experiência
+              <span data-i18n="gamificacao.cat_experiencia">Experiência</span>
             </h3>
             <div class="gami-badges-grid" id="gami-badges-xp"></div>
           </div>
@@ -365,7 +411,7 @@
           <div class="gami-category" id="gami-cat-streak">
             <h3 class="gami-category-title">
               <span class="gami-cat-icon">🔥</span>
-              Dias Seguidos
+              <span data-i18n="gamificacao.cat_dias_seguidos">Dias Seguidos</span>
             </h3>
             <div class="gami-badges-grid" id="gami-badges-streak"></div>
           </div>
@@ -373,7 +419,7 @@
           <div class="gami-category" id="gami-cat-pomodoro">
             <h3 class="gami-category-title">
               <span class="gami-cat-icon">🍅</span>
-              Pomodoros
+              <span data-i18n="gamificacao.cat_pomodoros">Pomodoros</span>
             </h3>
             <div class="gami-badges-grid" id="gami-badges-pomodoro"></div>
           </div>
@@ -381,7 +427,7 @@
           <div class="gami-category" id="gami-cat-tasks">
             <h3 class="gami-category-title">
               <span class="gami-cat-icon">✅</span>
-              Tarefas Concluídas
+              <span data-i18n="gamificacao.cat_tarefas_concluidas">Tarefas Concluídas</span>
             </h3>
             <div class="gami-badges-grid" id="gami-badges-tasks"></div>
           </div>
@@ -389,7 +435,7 @@
           <div class="gami-category" id="gami-cat-level">
             <h3 class="gami-category-title">
               <span class="gami-cat-icon">🎖️</span>
-              Níveis Alcançados
+              <span data-i18n="gamificacao.cat_niveis_alcancados">Níveis Alcançados</span>
             </h3>
             <div class="gami-badges-grid" id="gami-badges-level"></div>
           </div>
@@ -397,7 +443,7 @@
           <div class="gami-category" id="gami-cat-coins">
             <h3 class="gami-category-title">
               <span class="gami-cat-icon">💰</span>
-              Coins
+              <span data-i18n="gamificacao.cat_coins">Coins</span>
             </h3>
             <div class="gami-badges-grid" id="gami-badges-coins"></div>
           </div>
@@ -407,54 +453,54 @@
 
     <!-- Quadro de Horários -->
     <section id="horarios" class="panel">
-      <p class="section-desc">Seus horários de aulas presenciais por dia da semana</p>
+      <p class="section-desc" data-i18n="horarios.section_desc">Seus horários de aulas presenciais por dia da semana</p>
       <div id="quadro-horarios" class="horarios-grid"></div>
     </section>
 
     <!-- Tarefas -->
     <section id="tasks" class="panel">
       <div class="tasks-filters">
-        <select id="sort-tasks" aria-label="Ordenar por">
-          <option value="prioridade">Por Prioridade</option>
-          <option value="data">Por Data</option>
+        <select id="sort-tasks" data-i18n-aria="tasks.sort_label" aria-label="Ordenar por">
+          <option value="prioridade" data-i18n="tasks.sort_prioridade">Por Prioridade</option>
+          <option value="data" data-i18n="tasks.sort_data">Por Data</option>
         </select>
       </div>
       <form id="form-task" class="card form-card form-task">
-        <label class="form-label" for="task-area">Área</label>
+        <label class="form-label" for="task-area" data-i18n="tasks.area_label">Área</label>
         <select name="area_id" id="task-area" required class="form-select-area">
-          <option value="">Selecione a área</option>
+          <option value="" data-i18n="geral.select_area">Selecione a área</option>
         </select>
         <span id="area-selected" class="area-selected" aria-live="polite"></span>
-        <label class="form-label" for="task-titulo">Título</label>
-        <input type="text" name="titulo" id="task-titulo" placeholder="Título da tarefa" required class="form-input-lg">
-        <label class="form-label" for="task-prioridade">Prioridade</label>
+        <label class="form-label" for="task-titulo" data-i18n="tasks.titulo_label">Título</label>
+        <input type="text" name="titulo" id="task-titulo" data-i18n-placeholder="tasks.titulo_placeholder" placeholder="Título da tarefa" required class="form-input-lg">
+        <label class="form-label" for="task-prioridade" data-i18n="tasks.prioridade_label">Prioridade</label>
         <select name="prioridade" id="task-prioridade">
-          <option value="">Sem prioridade</option>
-          <option value="3">🔴 Alta</option>
-          <option value="2">🟡 Média</option>
-          <option value="1">🟢 Baixa</option>
+          <option value="" data-i18n="tasks.sem_prioridade">Sem prioridade</option>
+          <option value="3" data-i18n="tasks.alta">🔴 Alta</option>
+          <option value="2" data-i18n="tasks.media">🟡 Média</option>
+          <option value="1" data-i18n="tasks.baixa">🟢 Baixa</option>
         </select>
-        <label class="form-label" for="task-meta-pomodoros">Meta de Pomodoros</label>
+        <label class="form-label" for="task-meta-pomodoros" data-i18n="tasks.meta_pomodoros_label">Meta de Pomodoros</label>
         <input type="number" name="meta_pomodoros" id="task-meta-pomodoros" placeholder="Opcional" min="1" max="50">
-        <label class="form-label" for="task-desc">Descrição</label>
-        <textarea name="descricao" id="task-desc" placeholder="Descrição (opcional)" rows="3" class="form-textarea"></textarea>
-        <label class="form-label" for="task-data">Data de entrega</label>
+        <label class="form-label" for="task-desc" data-i18n="tasks.descricao_label">Descrição</label>
+        <textarea name="descricao" id="task-desc" data-i18n-placeholder="tasks.descricao_placeholder" placeholder="Descrição (opcional)" rows="3" class="form-textarea"></textarea>
+        <label class="form-label" for="task-data" data-i18n="tasks.data_entrega">Data de entrega</label>
         <input type="date" name="data_entrega" id="task-data" required>
-        <button type="submit">Adicionar</button>
+        <button type="submit" data-i18n="tasks.btn_adicionar">Adicionar</button>
       </form>
       <ul id="lista-tasks" class="list"></ul>
     </section>
 
     <!-- Sessões -->
     <section id="sessoes" class="panel">
-      <p class="section-desc">Registre seu tempo de estudo</p>
+      <p class="section-desc" data-i18n="sessoes.section_desc">Registre seu tempo de estudo</p>
       <form id="form-sessao" class="card form-card">
-        <select name="area_id" required aria-label="Área">
-          <option value="">Selecione a área</option>
+        <select name="area_id" required data-i18n-aria="sessoes.select_area" aria-label="Área">
+          <option value="" data-i18n="sessoes.select_area">Selecione a área</option>
         </select>
-        <input type="number" name="duracao_minutos" placeholder="Minutos (ex: 30)" min="1" max="480" required aria-label="Duração em minutos">
-        <input type="date" name="data" title="Deixe em branco para hoje" aria-label="Data">
-        <button type="submit">Registrar</button>
+        <input type="number" name="duracao_minutos" data-i18n-placeholder="sessoes.minutos_placeholder" placeholder="Minutos (ex: 30)" min="1" max="480" required data-i18n-aria="sessoes.minutos_placeholder" aria-label="Duração em minutos">
+        <input type="date" name="data" title="Deixe em branco para hoje" data-i18n-aria="sessoes.data_placeholder" aria-label="Data">
+        <button type="submit" data-i18n="sessoes.btn_registrar">Registrar</button>
       </form>
       <ul id="lista-sessoes" class="list"></ul>
     </section>
@@ -466,23 +512,23 @@
         <div class="resumo-hero">
           <div class="resumo-hero-stat">
             <span class="resumo-hero-num" id="resumo-horas-total">0</span>
-            <span class="resumo-hero-label">horas estudadas</span>
+            <span class="resumo-hero-label" data-i18n="resumo.horas_estudadas">horas estudadas</span>
           </div>
           <div class="resumo-hero-divider"></div>
           <div class="resumo-hero-stat">
             <span class="resumo-hero-num" id="resumo-sessoes-total">0</span>
-            <span class="resumo-hero-label">sessões</span>
+            <span class="resumo-hero-label" data-i18n="resumo.sessoes">sessões</span>
           </div>
           <div class="resumo-hero-divider"></div>
           <div class="resumo-hero-stat">
             <span class="resumo-hero-num" id="resumo-areas-total">0</span>
-            <span class="resumo-hero-label">áreas</span>
+            <span class="resumo-hero-label" data-i18n="resumo.areas">áreas</span>
           </div>
         </div>
 
         <!-- Gráfico Principal -->
         <div class="resumo-chart-section">
-          <h3 class="resumo-section-title">Distribuição por Área</h3>
+          <h3 class="resumo-section-title" data-i18n="resumo.chart_title">Distribuição por Área</h3>
           <div class="resumo-chart-container">
             <canvas id="chart-resumo"></canvas>
           </div>
@@ -490,7 +536,7 @@
 
         <!-- Lista de Áreas com Barras -->
         <div class="resumo-list-section">
-          <h3 class="resumo-section-title">Detalhamento</h3>
+          <h3 class="resumo-section-title" data-i18n="resumo.detalhamento">Detalhamento</h3>
           <div class="resumo-list" id="resumo-horas"></div>
         </div>
       </div>
@@ -502,43 +548,43 @@
   <div id="modal-task" class="modal" aria-hidden="true">
     <div class="modal-backdrop"></div>
     <div class="modal-content">
-      <button class="modal-close" title="Fechar">×</button>
+      <button class="modal-close" data-i18n-title="modal.fechar" title="Fechar">×</button>
       <form id="form-edit-task" class="modal-form">
-        <h3 class="modal-title">Editar Tarefa</h3>
+        <h3 class="modal-title" data-i18n="modal.edit_tarefa">Editar Tarefa</h3>
         <input type="hidden" name="id">
-        <label class="form-label" for="edit-task-area">Área</label>
+        <label class="form-label" for="edit-task-area" data-i18n="modal.area_label">Área</label>
         <select name="area_id" id="edit-task-area" required class="form-select-area">
-          <option value="">Selecione a área</option>
+          <option value="" data-i18n="geral.select_area">Selecione a área</option>
         </select>
-        <label class="form-label" for="edit-task-titulo">Título</label>
+        <label class="form-label" for="edit-task-titulo" data-i18n="modal.titulo_label">Título</label>
         <input type="text" name="titulo" id="edit-task-titulo" required>
-        <label class="form-label" for="edit-task-desc">Descrição</label>
+        <label class="form-label" for="edit-task-desc" data-i18n="modal.descricao_label">Descrição</label>
         <textarea name="descricao" id="edit-task-desc" rows="3"></textarea>
-        <label class="form-label" for="edit-task-data">Data de entrega</label>
+        <label class="form-label" for="edit-task-data" data-i18n="modal.data_entrega">Data de entrega</label>
         <input type="date" name="data_entrega" id="edit-task-data" required>
-        <label class="form-label" for="edit-task-status">Status</label>
+        <label class="form-label" for="edit-task-status" data-i18n="modal.status_label">Status</label>
         <select name="concluida" id="edit-task-status">
-          <option value="false">Pendente</option>
-          <option value="true">Concluída</option>
+          <option value="false" data-i18n="modal.pendente">Pendente</option>
+          <option value="true" data-i18n="modal.concluida">Concluída</option>
         </select>
-        <label class="form-label" for="edit-task-prioridade">Prioridade</label>
+        <label class="form-label" for="edit-task-prioridade" data-i18n="modal.prioridade_label">Prioridade</label>
         <select name="prioridade" id="edit-task-prioridade">
-          <option value="">Sem prioridade</option>
-          <option value="3">🔴 Alta</option>
-          <option value="2">🟡 Média</option>
-          <option value="1">🟢 Baixa</option>
+          <option value="" data-i18n="modal.sem_prioridade">Sem prioridade</option>
+          <option value="3" data-i18n="modal.alta">🔴 Alta</option>
+          <option value="2" data-i18n="modal.media">🟡 Média</option>
+          <option value="1" data-i18n="modal.baixa">🟢 Baixa</option>
         </select>
-        <label class="form-label" for="edit-task-meta-pomodoros">Meta de Pomodoros</label>
+        <label class="form-label" for="edit-task-meta-pomodoros" data-i18n="modal.meta_pomodoros_label">Meta de Pomodoros</label>
         <input type="number" name="meta_pomodoros" id="edit-task-meta-pomodoros" min="1" max="50">
         <div class="edit-pomo-progress" id="edit-pomo-progress" style="display:none;">
-          <span>Pomodoros concluídos: </span>
+          <span data-i18n="modal.pomodoros_concluidos">Pomodoros concluídos: </span>
           <span id="edit-pomo-concluidos">0</span>
         </div>
         <div id="edit-duracao-container" style="display:none;">
-          <label class="form-label" for="edit-task-duracao">Duração (minutos)</label>
+          <label class="form-label" for="edit-task-duracao" data-i18n="modal.duracao_label">Duração (minutos)</label>
           <input type="number" name="duracao_minutos" id="edit-task-duracao" min="1">
         </div>
-        <button type="submit" class="btn-save">Salvar</button>
+        <button type="submit" class="btn-save" data-i18n="modal.salvar">Salvar</button>
       </form>
     </div>
   </div>
@@ -546,48 +592,48 @@
   <div id="modal-area" class="modal" aria-hidden="true">
     <div class="modal-backdrop"></div>
     <div class="modal-content">
-      <button class="modal-close" title="Fechar">×</button>
+      <button class="modal-close" data-i18n-title="modal.fechar" title="Fechar">×</button>
       <form id="form-edit-area" class="modal-form">
-        <h3 class="modal-title">Editar Área</h3>
+        <h3 class="modal-title" data-i18n="modal.edit_area">Editar Área</h3>
         <input type="hidden" name="id">
-        <label class="form-label" for="edit-area-nome">Nome</label>
+        <label class="form-label" for="edit-area-nome" data-i18n="modal.nome_label">Nome</label>
         <div class="input-with-color">
           <input type="text" name="nome" id="edit-area-nome" required>
-          <div class="color-picker-wrap" title="Cor">
+          <div class="color-picker-wrap" data-i18n-title="modal.fechar" title="Cor">
             <span class="color-square" id="edit-color-preview"></span>
             <input type="color" name="cor" id="edit-area-cor" value="#6366f1" class="color-input">
           </div>
         </div>
-        <label class="form-label" for="edit-area-subcat">Subcategoria</label>
-        <input type="text" name="subcategoria" id="edit-area-subcat" list="subcategoria-list-edit" placeholder="Categoria (opcional)">
+        <label class="form-label" for="edit-area-subcat" data-i18n="modal.subcategoria_label">Subcategoria</label>
+        <input type="text" name="subcategoria" id="edit-area-subcat" list="subcategoria-list-edit" data-i18n-placeholder="modal.subcategoria_placeholder" placeholder="Categoria (opcional)">
         <datalist id="subcategoria-list-edit"></datalist>
-        <label class="form-label" for="edit-tipo-aula">Tipo</label>
-        <select name="tipo" id="edit-tipo-aula" aria-label="Tipo de aula">
-          <option value="online">Online</option>
-          <option value="presencial">Presencial</option>
+        <label class="form-label" for="edit-tipo-aula" data-i18n="modal.tipo_label">Tipo</label>
+        <select name="tipo" id="edit-tipo-aula" data-i18n-aria="areas.tipo_aula" aria-label="Tipo de aula">
+          <option value="online" data-i18n="modal.online">Online</option>
+          <option value="presencial" data-i18n="modal.presencial">Presencial</option>
         </select>
         <div id="edit-campos-presencial" class="campos-presencial" style="display:none;">
-          <label class="form-label" for="edit-area-dia">Dia da semana</label>
+          <label class="form-label" for="edit-area-dia" data-i18n="modal.dia_semana">Dia da semana</label>
           <select name="dia_semana" id="edit-area-dia">
-            <option value="">Selecione</option>
-            <option value="segunda">Segunda-feira</option>
-            <option value="terca">Terça-feira</option>
-            <option value="quarta">Quarta-feira</option>
-            <option value="quinta">Quinta-feira</option>
-            <option value="sexta">Sexta-feira</option>
-            <option value="sabado">Sábado</option>
-            <option value="domingo">Domingo</option>
+            <option value="" data-i18n="modal.selecione">Selecione</option>
+            <option value="segunda" data-i18n="horarios.dias.segunda">Segunda-feira</option>
+            <option value="terca" data-i18n="horarios.dias.terca">Terça-feira</option>
+            <option value="quarta" data-i18n="horarios.dias.quarta">Quarta-feira</option>
+            <option value="quinta" data-i18n="horarios.dias.quinta">Quinta-feira</option>
+            <option value="sexta" data-i18n="horarios.dias.sexta">Sexta-feira</option>
+            <option value="sabado" data-i18n="horarios.dias.sabado">Sábado</option>
+            <option value="domingo" data-i18n="horarios.dias.domingo">Domingo</option>
           </select>
-          <label class="form-label" for="edit-area-horario">Horário</label>
+          <label class="form-label" for="edit-area-horario" data-i18n="modal.horario_label">Horário</label>
           <input type="text" name="horario" id="edit-area-horario" placeholder="Ex: 19:00 - 20:40">
-          <label class="form-label" for="edit-area-sala">Sala</label>
+          <label class="form-label" for="edit-area-sala" data-i18n="modal.sala_label">Sala</label>
           <input type="text" name="sala" id="edit-area-sala" placeholder="Ex: 206">
-          <label class="form-label" for="edit-area-bloco">Bloco</label>
+          <label class="form-label" for="edit-area-bloco" data-i18n="modal.bloco_label">Bloco</label>
           <input type="text" name="bloco" id="edit-area-bloco" placeholder="Ex: E">
-          <label class="form-label" for="edit-area-prof">Professor</label>
+          <label class="form-label" for="edit-area-prof" data-i18n="modal.professor_label">Professor</label>
           <input type="text" name="professor" id="edit-area-prof" placeholder="Ex: Andre">
         </div>
-        <button type="submit" class="btn-save">Salvar</button>
+        <button type="submit" class="btn-save" data-i18n="modal.salvar">Salvar</button>
       </form>
     </div>
   </div>
@@ -595,19 +641,19 @@
   <div id="modal-sessao" class="modal" aria-hidden="true">
     <div class="modal-backdrop"></div>
     <div class="modal-content">
-      <button class="modal-close" title="Fechar">×</button>
+      <button class="modal-close" data-i18n-title="modal.fechar" title="Fechar">×</button>
       <form id="form-edit-sessao" class="modal-form">
-        <h3 class="modal-title">Editar Sessão</h3>
+        <h3 class="modal-title" data-i18n="modal.edit_sessao">Editar Sessão</h3>
         <input type="hidden" name="id">
-        <label class="form-label" for="edit-sessao-area">Área</label>
+        <label class="form-label" for="edit-sessao-area" data-i18n="modal.area_label">Área</label>
         <select name="area_id" id="edit-sessao-area" required>
-          <option value="">Selecione a área</option>
+          <option value="" data-i18n="geral.select_area">Selecione a área</option>
         </select>
-        <label class="form-label" for="edit-sessao-duracao">Duração (minutos)</label>
+        <label class="form-label" for="edit-sessao-duracao" data-i18n="modal.duracao_edit_label">Duração (minutos)</label>
         <input type="number" name="duracao_minutos" id="edit-sessao-duracao" min="1" required>
-        <label class="form-label" for="edit-sessao-data">Data</label>
+        <label class="form-label" for="edit-sessao-data" data-i18n="modal.data_entrega">Data</label>
         <input type="date" name="data" id="edit-sessao-data" required>
-        <button type="submit" class="btn-save">Salvar</button>
+        <button type="submit" class="btn-save" data-i18n="modal.salvar">Salvar</button>
       </form>
     </div>
   </div>
@@ -619,37 +665,37 @@
       <div class="pomo-confetti-container" id="pomo-confetti"></div>
       <div class="pomo-modal-header">
         <div class="pomo-modal-icon">🎯</div>
-        <h2>Pomodoro Concluído!</h2>
+        <h2 data-i18n="pomo_modal.title">Pomodoro Concluído!</h2>
       </div>
       <div class="pomo-modal-body">
         <div class="pomo-modal-duration">
-          ⏱️ <span id="pomo-modal-duracao">25</span> min de foco
+          ⏱️ <span id="pomo-modal-duracao">25</span> <span data-i18n="pomo_modal.min_foco">min de foco</span>
         </div>
         <div class="pomo-modal-rewards">
           <div class="pomo-reward-card coins">
             <div class="pomo-reward-icon">🪙</div>
             <div class="pomo-reward-value" id="pomo-modal-coins">+3</div>
-            <div class="pomo-reward-label">Moedas</div>
+            <div class="pomo-reward-label" data-i18n="pomo_modal.moedas">Moedas</div>
           </div>
           <div class="pomo-reward-card xp">
             <div class="pomo-reward-icon">⭐</div>
             <div class="pomo-reward-value" id="pomo-modal-xp">+0</div>
-            <div class="pomo-reward-label">XP</div>
+            <div class="pomo-reward-label" data-i18n="pomo_modal.xp">XP</div>
           </div>
         </div>
         <div id="pomo-modal-achievements" class="pomo-modal-achievements" style="display:none">
-          <div class="pomo-achievements-title">🏆 Novas Conquistas</div>
+          <div class="pomo-achievements-title" data-i18n="pomo_modal.novas_conquistas">🏆 Novas Conquistas</div>
           <div id="pomo-modal-achievement-list" class="pomo-achievement-list"></div>
         </div>
         <div class="pomo-modal-streak" id="pomo-modal-streak" style="display:none">
-          🔥 Streak: <strong><span id="pomo-modal-streak-count">0</span> dias</strong>
+          🔥 <span data-i18n="pomo_modal.streak">Streak:</span> <strong><span id="pomo-modal-streak-count">0</span> <span data-i18n="pomo_modal.dias">dias</span></strong>
         </div>
         <div class="pomo-modal-level" id="pomo-modal-level" style="display:none">
-          🎊 Subiu para o <strong>Nível <span id="pomo-modal-level-num">1</span></strong>!
+          🎊 <span data-i18n="pomo_modal.subiu_nivel">Subiu para o</span> <strong><span data-i18n="pomo_modal.nivel">Nível</span> <span id="pomo-modal-level-num">1</span></strong>!
         </div>
       </div>
       <div class="pomo-modal-footer">
-        <button class="pomo-modal-btn" onclick="FocoTimer.closePomoModal()">
+        <button class="pomo-modal-btn" onclick="FocoTimer.closePomoModal()" data-i18n="pomo_modal.continuar">
           Continuar 🚀
         </button>
       </div>
@@ -658,6 +704,7 @@
 
   <div><!-- End main-app -->
 
+  <script src="/static/i18n.js"></script>
   <script src="/static/theme.js"></script>
   <script>ThemeManager.init();</script>
   <script src="/static/auth.js"></script>

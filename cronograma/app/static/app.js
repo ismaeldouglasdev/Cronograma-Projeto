@@ -104,16 +104,17 @@ async function delReq(url) {
 function formatDate(str) {
   if (!str) return "";
   const d = new Date(str + "T12:00:00");
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+  const lang = (typeof getCurrentLang === 'function' ? getCurrentLang() : 'pt-BR');
+  return d.toLocaleDateString(lang === 'en' ? 'en-US' : 'pt-BR', { day: "2-digit", month: "short", year: "numeric" });
 }
 
 function formatDuration(minutes) {
-  if (!minutes || minutes < 1) return "0min";
-  if (minutes < 60) return minutes + "min";
+  if (!minutes || minutes < 1) return "0" + (typeof t === 'function' ? t('foco.label_min') : 'min');
+  if (minutes < 60) return minutes + (typeof t === 'function' ? t('foco.label_min') : 'min');
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
   if (mins === 0) return hours + "h";
-  return hours + "h" + mins + "min";
+  return hours + "h" + mins + (typeof t === 'function' ? t('foco.label_min') : 'min');
 }
 
 function areaById(areas, id) {
@@ -142,13 +143,13 @@ async function loadAreas() {
     const subsFromAreas = areas.filter((a) => a.subcategoria).map((a) => a.subcategoria);
     const subsFromStorage = getSubcategorias();
     const allSubs = [...new Set([...subsFromAreas, ...subsFromStorage])];
-    categoryFilter.innerHTML = '<option value="">Todas as categorias</option>' + allSubs.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+    categoryFilter.innerHTML = '<option value="">' + (typeof t === 'function' ? t('areas.todas_categorias') : 'Todas as categorias') + '</option>' + allSubs.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
   }
   
   const opts = areas
     .map((a) => `<option value="${a.id}" data-color="${a.cor || "#6366f1"}">${escapeHtml(a.nome)}</option>`)
     .join("");
-  const selectHtml = '<option value="">Selecione a área</option>' + opts;
+  const selectHtml = '<option value="">' + (typeof t === 'function' ? t('geral.select_area') : 'Selecione a área') + '</option>' + opts;
   document.querySelectorAll('select[name="area_id"]').forEach((sel) => (sel.innerHTML = selectHtml));
   updateAreaSelected();
   
@@ -176,7 +177,7 @@ function renderAreasGrid(areas) {
   if (!container) return;
   
   if (!filtered.length) {
-    container.innerHTML = '<p class="resumo-empty">Nenhuma área encontrada.</p>';
+    container.innerHTML = '<p class="resumo-empty">' + (typeof t === 'function' ? t('areas.empty') : 'Nenhuma \u00e1rea encontrada.') + '</p>';
     return;
   }
   
@@ -184,12 +185,13 @@ function renderAreasGrid(areas) {
     .map((a) => {
       const meta = [];
       if (a.subcategoria) meta.push(a.subcategoria);
-      let tipoLabel = a.tipo === "presencial" ? "Presencial" : "Online";
+      let tipoLabel = a.tipo === "presencial" ? (typeof t === 'function' ? t('areas.presencial') : 'Presencial') : (typeof t === 'function' ? t('areas.online') : 'Online');
       let tipoInfo = "";
       if (a.tipo === "presencial") {
-        const parts = [a.dia_semana, a.horario, a.sala ? `Sala ${a.sala}` : null, a.bloco ? `Bloco ${a.bloco}` : null].filter(Boolean);
+        const _t_prefix = typeof t === 'function' ? t : (k => k);
+        const parts = [a.dia_semana, a.horario, a.sala ? _t_prefix('areas.sala_prefix') + a.sala : null, a.bloco ? _t_prefix('areas.bloco_prefix') + a.bloco : null].filter(Boolean);
         if (parts.length) tipoInfo = parts.join(" - ");
-        if (a.professor) tipoInfo += ` · Prof: ${a.professor}`;
+        if (a.professor) tipoInfo += ` · ${_t_prefix('areas.prof_prefix')}${a.professor}`;
       }
       const bgColor = a.cor || "#6366f1";
       return `
@@ -221,7 +223,7 @@ function renderAreasGrid(areas) {
   container.querySelectorAll(".btn-del[data-type='area']").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (!confirm("Excluir esta área? Tarefas e sessões serão removidas.")) return;
+      if (!confirm(typeof t === 'function' ? t('areas.confirm_delete') : 'Excluir esta \u00e1rea? Tarefas e sess\u00f5es ser\u00e3o removidas.')) return;
       await delReq(`/areas/${btn.dataset.id}`);
       horariosLoaded = false;
       const areas2 = await loadAreas();
@@ -254,7 +256,7 @@ async function loadTasks(areas) {
   }
   
   if (!sortedTasks.length) {
-    ul.innerHTML = '<li class="resumo-empty">Nenhuma tarefa. Adicione uma acima.</li>';
+    ul.innerHTML = '<li class="resumo-empty">' + (typeof t === 'function' ? t('tasks.empty') : 'Nenhuma tarefa. Adicione uma acima.') + '</li>';
     return;
   }
   ul.innerHTML = sortedTasks
@@ -299,11 +301,11 @@ async function loadTasks(areas) {
       const id = parseInt(btn.dataset.id, 10);
       const done = btn.dataset.done === "true";
       if (!done) {
-        const minutos = prompt("Quantos minutos você dedicou a esta tarefa?");
+        const minutos = prompt(typeof t === 'function' ? t('tasks.prompt_minutos') : 'Quantos minutos voc\u00ea dedicou a esta tarefa?');
         if (minutos === null || minutos.trim() === "") return;
         const n = parseInt(minutos, 10);
         if (isNaN(n) || n < 1) {
-          alert("Informe um número válido de minutos.");
+          alert(typeof t === 'function' ? t('tasks.alert_minutos_validos') : 'Informe um n\u00famero v\u00e1lido de minutos.');
           return;
         }
         await patch(`/tasks/${id}`, { concluida: true, duracao_minutos: n });
@@ -325,7 +327,7 @@ async function loadTasks(areas) {
   ul.querySelectorAll(".btn-del[data-type='task']").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (!confirm("Excluir esta tarefa?")) return;
+      if (!confirm(typeof t === 'function' ? t('tasks.confirm_delete') : 'Excluir esta tarefa?')) return;
       await delReq(`/tasks/${btn.dataset.id}`);
       const freshAreas = await loadAreas();
       cachedAreas = freshAreas;
@@ -338,7 +340,7 @@ async function loadSessoes(areas) {
   const sessoes = await get("/sessoes");
   const ul = document.getElementById("lista-sessoes");
   if (!sessoes || !sessoes.length) {
-    ul.innerHTML = '<li class="resumo-empty">Nenhuma sessão registrada.</li>';
+    ul.innerHTML = '<li class="resumo-empty">' + (typeof t === 'function' ? t('sessoes.empty') : 'Nenhuma sess\u00e3o registrada.') + '</li>';
     return;
   }
   ul.innerHTML = sessoes
@@ -365,7 +367,7 @@ async function loadSessoes(areas) {
   ul.querySelectorAll(".btn-del[data-type='sessao']").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (!confirm("Excluir esta sessão?")) return;
+      if (!confirm(typeof t === 'function' ? t('sessoes.confirm_delete') : 'Excluir esta sess\u00e3o?')) return;
       await delReq(`/sessoes/${btn.dataset.id}`);
       const freshAreas = await loadAreas();
       await loadSessoes(freshAreas);
@@ -382,7 +384,7 @@ async function openTaskModal(task, areas) {
   
   const areaSelect = form.querySelector('select[name="area_id"]');
   const opts = areas.map((a) => `<option value="${a.id}">${escapeHtml(a.nome)}</option>`).join("");
-  areaSelect.innerHTML = '<option value="">Selecione a área</option>' + opts;
+  areaSelect.innerHTML = '<option value="">' + (typeof t === 'function' ? t('geral.select_area') : 'Selecione a \u00e1rea') + '</option>' + opts;
   areaSelect.value = task.area_id;
   
   form.titulo.value = task.titulo;
@@ -466,7 +468,7 @@ function openSessaoModal(sessao, areas) {
 
   const areaSelect = form.querySelector('select[name="area_id"]');
   const opts = areas.map((a) => `<option value="${a.id}">${escapeHtml(a.nome)}</option>`).join("");
-  areaSelect.innerHTML = '<option value="">Selecione a área</option>' + opts;
+  areaSelect.innerHTML = '<option value="">' + (typeof t === 'function' ? t('geral.select_area') : 'Selecione a \u00e1rea') + '</option>' + opts;
   areaSelect.value = sessao.area_id;
 
   form.duracao_minutos.value = sessao.duracao_minutos;
@@ -574,7 +576,7 @@ function initModal() {
       cachedAreas = areasUpdated;
       loadTasks(areasUpdated);
     } catch (err) {
-      alert("Erro ao salvar: " + err.message);
+      alert((typeof t === 'function' ? t('geral.erro_salvar') : 'Erro ao salvar: ') + err.message);
     }
   });
 
@@ -632,15 +634,18 @@ function initModal() {
   });
 }
 
-const DIAS_SEMANA = [
-  { key: "segunda", label: "Segunda-feira" },
-  { key: "terca", label: "Terça-feira" },
-  { key: "quarta", label: "Quarta-feira" },
-  { key: "quinta", label: "Quinta-feira" },
-  { key: "sexta", label: "Sexta-feira" },
-  { key: "sabado", label: "Sábado" },
-  { key: "domingo", label: "Domingo" },
-];
+function getDiasSemana() {
+  const _t = typeof t === 'function' ? t : (k => k);
+  return [
+    { key: "segunda", label: _t('horarios.dias.segunda') },
+    { key: "terca", label: _t('horarios.dias.terca') },
+    { key: "quarta", label: _t('horarios.dias.quarta') },
+    { key: "quinta", label: _t('horarios.dias.quinta') },
+    { key: "sexta", label: _t('horarios.dias.sexta') },
+    { key: "sabado", label: _t('horarios.dias.sabado') },
+    { key: "domingo", label: _t('horarios.dias.domingo') },
+  ];
+}
 
 let horariosLoaded = false;
 
@@ -653,12 +658,14 @@ async function loadHorarios() {
   const container = document.getElementById("quadro-horarios");
   
   if (!presencialAreas.length) {
-    container.innerHTML = '<p class="aula-empty">Nenhuma aula presencial cadastrada. Adicione áreas presenciais com dia da semana.</p>';
+    container.innerHTML = '<p class="aula-empty">' + (typeof t === 'function' ? t('horarios.empty') : 'Nenhuma aula presencial cadastrada. Adicione \u00e1reas presenciais com dia da semana.') + '</p>';
     horariosLoaded = true;
     return;
   }
   
-  container.innerHTML = DIAS_SEMANA.map((dia) => {
+  const _t_prefix = typeof t === 'function' ? t : (k => k);
+  const dias = (typeof getDiasSemana === 'function' ? getDiasSemana() : []);
+  container.innerHTML = dias.map((dia) => {
     const aulas = presencialAreas.filter((a) => a.dia_semana === dia.key);
     const aulasHtml = aulas.length
       ? aulas
@@ -669,15 +676,15 @@ async function loadHorarios() {
             <div class="aula-info">
               <div class="aula-nome">${escapeHtml(a.nome)}</div>
               <div class="aula-detalhes">
-                ${a.horario || ""} ${a.sala ? `· Sala ${a.sala}` : ""} ${a.bloco ? `(${a.bloco})` : ""}
-                ${a.professor ? `· Prof. ${a.professor}` : ""}
+                ${a.horario || ""} ${a.sala ? `· ${_t_prefix('areas.sala_prefix')}${a.sala}` : ""} ${a.bloco ? `(${_t_prefix('areas.bloco_prefix')}${a.bloco})` : ""}
+                ${a.professor ? `· ${_t_prefix('areas.prof_prefix_dot')}${a.professor}` : ""}
               </div>
             </div>
           </div>
         `
           )
           .join("")
-      : '<p class="aula-empty">Sem aulas</p>';
+      : '<p class="aula-empty">' + (typeof t === 'function' ? t('horarios.sem_aulas') : 'Sem aulas') + '</p>';
     
     return `
       <div class="dia-card">
@@ -698,13 +705,13 @@ async function loadResumo() {
     const chartCanvas = document.getElementById("chart-resumo");
     
     if (!resumo.length) {
-      container.innerHTML = '<p class="resumo-empty">Nenhuma sessão registrada ainda.</p>';
+      container.innerHTML = '<p class="resumo-empty">' + (typeof t === 'function' ? t('resumo.empty') : 'Nenhuma sess\u00e3o registrada ainda.') + '</p>';
       
       // Empty state for chart
       if (chartCanvas) {
         const chartContainer = chartCanvas.parentElement;
         if (chartContainer) {
-          chartContainer.innerHTML = '<div class="empty-state">Nenhum dado registrado para este período.</div>';
+          chartContainer.innerHTML = '<div class="empty-state">' + (typeof t === 'function' ? t('resumo.empty_chart') : 'Nenhum dado registrado para este per\u00edodo.') + '</div>';
         }
       }
       
@@ -789,15 +796,19 @@ async function loadResumo() {
 }
 
 // Page titles for each tab
-const PAGE_TITLES = {
-  'areas': 'Áreas',
-  'foco': 'Foco',
-  'gamificacao': 'Gamificação',
-  'horarios': 'Quadro de Horários',
-  'tasks': 'Tarefas',
-  'sessoes': 'Sessões',
-  'resumo': 'Resumo'
-};
+function getPageTitle(tabName) {
+  const _t = typeof t === 'function' ? t : (k => k);
+  const titles = {
+    'areas': _t('pages.areas'),
+    'foco': _t('pages.foco'),
+    'gamificacao': _t('pages.gamificacao'),
+    'horarios': _t('pages.horarios'),
+    'tasks': _t('pages.tarefas'),
+    'sessoes': _t('pages.sessoes'),
+    'resumo': _t('pages.resumo')
+  };
+  return titles[tabName] || tabName;
+}
 
 function switchToTab(tabName) {
   // Update all tab/sidebar-link elements
@@ -819,8 +830,9 @@ function switchToTab(tabName) {
   
   // Update page title
   const pageTitle = document.getElementById('page-title');
-  if (pageTitle && PAGE_TITLES[tabName]) {
-    pageTitle.textContent = PAGE_TITLES[tabName];
+  if (pageTitle) {
+    const title = getPageTitle(tabName);
+    pageTitle.textContent = title;
   }
   
   // Load data if needed
@@ -839,7 +851,7 @@ function initTabs() {
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       if (typeof FocoTimer !== "undefined" && FocoTimer.isActive()) {
-        if (!alertShownThisSession && !confirm("Trocar de aba?")) {
+        if (!alertShownThisSession && !confirm(typeof t === 'function' ? t('geral.trocar_aba') : 'Trocar de aba?')) {
           return;
         }
         alertShownThisSession = true;
@@ -853,7 +865,7 @@ function initTabs() {
   document.querySelectorAll(".sidebar-link").forEach((link) => {
     link.addEventListener("click", () => {
       if (typeof FocoTimer !== "undefined" && FocoTimer.isActive()) {
-        if (!alertShownThisSession && !confirm("Trocar de aba?")) {
+        if (!alertShownThisSession && !confirm(typeof t === 'function' ? t('geral.trocar_aba') : 'Trocar de aba?')) {
           return;
         }
         alertShownThisSession = true;
@@ -954,7 +966,7 @@ async function init() {
   });
 
   const formSessao = document.getElementById("form-sessao");
-  formSessao.querySelector('input[name="data"]').placeholder = "Opcional (hoje)";
+  formSessao.querySelector('input[name="data"]').placeholder = typeof t === 'function' ? t('sessoes.data_placeholder') : 'Opcional (hoje)';
 
   formSessao.addEventListener("submit", async (e) => {
     e.preventDefault();
