@@ -135,8 +135,12 @@ const Auth = (function() {
     }
     
     const data = await response.json();
-    clearToken();
-    showVerifyScreen();
+    setToken(data.access_token);
+    showMainApp();
+    
+    if (typeof window.initApp === "function") {
+      window.initApp().catch(err => console.error("Erro ao iniciar app:", err));
+    }
     
     return data;
   }

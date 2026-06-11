@@ -5,3 +5,4 @@ OpenCode.html
 *.db-journal
 *.sqlite
 *.sqlite3
+.vercel
