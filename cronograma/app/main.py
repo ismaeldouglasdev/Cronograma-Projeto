@@ -8,7 +8,13 @@ import base64
 import time
 import sqlite3
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from logger import get_logger, audit, log_request
+
+# Loggers
+log = get_logger("cronograma.main")
+auth_log = get_logger("cronograma.auth")
+
+from fastapi import Depends, FastAPI, HTTPException, status, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response, JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -27,7 +33,58 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 import hashlib
+import threading
+import bcrypt as _bcrypt
+from collections import defaultdict
 import uuid
+import html
+
+# ─── Rate Limiter (in-memory) ──────────────────────────────────────────────
+
+
+class RateLimiter:
+    """Simple in-memory sliding-window rate limiter. Thread-safe."""
+
+    def __init__(self):
+        self._store: dict[str, list[float]] = {}
+        self._lock = threading.Lock()
+        self._cleanup_interval = 60.0
+        self._last_cleanup = time.time()
+
+    def _cleanup(self):
+        now = time.time()
+        if now - self._last_cleanup < self._cleanup_interval:
+            return
+        cutoff = now - 60.0
+        expired = [k for k, v in self._store.items() if all(t < cutoff for t in v)]
+        for k in expired:
+            del self._store[k]
+        self._last_cleanup = now
+
+    def check(self, key: str, max_requests: int, window_seconds: int = 60) -> bool:
+        with self._lock:
+            self._cleanup()
+            now = time.time()
+            window_start = now - window_seconds
+            if key not in self._store:
+                self._store[key] = []
+            self._store[key] = [t for t in self._store[key] if t > window_start]
+            if len(self._store[key]) >= max_requests:
+                return False
+            self._store[key].append(now)
+            return True
+
+
+rate_limiter = RateLimiter()
+
+
+def rate_limit(key: str, max_req: int = 30, window: int = 60):
+    if not rate_limiter.check(key, max_req, window):
+        raise HTTPException(status_code=429, detail="Muitas requisições. Tente novamente em instantes.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./cronograma.db")
 
@@ -60,11 +117,15 @@ def validate_password(password: str) -> tuple[bool, str]:
 
 
 def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+    return _bcrypt.hashpw(password.encode(), _bcrypt.gensalt()).decode()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return hash_password(plain_password) == hashed_password
+    try:
+        return _bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
+    except Exception:
+        # Fallback: legacy SHA-256 hash (for existing users on upgrade)
+        return hashlib.sha256(plain_password.encode()).hexdigest() == hashed_password
 
 
 def generate_verification_token() -> str:
@@ -72,11 +133,14 @@ def generate_verification_token() -> str:
 
 
 def sendVerificationEmail(user, token: str):
-    print(f"[DEBUG AUTH] ============================================")
-    print(f"[DEBUG AUTH] 📧 Verification email for: {user.email}")
-    print(f"[DEBUG AUTH] 🎫 Token: {token}")
-    print(f"[DEBUG AUTH] 🔗 Link: http://localhost:8000/verify.html?token={token}")
-    print(f"[DEBUG AUTH] ============================================")
+    auth_log.info(
+        "Verification email",
+        extra={
+            "action": "send_verification_email",
+            "email": user.email,
+            "token_preview": token[:8] + "...",
+        },
+    )
     return True
 
 
@@ -345,14 +409,17 @@ def add_column_if_not_exists(conn, table: str, column: str, definition: str):
             conn.commit()
             return True
         except Exception as e:
-            print(f"[MIGRATIONS] Failed to add {column}: {e}")
+            log.warning(
+                "Migration add column failed",
+                extra={"column": column, "table": table, "error": str(e)},
+            )
             return False
     return False
 
 
 # Migrações (SQLite apenas — PostgreSQL usa ORM)
 if "sqlite" in DATABASE_URL:
-    print(f"[MIGRATIONS] Using database: {DATABASE_URL[:30]}...")
+    log.info("Using SQLite database", extra={"database_url": DATABASE_URL[:30]})
     with engine.connect() as conn:
         # Tabela de usuários
         try:
@@ -362,9 +429,9 @@ if "sqlite" in DATABASE_URL:
                 )
             )
             conn.commit()
-            print("[MIGRATIONS] Users table OK")
+            log.info("Users table OK")
         except Exception as e:
-            print(f"[MIGRATIONS] Users table error: {e}")
+            log.error("Users table error", extra={"error": str(e)})
 
         # User columns
         add_column_if_not_exists(conn, "users", "is_verified", "BOOLEAN DEFAULT 0")
@@ -773,9 +840,75 @@ app.add_middleware(
         "http://localhost:3000",
     ],
     allow_credentials=True,
-    allow_methods=["GET", "HEAD", "OPTIONS"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "PUT", "HEAD", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+# ─── Security Headers Middleware (CSP, XFO, HSTS) ──────────────────────────
+
+
+@app.middleware("http")
+async def security_headers_middleware(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "0"  # Desliga legacy, usamos CSP
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    # CSP permissivo para app com CDN/Chart.js inline
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "img-src 'self' data: blob:; "
+        "connect-src 'self'; "
+        "font-src 'self'; "
+        "frame-ancestors 'none'"
+    )
+    return response
+
+
+# ─── Request Logging Middleware ───────────────────────────────────────────────
+
+
+@app.middleware("http")
+async def log_requests_middleware(request, call_next):
+    """Loga todas as requisições HTTP com duração."""
+    # General rate limit: 120 req/min por IP (pula para /static/)
+    if not request.url.path.startswith("/static"):
+        ip = request.client.host if request.client else "unknown"
+        try:
+            rate_limit(f"general:{ip}", max_req=120, window=60)
+        except HTTPException as e:
+            return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
+
+    start_time = time.time()
+    ip = request.client.host if request.client else None
+    response = await call_next(request)
+    duration_ms = (time.time() - start_time) * 1000
+
+    # Extract user_id from auth header if present
+    user_id = None
+    auth_header = request.headers.get("authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        try:
+            token = auth_header[len("Bearer "):]
+            valid, uid = verify_token(token)
+            if valid:
+                user_id = uid
+        except Exception:
+            pass
+
+    log_request(
+        method=request.method,
+        endpoint=request.url.path,
+        status_code=response.status_code,
+        duration_ms=duration_ms,
+        user_id=user_id,
+        ip=ip,
+    )
+    return response
 
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -1072,7 +1205,10 @@ def migrate_data(secret: str = "", user_id: int = Depends(get_current_user)):
                 report["tables"].append(
                     {"name": table, "records": count, "status": "ok"}
                 )
-                print(f"[MIGRATION] {table}: {count} records")
+                log.info(
+                    "Migration data copied",
+                    extra={"table": table, "records": count, "action": "migration"},
+                )
 
             except Exception as e:
                 report["errors"].append(f"{table}: {str(e)}")
@@ -1091,7 +1227,13 @@ def migrate_data(secret: str = "", user_id: int = Depends(get_current_user)):
 
 # --- Auth Endpoints ---
 @app.post("/auth/register", response_model=TokenResponse)
-def register(body: UserRegister, db: Session = Depends(get_db)):
+def register(
+    body: UserRegister,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    client_ip = request.client.host if request.client else "unknown"
+    rate_limit(f"register:{client_ip}", max_req=5, window=60)
     if not validate_email(body.email):
         raise HTTPException(status_code=400, detail="Email inválido")
 
@@ -1113,19 +1255,39 @@ def register(body: UserRegister, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    print(f"[DEBUG AUTH] User created (auto-verified): {user.email} (id={user.id})")
+    auth_log.info(
+        "User registered (auto-verified)",
+        extra={
+            "user_id": user.id,
+            "email": user.email,
+            "action": "register",
+        },
+    )
 
     token = create_access_token(user.id)
     return TokenResponse(access_token=token)
 
 
 @app.post("/auth/login", response_model=TokenResponse)
-def login(body: UserLogin, db: Session = Depends(get_db)):
+def login(
+    body: UserLogin,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    client_ip = request.client.host if request.client else "unknown"
+    rate_limit(f"login:{client_ip}", max_req=10, window=60)
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not verify_password(body.password, user.password_hash):
+        auth_log.warning(
+            "Login failed",
+            extra={"email": body.email, "action": "login_failed"},
+        )
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
 
-    print(f"[DEBUG AUTH] Login success: {user.email}")
+    auth_log.info(
+        "Login success",
+        extra={"user_id": user.id, "email": user.email, "action": "login"},
+    )
     token = create_access_token(user.id)
     return TokenResponse(access_token=token)
 
@@ -1146,11 +1308,17 @@ def verify_email_get(token: str, db: Session = Depends(get_db)):
         user.verification_token = None
         db.commit()
 
-        print(f"[DEBUG AUTH] User verified via link: {user.email}")
+        auth_log.info(
+            "User verified via link",
+            extra={"email": user.email, "action": "verify_email_link"},
+        )
         return {"success": True, "message": "Email verificado com sucesso!"}
 
     except Exception as e:
-        print(f"[DEBUG AUTH] Verify error: {e}")
+        auth_log.error(
+            "Verify email error",
+            extra={"error": str(e), "action": "verify_email"},
+        )
         return {"success": False, "message": "Erro ao verificar email"}
 
 
@@ -1165,11 +1333,17 @@ def verify_email_post(body: VerifyEmailRequest, db: Session = Depends(get_db)):
         user.verification_token = None  # type: ignore[assignment]
         db.commit()
 
-        print(f"[DEBUG AUTH] User verified via manual token: {user.email}")
+        auth_log.info(
+            "User verified via manual token",
+            extra={"email": user.email, "action": "verify_email_manual"},
+        )
         return {"success": True, "message": "Email verificado com sucesso!"}
 
     except Exception as e:
-        print(f"[DEBUG AUTH] Verify error: {e}")
+        auth_log.error(
+            "Verify email manual error",
+            extra={"error": str(e), "action": "verify_email_manual"},
+        )
         return {"success": False, "message": "Erro ao verificar email"}
 
 
@@ -1204,7 +1378,7 @@ def criar_area(
 ):
     area = Areas(
         user_id=user_id,
-        nome=body.nome,
+        nome=html.escape(body.nome.strip()),
         cor=body.cor,
         ordem=body.ordem,
         tipo=body.tipo or "online",
@@ -1230,9 +1404,13 @@ def atualizar_area(
 ):
     area = db.query(Areas).filter(Areas.id == area_id, Areas.user_id == user_id).first()
     if not area:
+        log.warning(
+            "Area not found for update",
+            extra={"area_id": area_id, "user_id": user_id, "action": "area_update"},
+        )
         raise HTTPException(status_code=404, detail="Área não encontrada")
     if body.nome is not None:
-        setattr(area, "nome", body.nome)
+        setattr(area, "nome", html.escape(body.nome.strip()))
     if body.cor is not None:
         setattr(area, "cor", body.cor)
     if body.ordem is not None:
@@ -1253,6 +1431,7 @@ def atualizar_area(
         setattr(area, "subcategoria", body.subcategoria)
     db.commit()
     db.refresh(area)
+    audit("area.update", user_id=user_id, area_id=area_id)
     return area
 
 
@@ -1271,6 +1450,7 @@ def excluir_area(
     ).delete()
     db.delete(area)
     db.commit()
+    audit("area.delete", user_id=user_id, area_id=area_id)
     return None
 
 
@@ -1288,6 +1468,17 @@ def criar_task(
     user_id: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if body.area_id is not None:
+        area = (
+            db.query(Areas)
+            .filter(Areas.id == body.area_id, Areas.user_id == user_id)
+            .first()
+        )
+        if not area:
+            raise HTTPException(
+                status_code=404, detail="Área não encontrada ou não pertence ao usuário"
+            )
+
     task = Tasks(
         user_id=user_id,
         area_id=body.area_id,
@@ -1299,6 +1490,7 @@ def criar_task(
     db.add(task)
     db.commit()
     db.refresh(task)
+    audit("task.create", user_id=user_id, task_id=task.id, titulo=task.titulo)
     return task
 
 
@@ -1314,6 +1506,15 @@ def atualizar_task(
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
 
     if body.area_id is not None:
+        area = (
+            db.query(Areas)
+            .filter(Areas.id == body.area_id, Areas.user_id == user_id)
+            .first()
+        )
+        if not area:
+            raise HTTPException(
+                status_code=404, detail="Área não encontrada ou não pertence ao usuário"
+            )
         setattr(task, "area_id", body.area_id)
     if body.titulo is not None:
         setattr(task, "titulo", body.titulo)
@@ -1333,6 +1534,7 @@ def atualizar_task(
         setattr(task, "pomodoros_concluidos", body.pomodoros_concluidos)
     db.commit()
     db.refresh(task)
+    audit("task.update", user_id=user_id, task_id=task_id)
     return task
 
 
@@ -1344,12 +1546,17 @@ def excluir_task(
 ):
     task = db.query(Tasks).filter(Tasks.id == task_id, Tasks.user_id == user_id).first()
     if not task:
+        log.warning(
+            "Task not found for delete",
+            extra={"task_id": task_id, "user_id": user_id, "action": "task_delete"},
+        )
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
     db.query(Sessoes).filter(
         Sessoes.task_id == task_id, Sessoes.user_id == user_id
     ).delete()
     db.delete(task)
     db.commit()
+    audit("task.delete", user_id=user_id, task_id=task_id)
     return None
 
 
@@ -1388,6 +1595,12 @@ def criar_sessao(
         data=data_sessao,
     )
     db.add(sessao)
+    audit(
+        "sessao.create",
+        user_id=user_id,
+        area_id=body.area_id,
+        duracao_minutos=body.duracao_minutos,
+    )
 
     # Add coins (1 coin per 10 minutes studied)
     user = db.query(User).filter(User.id == user_id).first()
@@ -1420,6 +1633,15 @@ def atualizar_sessao(
     if not sessao:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
     if body.area_id is not None:
+        area = (
+            db.query(Areas)
+            .filter(Areas.id == body.area_id, Areas.user_id == user_id)
+            .first()
+        )
+        if not area:
+            raise HTTPException(
+                status_code=404, detail="Área não encontrada ou não pertence ao usuário"
+            )
         setattr(sessao, "area_id", body.area_id)
     if body.duracao_minutos is not None:
         setattr(sessao, "duracao_minutos", body.duracao_minutos)
@@ -1603,6 +1825,43 @@ def gamification_summary(
     }
 
 
+# --- Client Logs ---
+class ClientLogBatch(BaseModel):
+    logs: List[dict]
+
+
+@app.post("/logs/client")
+def receive_client_logs(
+    body: ClientLogBatch,
+    user_id: int = Depends(get_current_user),
+):
+    """Recebe lotes de logs do frontend e persiste no arquivo."""
+    client_log = get_logger("cronograma.client")
+    for entry in body.logs:
+        level = entry.get("level", "INFO")
+        message = entry.get("message", "")
+        context = entry.get("context", {})
+        context["client_timestamp"] = entry.get("timestamp")
+        context["url"] = entry.get("url")
+
+        extra = {
+            "user_id": user_id,
+            "client_log": True,
+            **context,
+        }
+
+        if level == "ERROR":
+            client_log.error(f"[CLIENT] {message}", extra=extra)
+        elif level == "WARN":
+            client_log.warning(f"[CLIENT] {message}", extra=extra)
+        elif level == "DEBUG":
+            client_log.debug(f"[CLIENT] {message}", extra=extra)
+        else:
+            client_log.info(f"[CLIENT] {message}", extra=extra)
+
+    return {"received": len(body.logs)}
+
+
 # --- Coins & Shop ---
 FREEZE_COST = 10  # Cost to buy a freeze
 
@@ -1648,6 +1907,10 @@ def add_coins(
     db: Session = Depends(get_db),
 ):
     """Adiciona coins ao usuário (para testing/dev). Limite: 100 por chamada."""
+    if amount < 0:
+        raise HTTPException(
+            status_code=400, detail="Valor não pode ser negativo"
+        )
     if amount > 100:
         raise HTTPException(
             status_code=400, detail="Limite máximo de 100 coins por chamada"
