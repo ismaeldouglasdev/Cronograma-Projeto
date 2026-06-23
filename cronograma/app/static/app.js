@@ -223,13 +223,24 @@ function renderAreasGrid(areas) {
   container.querySelectorAll(".btn-del[data-type='area']").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
+      if (btn.disabled) return;
       if (!confirm(typeof t === 'function' ? t('areas.confirm_delete') : 'Excluir esta \u00e1rea? Tarefas e sess\u00f5es ser\u00e3o removidas.')) return;
-      await delReq(`/areas/${btn.dataset.id}`);
-      horariosLoaded = false;
-      const areas2 = await loadAreas();
-      await loadTasks(areas2);
-      await loadSessoes(areas2);
-      await loadResumo();
+      btn.disabled = true;
+      try {
+        await delReq(`/areas/${btn.dataset.id}`);
+        horariosLoaded = false;
+        const areas2 = await loadAreas();
+        await loadTasks(areas2);
+        await loadSessoes(areas2);
+        await loadResumo();
+        if (typeof FocoTimer !== "undefined") {
+          FocoTimer.refreshAreas(areas2);
+        }
+      } catch (err) {
+        console.error("Falha ao excluir \u00e1rea:", err);
+      } finally {
+        btn.disabled = false;
+      }
     });
   });
 }
@@ -263,7 +274,7 @@ async function loadTasks(areas) {
     .map(
       (t) => {
         const meta = [
-          areaNome(areas, t.area_id),
+          escapeHtml(areaNome(areas, t.area_id)),
           formatDate(t.data_entrega),
           t.concluida && t.duracao_minutos ? `${t.duracao_minutos} min` : null,
         ]
@@ -327,11 +338,19 @@ async function loadTasks(areas) {
   ul.querySelectorAll(".btn-del[data-type='task']").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
+      if (btn.disabled) return;
       if (!confirm(typeof t === 'function' ? t('tasks.confirm_delete') : 'Excluir esta tarefa?')) return;
-      await delReq(`/tasks/${btn.dataset.id}`);
-      const freshAreas = await loadAreas();
-      cachedAreas = freshAreas;
-      await loadTasks(freshAreas);
+      btn.disabled = true;
+      try {
+        await delReq(`/tasks/${btn.dataset.id}`);
+        const freshAreas = await loadAreas();
+        cachedAreas = freshAreas;
+        await loadTasks(freshAreas);
+      } catch (err) {
+        console.error("Falha ao excluir tarefa:", err);
+      } finally {
+        btn.disabled = false;
+      }
     });
   });
 }
@@ -367,11 +386,19 @@ async function loadSessoes(areas) {
   ul.querySelectorAll(".btn-del[data-type='sessao']").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
+      if (btn.disabled) return;
       if (!confirm(typeof t === 'function' ? t('sessoes.confirm_delete') : 'Excluir esta sess\u00e3o?')) return;
-      await delReq(`/sessoes/${btn.dataset.id}`);
-      const freshAreas = await loadAreas();
-      await loadSessoes(freshAreas);
-      await loadResumo();
+      btn.disabled = true;
+      try {
+        await delReq(`/sessoes/${btn.dataset.id}`);
+        const freshAreas = await loadAreas();
+        await loadSessoes(freshAreas);
+        await loadResumo();
+      } catch (err) {
+        console.error("Falha ao excluir sess\u00e3o:", err);
+      } finally {
+        btn.disabled = false;
+      }
     });
   });
 }
@@ -936,6 +963,9 @@ async function init() {
     const newAreas = await loadAreas();
     cachedAreas = newAreas;
     loadTasks(newAreas);
+    if (typeof FocoTimer !== "undefined") {
+      FocoTimer.refreshAreas(newAreas);
+    }
     populateSubcategoriasDatalist();
   });
 

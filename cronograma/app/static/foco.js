@@ -31,7 +31,7 @@ const FocoTimer = (function() {
     endBtn: document.getElementById("foco-end"),
     resetBtn: document.getElementById("foco-reset"),
     skipBtn: document.getElementById("foco-skip"),
-    areaSelect: document.getElementById("foco-area"),
+    areaInput: document.getElementById("foco-area"),
     taskSelect: document.getElementById("foco-task"),
     minutesInput: document.getElementById("foco-minutes"),
     breakMinutesInput: document.getElementById("foco-break-minutes"),
@@ -47,8 +47,8 @@ const FocoTimer = (function() {
   function init(areas, tasks) {
     cachedAreas = areas;
     cachedTasks = tasks;
-    populateAreaSelect();
     loadState();
+    populateAreaInput();
     updateProgressDisplay();
     loadTodayStats();
     attachEventListeners();
@@ -70,15 +70,23 @@ const FocoTimer = (function() {
     });
   }
   
-  function populateAreaSelect() {
-    if (!elements.areaSelect) return;
-    const opts = cachedAreas.map((a) => `<option value="${a.id}">${escapeHtml(a.nome)}</option>`).join("");
-    elements.areaSelect.innerHTML = '<option value="">' + (typeof t === 'function' ? t('foco.select_area') : 'Selecione a \u00e1rea') + '</option>' + opts;
+  function populateAreaInput() {
+    if (!elements.areaInput) return;
+    var list = document.getElementById("foco-area-list");
+    if (!list) return;
+    
+    list.innerHTML = cachedAreas.map(function(a) {
+      return '<option value="' + escapeHtml(a.nome) + '">';
+    }).join("");
     
     if (currentAreaId) {
-      elements.areaSelect.value = currentAreaId;
-      populateTaskSelect();
+      var area = cachedAreas.find(function(a) { return a.id === currentAreaId; });
+      if (area) {
+        elements.areaInput.value = area.nome;
+        populateTaskSelect();
+      }
     }
+  }
   }
   
   function populateTaskSelect() {
@@ -139,7 +147,7 @@ const FocoTimer = (function() {
             state = "running";
             updateButtons();
             elements.minutesInput.disabled = true;
-            elements.areaSelect.disabled = true;
+            elements.areaInput.disabled = true;
             elements.taskSelect.disabled = true;
             startTick();
             saveState();
@@ -193,13 +201,19 @@ const FocoTimer = (function() {
     elements.resetBtn?.addEventListener("click", handleReset);
     elements.skipBtn?.addEventListener("click", handleSkip);
     
-    elements.areaSelect?.addEventListener("change", (e) => {
-      currentAreaId = e.target.value ? parseInt(e.target.value, 10) : null;
+    function updateAreaFromInput() {
+      if (!elements.areaInput) return;
+      var text = elements.areaInput.value.trim();
+      var area = cachedAreas.find(function(a) { return a.nome.toLowerCase() === text.toLowerCase(); });
+      currentAreaId = area ? area.id : null;
       currentTaskId = null;
       populateTaskSelect();
       updateProgressDisplay();
       saveState();
-    });
+    }
+    
+    elements.areaInput?.addEventListener("input", updateAreaFromInput);
+    elements.areaInput?.addEventListener("change", updateAreaFromInput);
     
     elements.taskSelect?.addEventListener("change", (e) => {
       currentTaskId = e.target.value ? parseInt(e.target.value, 10) : null;
@@ -243,7 +257,7 @@ const FocoTimer = (function() {
       state = "running";
       updateButtons();
       elements.minutesInput.disabled = true;
-      elements.areaSelect.disabled = true;
+      elements.areaInput.disabled = true;
       elements.taskSelect.disabled = true;
       
       requestNotificationPermission();
@@ -303,7 +317,7 @@ const FocoTimer = (function() {
     updateDisplay();
     updateButtons();
     elements.minutesInput.disabled = false;
-    elements.areaSelect.disabled = false;
+    elements.areaInput.disabled = false;
     if (currentAreaId) elements.taskSelect.disabled = false;
     clearState();
   }
@@ -628,7 +642,7 @@ const FocoTimer = (function() {
   
   function refreshAreas(areas) {
     cachedAreas = areas;
-    populateAreaSelect();
+    populateAreaInput();
   }
   
   // Audio using Web Audio API - works in background

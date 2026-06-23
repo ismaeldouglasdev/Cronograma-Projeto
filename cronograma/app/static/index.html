@@ -275,9 +275,8 @@
         <div class="foco-config-section">
           <div class="foco-config">
             <label for="foco-area" data-i18n="foco.label_area">Área</label>
-            <select id="foco-area">
-              <option value="" data-i18n="foco.select_area">Selecione a área</option>
-            </select>
+            <input id="foco-area" list="foco-area-list" placeholder="Digite o nome da área..." autocomplete="off">
+            <datalist id="foco-area-list"></datalist>
             
             <label for="foco-task" data-i18n="foco.label_tarefa">Tarefa (opcional)</label>
             <select id="foco-task" disabled>
@@ -704,6 +703,7 @@
 
   <div><!-- End main-app -->
 
+  <script src="/static/logger.js"></script>
   <script src="/static/i18n.js"></script>
   <script src="/static/theme.js"></script>
   <script>ThemeManager.init();</script>

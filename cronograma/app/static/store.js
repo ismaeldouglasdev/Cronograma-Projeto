@@ -329,18 +329,9 @@ const AppStore = (function() {
   }
 
   function setTasks(tasks) {
-    const previousCompleted = state.tasks.filter(t => t.concluida).length;
-    const newCompleted = tasks.filter(t => t.concluida).length;
-    
     state.tasks = tasks;
-    
-    if (newCompleted > previousCompleted) {
-      const diff = newCompleted - previousCompleted;
-      for (let i = 0; i < diff; i++) {
-        addXP('task');
-      }
-    }
-    
+    // XP é calculado exclusivamente pelo backend (calcular_xp_total)
+    // para evitar duplicação. Use syncFromBackend() para obter valores reais.
     _notify();
   }
 
