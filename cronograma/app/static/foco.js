@@ -5,6 +5,7 @@ const FocoTimer = (function() {
   let isBreak = false;
   let tempoRestante = 25 * 60;
   let duracaoTotal = 25 * 60;
+  let originalDuracao = 25 * 60;
   let startTimestamp = null;
   let intervalId = null;
   let currentAreaId = null;
@@ -87,7 +88,6 @@ const FocoTimer = (function() {
       }
     }
   }
-  }
   
   function populateTaskSelect() {
     if (!elements.taskSelect || !currentAreaId) {
@@ -126,10 +126,15 @@ const FocoTimer = (function() {
         currentTaskId = saved.taskId || null;
         
         if (saved.state === "running" || saved.state === "paused") {
-          const elapsed = Math.floor((Date.now() - saved.startTime) / 1000);
-          tempoRestante = Math.max(0, saved.tempoRestante - elapsed);
+          if (saved.state === "running") {
+            const elapsed = Math.floor((Date.now() - saved.startTime) / 1000);
+            tempoRestante = Math.max(0, saved.tempoRestante - elapsed);
+          } else {
+            tempoRestante = saved.tempoRestante;
+          }
           isBreak = saved.isBreak || false;
           duracaoTotal = saved.duracaoTotal || tempoRestante;
+          originalDuracao = saved.originalDuracao || duracaoTotal;
           
           if (saved.state === "paused") {
             startTimestamp = null;
@@ -166,6 +171,7 @@ const FocoTimer = (function() {
         isBreak: isBreak,
         tempoRestante: tempoRestante,
         duracaoTotal: duracaoTotal,
+        originalDuracao: originalDuracao,
         areaId: currentAreaId,
         taskId: currentTaskId,
         startTime: state === "running" ? (startTimestamp || Date.now()) : null,
@@ -248,6 +254,7 @@ const FocoTimer = (function() {
       }
       tempoRestante = (parseInt(elements.minutesInput.value, 10) || 25) * 60;
       duracaoTotal = tempoRestante;
+      originalDuracao = tempoRestante;
       startTimestamp = Date.now();
       isBreak = false;
       elements.timerLabel.textContent = typeof t === 'function' ? t('foco.timer_foco') : 'Foco';
@@ -313,6 +320,7 @@ const FocoTimer = (function() {
     state = "idle";
     tempoRestante = (parseInt(elements.minutesInput.value, 10) || 25) * 60;
     duracaoTotal = tempoRestante;
+    originalDuracao = tempoRestante;
     elements.timerLabel.textContent = typeof t === 'function' ? t('foco.timer_foco') : 'Foco';
     updateDisplay();
     updateButtons();
@@ -347,12 +355,12 @@ const FocoTimer = (function() {
     intervalId = setInterval(tick, 1000);
   }
   
-  function onTimerComplete() {
+  async function onTimerComplete() {
     playBeep();
     showDesktopNotification();
     
     if (!isBreak) {
-      completarPomodoro();
+      await completarPomodoro();
       
       if (elements.autoBreakCheckbox.checked) {
         startBreak();
@@ -393,6 +401,9 @@ const FocoTimer = (function() {
       if (typeof loadResumo === "function") {
         loadResumo();
       }
+      if (typeof AppStore !== 'undefined') {
+        AppStore.syncFromBackend();
+      }
       
       lastPomoData = {
         duracao: duracao,
@@ -406,7 +417,7 @@ const FocoTimer = (function() {
     } catch (err) {
       console.error("Erro ao salvar pomodoro:", err);
       lastPomoData = {
-        duracao: Math.round(duracaoTotal / 60),
+        duracao: duracao,
         coins: 0,
         coinsGanhos: 0,
         xpGanho: 0,
@@ -431,7 +442,8 @@ const FocoTimer = (function() {
     if (Notification.permission === "granted") {
       try {
         var defaultTitle = typeof t === 'function' ? t('foco.notif_pomodoro_titulo') : 'Pomodoro Conclu\u00eddo!';
-        var defaultBody = (duracaoTotal / 60) + ' ' + (typeof t === 'function' ? t('foco.notif_pomodoro_corpo').replace('{minutos}', duracaoTotal / 60) : (duracaoTotal / 60) + ' min de foco registrados. \ud83c\udfaf');
+        var dur = originalDuracao || duracaoTotal;
+        var defaultBody = (dur / 60) + ' ' + (typeof t === 'function' ? t('foco.notif_pomodoro_corpo').replace('{minutos}', dur / 60) : (dur / 60) + ' min de foco registrados. \ud83c\udfaf');
         new Notification(title || defaultTitle, {
           body: body || defaultBody,
           icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>",
@@ -538,6 +550,7 @@ const FocoTimer = (function() {
     isBreak = true;
     tempoRestante = (parseInt(elements.breakMinutesInput.value, 10) || 5) * 60;
     duracaoTotal = tempoRestante;
+    originalDuracao = tempoRestante;
     startTimestamp = Date.now();
     elements.timerLabel.textContent = typeof t === 'function' ? t('foco.timer_descanso') : 'Descanso';
     state = "running";
@@ -555,7 +568,8 @@ const FocoTimer = (function() {
     const secs = tempoRestante % 60;
     elements.timerTime.textContent = `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
     
-    const progress = ((duracaoTotal - tempoRestante) / duracaoTotal) * CIRCUMFERENCE;
+    const total = originalDuracao || duracaoTotal;
+    const progress = ((total - tempoRestante) / total) * CIRCUMFERENCE;
     elements.timerProgress.style.strokeDashoffset = CIRCUMFERENCE - progress;
     
     elements.timerProgress.classList.remove("warning", "danger", "break");
@@ -708,7 +722,7 @@ const FocoTimer = (function() {
   }
   
   // Manual end - calculate elapsed time and create session
-  function endManually() {
+  async function endManually() {
     if (state !== "running" && state !== "paused") return;
     
     const elapsed = Math.floor((duracaoTotal - tempoRestante) / 60);
@@ -717,7 +731,7 @@ const FocoTimer = (function() {
       return;
     }
     
-    completarPomodoroManual(elapsed);
+    await completarPomodoroManual(elapsed);
     resetTimer();
   }
   
@@ -725,11 +739,13 @@ const FocoTimer = (function() {
     if (!currentAreaId) return;
     
     try {
-      await post("/pomodoro/completar", {
+      const data = await post("/pomodoro/completar", {
         area_id: currentAreaId,
         duracao_minutos: minutes,
         task_id: currentTaskId || null,
       });
+      
+      const xpGanho = Math.floor(minutes * 10 / 30);
       
       loadTodayStats();
       updateProgressDisplay();
@@ -740,8 +756,25 @@ const FocoTimer = (function() {
         AppStore.syncFromBackend();
       }
       
+      lastPomoData = {
+        duracao: minutes,
+        coins: (data && data.coins) ? data.coins - 3 + 3 : 3,
+        coinsGanhos: 3,
+        xpGanho: xpGanho,
+        novasConquistas: (data && data.novas_conquistas) ? data.novas_conquistas : [],
+      };
+      
+      showPomoCompleteModal();
     } catch (e) {
       console.error('Erro ao registrar sessão:', e);
+      lastPomoData = {
+        duracao: minutes,
+        coins: 0,
+        coinsGanhos: 0,
+        xpGanho: 0,
+        novasConquistas: [],
+      };
+      showPomoCompleteModal();
     }
   }
   
