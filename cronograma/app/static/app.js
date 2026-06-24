@@ -333,6 +333,18 @@ async function loadTasks(areas) {
         await loadSessoes(areas2);
         await loadResumo();
       }
+      if (typeof AppStore !== 'undefined') {
+        const tasks = await get('/tasks');
+        AppStore.setTasks(tasks);
+        await AppStore.syncFromBackend();
+      }
+      if (typeof renderGamification === 'function') {
+        renderGamification();
+      }
+      if (typeof FocoTimer !== 'undefined') {
+        const tasks = await get('/tasks');
+        FocoTimer.refreshTasks(tasks);
+      }
     });
   });
   ul.querySelectorAll(".btn-del[data-type='task']").forEach((btn) => {
@@ -346,6 +358,18 @@ async function loadTasks(areas) {
         const freshAreas = await loadAreas();
         cachedAreas = freshAreas;
         await loadTasks(freshAreas);
+        if (typeof AppStore !== 'undefined') {
+          const tasksAfterDelete = await get('/tasks');
+          AppStore.setTasks(tasksAfterDelete);
+          await AppStore.syncFromBackend();
+        }
+        if (typeof renderGamification === 'function') {
+          renderGamification();
+        }
+        if (typeof FocoTimer !== 'undefined') {
+          const tasksAfterDelete = await get('/tasks');
+          FocoTimer.refreshTasks(tasksAfterDelete);
+        }
       } catch (err) {
         console.error("Falha ao excluir tarefa:", err);
       } finally {
@@ -1074,6 +1098,8 @@ function renderGamification() {
     if (sidebarLevel) sidebarLevel.textContent = stats.level;
     if (sidebarXp) sidebarXp.textContent = stats.totalXP;
     if (sidebarStreak) sidebarStreak.textContent = stats.currentStreak;
+    const sidebarCoins = document.getElementById("sidebar-coins");
+    if (sidebarCoins) sidebarCoins.textContent = stats.coins;
     
     // Barra de XP com percentual
     const xpPercent = stats.xpForNextLevel > 0 

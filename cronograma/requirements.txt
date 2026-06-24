@@ -4,3 +4,4 @@ sqlalchemy==2.0.36
 pydantic==2.10.5
 python-multipart==0.0.20
 psycopg2-binary==2.9.12
+python-dotenv==1.1.0

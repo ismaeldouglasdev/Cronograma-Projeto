@@ -7,7 +7,7 @@ const AppStore = (function() {
   // ============================================
   // CONSTANTES DE GAMIFICAÇÃO
   // ============================================
-  const XP_POR_MINUTO = 0.5; // 30 min = 15 XP, 60 min = 30 XP
+  const XP_POR_MINUTO = 1/3; // 30 min = 10 XP (match backend: minutos * 10 // 30)
   const XP_POR_TAREFA = 5;
   const XP_POR_AREA = 25;
   
@@ -61,9 +61,10 @@ const AppStore = (function() {
       { id: 'level_50', title: 'Level 50', description: 'Atinga level 50', requirement: 50, icon: 'crown' },
     ],
     coins: [
-      { id: 'coin_50', title: 'Iniciante', description: 'Acumule 50 coins', requirement: 50, icon: 'gift' },
-      { id: 'coin_200', title: 'Economizador', description: 'Acumule 200 coins', requirement: 200, icon: 'blue-diamond' },
-      { id: 'coin_500', title: 'Rico', description: 'Acumule 500 coins', requirement: 500, icon: 'purple-gem' },
+      { id: 'coin_10', title: 'Primeiras Moedas', description: 'Acumule 10 coins', requirement: 10, icon: 'gift' },
+      { id: 'coin_50', title: 'Economizador', description: 'Acumule 50 coins', requirement: 50, icon: 'blue-diamond' },
+      { id: 'coin_100', title: 'Poupador', description: 'Acumule 100 coins', requirement: 100, icon: 'purple-gem' },
+      { id: 'coin_500', title: 'Investidor', description: 'Acumule 500 coins', requirement: 500, icon: 'bank' },
       { id: 'coin_1000', title: 'Milionário', description: 'Acumule 1000 coins', requirement: 1000, icon: 'crown' },
     ]
   };

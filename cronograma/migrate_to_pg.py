@@ -5,11 +5,14 @@ Execute localmente: python migrate_to_pg.py
 
 import sqlite3
 import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
+
+load_dotenv()
 
 # Configuracao
 SQLITE_PATH = "app/cronograma.db"
-PG_URL = "postgresql://cronograma_uszp_user:M6znQJoNAgA3jYWLrlZdV1JEjGGTRmCG@dpg-d6ge2k1drdic73c4et8g-a/cronograma_uszp"
+PG_URL = os.environ.get("PG_URL")
 
 
 def load_sqlite_data():

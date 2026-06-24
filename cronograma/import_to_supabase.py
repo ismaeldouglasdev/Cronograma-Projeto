@@ -3,13 +3,13 @@ import json
 import os
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, text, Column, Integer, String, Boolean, Date, ForeignKey
 from sqlalchemy.orm import declarative_base
 
-SUPABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "postgresql://postgres:7FjE2ouGsNgMO0ky@db.zslcbywlnccgjbaddgnm.supabase.co:5432/postgres"
-)
+load_dotenv()
+
+SUPABASE_URL = os.environ.get("DATABASE_URL")
 
 JSON_PATH = Path(__file__).parent / "app" / "data_export.json"
 

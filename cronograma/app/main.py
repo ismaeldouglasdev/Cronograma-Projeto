@@ -702,14 +702,9 @@ def contar_tarefas_concluidas(user_id: int, db: Session) -> int:
 
 
 def calcular_streak_from_sessoes(user_id: int, db: Session) -> int:
-    """Calcula streak baseado nas datas reais de sessões."""
-    # Get distinct session dates
-    result = (
-        db.query(func.count(func.distinct(Sessoes.data)))
-        .filter(Sessoes.user_id == user_id)
-        .scalar()
-    )
-    return int(result or 0)
+    """Retorna streak atual do usuario (lido da tabela User)."""
+    user = db.query(User).filter(User.id == user_id).first()
+    return user.current_streak or 0 if user else 0
 
 
 def atualizar_streak(user_id: int, db: Session) -> int:
@@ -1602,12 +1597,8 @@ def criar_sessao(
         duracao_minutos=body.duracao_minutos,
     )
 
-    # Add coins (1 coin per 10 minutes studied)
-    user = db.query(User).filter(User.id == user_id).first()
-    if user:
-        coins_earned = max(1, body.duracao_minutos // 10)
-        user.coins = (user.coins or 0) + coins_earned  # type: ignore[assignment]
-
+    # Coins are earned only via pomodoro completions (3 per pomodoro).
+    # Manual sessions do not award coins to keep the system consistent.
     db.commit()
 
     # Update streak and check achievements
