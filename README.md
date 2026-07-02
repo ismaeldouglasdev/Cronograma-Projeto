@@ -1,7 +1,8 @@
-# Cronograma de Estudos
 <p align="center">
   <strong>🇧🇷 Português</strong> &nbsp;|&nbsp; <a href="README.en.md">🇺🇸 English</a>
 </p>
+
+# Cronograma de Estudos
 
 
 Sistema completo de gerenciamento de estudos com timer Pomodoro integrado, tracking de horas, quadro de horários de aulas e gamificação.
