@@ -4,8 +4,11 @@
 
 # Cronograma de Estudos
 
+🔗 **Acesse:** [cronograma-projeto.onrender.com](https://cronograma-projeto.onrender.com/)
 
 Sistema completo de gerenciamento de estudos com timer Pomodoro integrado, tracking de horas, quadro de horários de aulas e gamificação.
+
+![Cronograma](screenshots/cronograma-ptbr.png)
 
 ## Stack
 
