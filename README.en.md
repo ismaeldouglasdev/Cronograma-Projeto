@@ -4,9 +4,11 @@
 
 # Study Schedule
 
+🔗 **Live site:** [cronograma-projeto.onrender.com](https://cronograma-projeto.onrender.com/)
+
 Complete study management system with integrated Pomodoro timer, hour tracking, class timetable, and gamification.
 
-🔗 **Live site:** [cronograma-projeto.onrender.com](https://cronograma-projeto.onrender.com/)
+![Cronograma](screenshots/cronograma-en.png)
 
 ## Stack
 
