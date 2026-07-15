@@ -207,16 +207,18 @@ const FocoTimer = (function() {
     elements.resetBtn?.addEventListener("click", handleReset);
     elements.skipBtn?.addEventListener("click", handleSkip);
     
-    function updateAreaFromInput() {
-      if (!elements.areaInput) return;
-      var text = elements.areaInput.value.trim();
-      var area = cachedAreas.find(function(a) { return a.nome.toLowerCase() === text.toLowerCase(); });
-      currentAreaId = area ? area.id : null;
-      currentTaskId = null;
-      populateTaskSelect();
-      updateProgressDisplay();
-      saveState();
-    }
+function updateAreaFromInput() {
+  if (!elements.areaInput) return;
+  var text = elements.areaInput.value.trim();
+  var area = cachedAreas.find(function(a) { return a.nome.toLowerCase() === text.toLowerCase(); });
+  currentAreaId = area ? area.id : null;
+  // Clear existing interval if running
+  if (intervalId) clearInterval(intervalId);
+  currentTaskId = null;
+  populateTaskSelect();
+  updateProgressDisplay();
+  saveState();
+}
     
     elements.areaInput?.addEventListener("input", updateAreaFromInput);
     elements.areaInput?.addEventListener("change", updateAreaFromInput);
@@ -278,6 +280,7 @@ const FocoTimer = (function() {
       clearInterval(intervalId);
       intervalId = null;
       const elapsed = Math.floor((Date.now() - startTimestamp) / 1000);
+      tempoRestante = Math.max(0, duracaoTotal - elapsed);
       duracaoTotal = tempoRestante;
       startTimestamp = null;
       state = "paused";
@@ -293,24 +296,14 @@ const FocoTimer = (function() {
     }
   }
   
-  function handleReset() {
-    if (state === "running" || state === "paused") {
-      if (!confirm(typeof t === 'function' ? t('foco.confirm_cancel') : 'Tem certeza que deseja cancelar a sess\u00e3o de foco?')) {
-        return;
-      }
-    }
-    resetTimer();
-  }
-  
-  function handleSkip() {
-    if (isBreak) {
-      if (!confirm(typeof t === 'function' ? t('foco.confirm_pular_descanso') : 'Pular o descanso?')) return;
-      clearInterval(intervalId);
-      playBeep();
-      alert(typeof t === 'function' ? t('foco.alert_descanso_fim') : 'Descanso finalizado! Pronto para mais um pomodoro?');
-      resetTimer();
-    }
-  }
+function handleReset() {
+     if (state !== "idle") {
+       if (!confirm(typeof t === 'function' ? t('foco.confirm_cancel') : 'Tem certeza que deseja cancelar a sessão de foco?')) {
+         return;
+       }
+     }
+     resetTimer();
+   }
   
   function resetTimer() {
     clearInterval(intervalId);
