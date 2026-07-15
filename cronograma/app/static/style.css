@@ -1302,9 +1302,40 @@ main {
   margin: 0 auto;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .foco-container {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 0 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .foco-timer-wrapper {
+    width: min(200px, 65vw);
+    height: min(200px, 65vw);
+  }
+  #foco-timer-time {
+    font-size: 2rem;
+  }
+  .foco-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .foco-btn {
+    flex: 1 1 auto;
+    min-height: var(--touch, 44px);
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 360px) {
+  .foco-timer-wrapper {
+    width: min(170px, 68vw);
+    height: min(170px, 68vw);
+  }
+  #foco-timer-time {
+    font-size: 1.65rem;
   }
 }
 
