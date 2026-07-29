@@ -30,6 +30,23 @@ function getAuthHeader() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function showToast(message, type) {
+  const container = document.getElementById("toast-container") || (() => {
+    const el = document.createElement("div");
+    el.id = "toast-container";
+    el.style.cssText = "position:fixed;top:1rem;right:1rem;z-index:9999;display:flex;flex-direction:column;gap:0.5rem;max-width:400px";
+    document.body.appendChild(el);
+    return el;
+  })();
+  const toast = document.createElement("div");
+  toast.textContent = message;
+  toast.style.cssText = "padding:0.75rem 1.25rem;border-radius:8px;color:#fff;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.3);animation:slideIn 0.3s ease;transition:opacity 0.3s;cursor:pointer";
+  toast.style.background = type === "error" ? "#ef4444" : type === "success" ? "#22c55e" : "#3b82f6";
+  toast.addEventListener("click", () => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 300); });
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 300); }, 4000);
+}
+
 function getSubcategorias() {
   try {
     return JSON.parse(localStorage.getItem("subcategorias") || "[]");
@@ -316,7 +333,7 @@ async function loadTasks(areas) {
         if (minutos === null || minutos.trim() === "") return;
         const n = parseInt(minutos, 10);
         if (isNaN(n) || n < 1) {
-          alert(typeof t === 'function' ? t('tasks.alert_minutos_validos') : 'Informe um n\u00famero v\u00e1lido de minutos.');
+          showToast(typeof t === 'function' ? t('tasks.alert_minutos_validos') : 'Informe um n\u00famero v\u00e1lido de minutos.', 'error');
           return;
         }
         await patch(`/tasks/${id}`, { concluida: true, duracao_minutos: n });
@@ -627,7 +644,7 @@ function initModal() {
       cachedAreas = areasUpdated;
       loadTasks(areasUpdated);
     } catch (err) {
-      alert((typeof t === 'function' ? t('geral.erro_salvar') : 'Erro ao salvar: ') + (typeof translateBackendError === 'function' ? translateBackendError(err.message) : err.message));
+      showToast((typeof t === 'function' ? t('geral.erro_salvar') : 'Erro ao salvar: ') + (typeof translateBackendError === 'function' ? translateBackendError(err.message) : err.message), 'error');
     }
   });
 
@@ -1121,7 +1138,8 @@ function renderGamification() {
         const imgSrc = `/icon_images/${iconName}.png`;
         return `
           <div class="gami-badge ${ach.unlocked ? 'unlocked' : 'locked'}" title="${ach.description}">
-            <img class="gami-badge-icon-img" src="${imgSrc}" alt="${ach.title}" onerror="this.style.display='none'">
+            <span class="gami-badge-icon-fallback" style="display:none">${ach.title.charAt(0).toUpperCase()}</span>
+            <img class="gami-badge-icon-img" src="${imgSrc}" alt="${ach.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
             <span class="gami-badge-name">${ach.title}</span>
           </div>
         `;
