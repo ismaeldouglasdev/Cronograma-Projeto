@@ -1369,6 +1369,7 @@ def criar_area(
     user_id: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    rate_limit(f"crud:areas:post:{user_id}", max_req=60, window=60)
     area = Areas(
         user_id=user_id,
         nome=html.escape(body.nome.strip()),
@@ -1395,6 +1396,7 @@ def atualizar_area(
     user_id: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    rate_limit(f"crud:areas:patch:{user_id}", max_req=60, window=60)
     area = db.query(Areas).filter(Areas.id == area_id, Areas.user_id == user_id).first()
     if not area:
         log.warning(
@@ -1434,6 +1436,7 @@ def excluir_area(
     user_id: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    rate_limit(f"crud:areas:delete:{user_id}", max_req=60, window=60)
     area = db.query(Areas).filter(Areas.id == area_id, Areas.user_id == user_id).first()
     if not area:
         raise HTTPException(status_code=404, detail="Área não encontrada")
@@ -1468,6 +1471,7 @@ def criar_task(
     user_id: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    rate_limit(f"crud:tasks:post:{user_id}", max_req=60, window=60)
     if body.area_id is not None:
         area = (
             db.query(Areas)
@@ -1501,6 +1505,7 @@ def atualizar_task(
     user_id: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    rate_limit(f"crud:tasks:patch:{user_id}", max_req=60, window=60)
     task = db.query(Tasks).filter(Tasks.id == task_id, Tasks.user_id == user_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
@@ -1544,6 +1549,7 @@ def excluir_task(
     user_id: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    rate_limit(f"crud:tasks:delete:{user_id}", max_req=60, window=60)
     task = db.query(Tasks).filter(Tasks.id == task_id, Tasks.user_id == user_id).first()
     if not task:
         log.warning(
@@ -1625,6 +1631,7 @@ def atualizar_sessao(
     user_id: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    rate_limit(f"crud:sessoes:patch:{user_id}", max_req=60, window=60)
     sessao = (
         db.query(Sessoes)
         .filter(Sessoes.id == sessao_id, Sessoes.user_id == user_id)
@@ -1658,6 +1665,7 @@ def excluir_sessao(
     user_id: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    rate_limit(f"crud:sessoes:delete:{user_id}", max_req=60, window=60)
     sessao = (
         db.query(Sessoes)
         .filter(Sessoes.id == sessao_id, Sessoes.user_id == user_id)

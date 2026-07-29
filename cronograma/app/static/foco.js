@@ -160,7 +160,7 @@ const FocoTimer = (function() {
         }
       }
     } catch (e) {
-      console.log("Error loading foco state:", e);
+      console.error("Error loading foco state:", e);
     }
   }
   
@@ -178,7 +178,7 @@ const FocoTimer = (function() {
       };
       localStorage.setItem("focoState", JSON.stringify(stateToSave));
     } catch (e) {
-      console.log("Error saving foco state:", e);
+      console.error("Error saving foco state:", e);
     }
   }
   
@@ -196,7 +196,7 @@ const FocoTimer = (function() {
         }
       }
     } catch (e) {
-      console.log("Error checking active timer:", e);
+      console.error("Error checking active timer:", e);
     }
   }
   
@@ -443,7 +443,7 @@ function handleReset() {
           badge: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍅</text></svg>",
         });
       } catch (e) {
-        console.log("Notification error:", e);
+        console.error("Notification error:", e);
       }
     }
   }
