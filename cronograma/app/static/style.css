@@ -2642,6 +2642,74 @@ main {
     width: 32px;
     height: 32px;
   }
+
+  /* Login screen mobile */
+  .login-container {
+    padding: 1.25rem;
+    margin: 0.5rem;
+    border-radius: var(--radius-sm);
+  }
+
+  .login-header h1 {
+    font-size: 1.35rem;
+  }
+
+  .login-icon {
+    font-size: 2.25rem;
+  }
+
+  .auth-form input {
+    font-size: 16px;
+    padding: 0.75rem 0.875rem;
+  }
+
+  .auth-form button {
+    padding: 0.8rem;
+    font-size: 0.95rem;
+    min-height: 44px;
+  }
+
+  /* Modal mobile */
+  .modal-content {
+    max-width: 96%;
+    width: 96%;
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .modal-content .modal-close {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .modal-form input,
+  .modal-form select,
+  .modal-form textarea {
+    font-size: 16px;
+    padding: 0.75rem 0.75rem;
+  }
+
+  /* Sidebar footer safe-area on bottom bar */
+  .sidebar-footer .theme-select,
+  .sidebar-footer .logout-btn {
+    max-width: 100%;
+  }
+}
+
+/* Extremely small devices */
+@media (max-width: 360px) {
+  .login-container {
+    padding: 1rem;
+    margin: 0.25rem;
+  }
+
+  .modal-content {
+    padding: 0.75rem;
+  }
+
+  .login-header h1 {
+    font-size: 1.15rem;
+  }
 }
 
 /* ========== POMODORO COMPLETE MODAL ========== */
