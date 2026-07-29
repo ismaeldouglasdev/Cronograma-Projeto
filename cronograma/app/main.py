@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional, List
 import os
@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response, JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 from sqlalchemy import (
     Column,
     Integer,
@@ -195,8 +195,7 @@ class AreaResponse(BaseModel):
     professor: Optional[str] = None
     subcategoria: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AreaPatch(BaseModel):
@@ -253,8 +252,7 @@ class TaskResponse(BaseModel):
     meta_pomodoros: Optional[int] = None
     pomodoros_concluidos: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SessaoCreate(BaseModel):
@@ -274,8 +272,7 @@ class SessaoResponse(BaseModel):
     duracao_minutos: int
     data: date
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SessaoPatch(BaseModel):
@@ -326,6 +323,7 @@ class User(Base):
 
 class Areas(Base):
     __tablename__ = "areas"
+    __mapper_args__ = {"confirm_deleted_rows": False}
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -1243,7 +1241,7 @@ def register(
     user = User(
         email=body.email,
         password_hash=hash_password(body.password),
-        created_at=datetime.utcnow().isoformat(),
+        created_at=datetime.now(timezone.utc).isoformat(),
         is_verified=True,
     )
     db.add(user)
@@ -1439,12 +1437,19 @@ def excluir_area(
     area = db.query(Areas).filter(Areas.id == area_id, Areas.user_id == user_id).first()
     if not area:
         raise HTTPException(status_code=404, detail="Área não encontrada")
-    db.query(Tasks).filter(Tasks.area_id == area_id, Tasks.user_id == user_id).delete()
-    db.query(Sessoes).filter(
-        Sessoes.area_id == area_id, Sessoes.user_id == user_id
-    ).delete()
-    db.delete(area)
-    db.commit()
+    try:
+        db.query(Tasks).filter(Tasks.area_id == area_id, Tasks.user_id == user_id).delete(
+            synchronize_session="fetch"
+        )
+        db.query(Sessoes).filter(
+            Sessoes.area_id == area_id, Sessoes.user_id == user_id
+        ).delete(synchronize_session="fetch")
+        db.delete(area)
+        db.commit()
+    except Exception:
+        db.rollback()
+        # Idempotent: already deleted by concurrent request
+        pass
     audit("area.delete", user_id=user_id, area_id=area_id)
     return None
 
@@ -1546,11 +1551,15 @@ def excluir_task(
             extra={"task_id": task_id, "user_id": user_id, "action": "task_delete"},
         )
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
-    db.query(Sessoes).filter(
-        Sessoes.task_id == task_id, Sessoes.user_id == user_id
-    ).delete()
-    db.delete(task)
-    db.commit()
+    try:
+        db.query(Sessoes).filter(
+            Sessoes.task_id == task_id, Sessoes.user_id == user_id
+        ).delete(synchronize_session="fetch")
+        db.delete(task)
+        db.commit()
+    except Exception:
+        db.rollback()
+        pass
     audit("task.delete", user_id=user_id, task_id=task_id)
     return None
 
@@ -1656,8 +1665,12 @@ def excluir_sessao(
     )
     if not sessao:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
-    db.delete(sessao)
-    db.commit()
+    try:
+        db.delete(sessao)
+        db.commit()
+    except Exception:
+        db.rollback()
+        pass
     return None
 
 
@@ -1685,20 +1698,19 @@ def completar_pomodoro(
     )
     db.add(sessao)
 
-    # Add coins for completing pomodoro (3 coins per pomodoro)
-    user = db.query(User).filter(User.id == user_id).first()
-    if user:
-        user.coins = (user.coins or 0) + 3
+    # Atomic coins increment to avoid lost updates under concurrency
+    db.execute(
+        text("UPDATE users SET coins = COALESCE(coins, 0) + 3 WHERE id = :id"),
+        {"id": user_id},
+    )
 
     if body.task_id:
-        task = db.query(Tasks).filter(Tasks.id == body.task_id).first()
-        if task:
-            db.execute(
-                text(
-                    "UPDATE tasks SET pomodoros_concluidos = pomodoros_concluidos + 1 WHERE id = :id"
-                ),
-                {"id": body.task_id},
-            )
+        db.execute(
+            text(
+                "UPDATE tasks SET pomodoros_concluidos = pomodoros_concluidos + 1 WHERE id = :id"
+            ),
+            {"id": body.task_id},
+        )
 
     db.commit()
 
@@ -1707,6 +1719,9 @@ def completar_pomodoro(
     novas_conquistas = verificar_conquistas(user_id, db)
 
     db.refresh(sessao)
+
+    # Read updated coins
+    user = db.query(User).filter(User.id == user_id).first()
     return {
         "sessao": sessao,
         "novas_conquistas": novas_conquistas,
