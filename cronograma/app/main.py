@@ -121,11 +121,7 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    try:
-        return _bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
-    except Exception:
-        # Fallback: legacy SHA-256 hash (for existing users on upgrade)
-        return hashlib.sha256(plain_password.encode()).hexdigest() == hashed_password
+    return _bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
 
 def generate_verification_token() -> str:
@@ -219,7 +215,7 @@ class TaskCreate(BaseModel):
     area_id: Optional[int] = None
     titulo: str
     descricao: Optional[str] = None
-    data_entrega: date
+    data_entrega: Optional[date] = None
     prioridade: Optional[int] = None  # 1=baixa, 2=media, 3=alta
     meta_pomodoros: Optional[int] = None
 
@@ -261,6 +257,7 @@ class SessaoCreate(BaseModel):
     area_id: int
     duracao_minutos: int
     data: Optional[date] = None  # se omitido, usa hoje
+    task_id: Optional[int] = None
 
 
 class SessaoResponse(BaseModel):
@@ -271,6 +268,7 @@ class SessaoResponse(BaseModel):
     area_id: int
     duracao_minutos: int
     data: date
+    task_id: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -281,6 +279,7 @@ class SessaoPatch(BaseModel):
     area_id: Optional[int] = None
     duracao_minutos: Optional[int] = None
     data: Optional[date] = None
+    task_id: Optional[int] = None
 
 
 class PomodoroComplete(BaseModel):
@@ -659,13 +658,9 @@ def get_current_user(
 
 
 def calcular_level(xp_total: int) -> int:
-    """Calcula o level baseado no XP total usando curva: XP = 100 * level^1.5"""
-    level = 1
-    while True:
-        xp_needed = int(100 * (level**1.5))
-        if xp_total < xp_needed:
-            break
-        xp_total -= xp_needed
+    """Calcula o level baseado no XP total usando curva: XP acumulado = 100 * level^1.5"""
+    level = 0
+    while xp_total >= int(100 * ((level + 1) ** 1.5)):
         level += 1
     return level
 
@@ -673,11 +668,9 @@ def calcular_level(xp_total: int) -> int:
 def xp_para_proximo_level(xp_total: int) -> tuple[int, int]:
     """Retorna (XP atual no level, XP necessario para proximo level)"""
     level = calcular_level(xp_total)
-    xp_needed = int(100 * (level**1.5))
-    xp_in_level = xp_total
-    for l in range(1, level):
-        xp_in_level -= int(100 * (l**1.5))
-    return max(0, xp_in_level), xp_needed
+    xp_atual = xp_total - int(100 * (level ** 1.5))
+    xp_proximo = int(100 * ((level + 1) ** 1.5)) - int(100 * (level ** 1.5))
+    return max(0, xp_atual), max(1, xp_proximo)
 
 
 def calcular_xp_total(user_id: int, db: Session) -> int:
@@ -762,14 +755,10 @@ def atualizar_streak(user_id: int, db: Session) -> int:
         # Studied yesterday, increment streak
         user.current_streak = (user.current_streak or 0) + 1  # type: ignore[assignment]
     else:
-        # Missed days
         if (user.streak_freezes or 0) > 0 and user.last_activity_date is not None:
-            # Use a freeze
             user.streak_freezes = (user.streak_freezes or 0) - 1
-            # Keep streak
         else:
-            # Reset streak
-            user.current_streak = 1
+            user.current_streak = 0  # type: ignore[assignment]
 
     # Update longest streak if needed
     if (user.current_streak or 0) > (user.longest_streak or 0):
@@ -1076,7 +1065,7 @@ def import_data(
                     conn.execute(
                         text("""
                         INSERT INTO areas (id, nome, cor, ordem, tipo, dia_semana, horario, sala, bloco, professor, subcategoria, user_id)
-                        VALUES (:id, :nome, :cor, :ordem, :tipo, :dia_semana, :horario, :sala, :bloco, :professor, :subcategoria, 1)
+                        VALUES (:id, :nome, :cor, :ordem, :tipo, :dia_semana, :horario, :sala, :bloco, :professor, :subcategoria, :user_id)
                         ON CONFLICT (id) DO NOTHING
                     """),
                         area,
@@ -1095,7 +1084,7 @@ def import_data(
                     conn.execute(
                         text("""
                         INSERT INTO tasks (id, area_id, titulo, descricao, data_entrega, concluida, duracao_minutos, prioridade, meta_pomodoros, pomodoros_concluidos, user_id)
-                        VALUES (:id, :area_id, :titulo, :descricao, :data_entrega, :concluida, :duracao_minutos, :prioridade, :meta_pomodoros, :pomodoros_concluidos, 1)
+                        VALUES (:id, :area_id, :titulo, :descricao, :data_entrega, :concluida, :duracao_minutos, :prioridade, :meta_pomodoros, :pomodoros_concluidos, :user_id)
                         ON CONFLICT (id) DO NOTHING
                     """),
                         {
@@ -1109,6 +1098,7 @@ def import_data(
                             "prioridade": task.get("prioridade"),
                             "meta_pomodoros": task.get("meta_pomodoros"),
                             "pomodoros_concluidos": task.get("pomodoros_concluidos"),
+                            "user_id": user_id,
                         },
                     )
                 conn.commit()
@@ -1122,10 +1112,10 @@ def import_data(
                     conn.execute(
                         text("""
                         INSERT INTO sessoes (id, area_id, duracao_minutos, data, task_id, user_id)
-                        VALUES (:id, :area_id, :duracao_minutos, :data, :task_id, 1)
+                        VALUES (:id, :area_id, :duracao_minutos, :data, :task_id, :user_id)
                         ON CONFLICT (id) DO NOTHING
                     """),
-                        sessao,
+                        {**sessao, "user_id": user_id},
                     )
                 conn.commit()
             report["tables"].append(
@@ -1937,10 +1927,13 @@ def buy_freeze(user_id: int = Depends(get_current_user), db: Session = Depends(g
 @app.post("/coins/add")
 def add_coins(
     amount: int = 1,
+    secret: str = "",
     user_id: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Adiciona coins ao usuário (para testing/dev). Limite: 100 por chamada."""
+    if not MIGRATION_SECRET or secret != MIGRATION_SECRET:
+        raise HTTPException(status_code=403, detail="Acesso administrativo negado")
     if amount < 0:
         raise HTTPException(
             status_code=400, detail="Valor não pode ser negativo"
@@ -2012,10 +2005,13 @@ def debug_stats(
 
 @app.post("/admin/recalculate-xp")
 def recalculate_all_xp(
+    secret: str = "",
     user_id: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Recalcula XP de todos os usuários (ação administrativa)."""
+    if not MIGRATION_SECRET or secret != MIGRATION_SECRET:
+        raise HTTPException(status_code=403, detail="Acesso administrativo negado")
     users = db.query(User).all()
     results = []
 

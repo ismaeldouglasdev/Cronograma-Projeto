@@ -74,6 +74,7 @@ function populateSubcategoriasDatalist() {
 
 async function get(url) {
   const r = await fetch(API + url, { headers: getAuthHeader() });
+  if (r.status === 401) { handleAuthFailure(); throw new Error("Unauthorized"); }
   if (!r.ok) {
     const text = await r.text();
     throw new Error(r.statusText || text || `HTTP ${r.status}`);
@@ -89,6 +90,7 @@ async function post(url, body) {
     headers: { "Content-Type": "application/json", ...getAuthHeader() },
     body: JSON.stringify(body),
   });
+  if (r.status === 401) { handleAuthFailure(); throw new Error("Unauthorized"); }
   if (!r.ok) {
     const text = await r.text();
     throw new Error(r.statusText || text || `HTTP ${r.status}`);
@@ -104,6 +106,7 @@ async function patch(url, body) {
     headers: { "Content-Type": "application/json", ...getAuthHeader() },
     body: JSON.stringify(body),
   });
+  if (r.status === 401) { handleAuthFailure(); throw new Error("Unauthorized"); }
   if (!r.ok) {
     const text = await r.text();
     throw new Error(r.statusText || text || `HTTP ${r.status}`);
@@ -115,7 +118,14 @@ async function patch(url, body) {
 
 async function delReq(url) {
   const r = await fetch(API + url, { method: "DELETE", headers: getAuthHeader() });
+  if (r.status === 401) { handleAuthFailure(); throw new Error("Unauthorized"); }
   if (!r.ok) throw new Error(r.statusText);
+  return null;
+}
+
+function handleAuthFailure() {
+  localStorage.removeItem("cronograma_token");
+  if (typeof showLoginScreen === "function") showLoginScreen();
 }
 
 function formatDate(str) {

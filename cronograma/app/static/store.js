@@ -12,7 +12,7 @@ const AppStore = (function() {
   const XP_POR_AREA = 25;
   
   // Coins
-  const COINS_POR_TAREFA = 2;
+  const COINS_POR_TAREFA = 3;
   const COINS_POR_POMODORO = 3;
   const COINS_POR_STREAK_DIA = 1;
   const FREEZE_COST = 10; // Custo para comprar freeze
