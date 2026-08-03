@@ -965,7 +965,7 @@ def init_database(user_id: int = Depends(get_current_user)):
                     bloco VARCHAR(50),
                     professor VARCHAR(255),
                     subcategoria VARCHAR(100),
-                    user_id INTEGER DEFAULT 1
+                    user_id INTEGER NOT NULL REFERENCES users(id)
                 )
             """)
             )
@@ -1068,7 +1068,7 @@ def import_data(
                         VALUES (:id, :nome, :cor, :ordem, :tipo, :dia_semana, :horario, :sala, :bloco, :professor, :subcategoria, :user_id)
                         ON CONFLICT (id) DO NOTHING
                     """),
-                        area,
+                        {**area, "user_id": user_id},
                     )
                 conn.commit()
             report["tables"].append(
@@ -1801,7 +1801,7 @@ def gamification_summary(
     """Retorna todos os dados de gamificacao do usuario"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="Usuario nao encontrado")
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
     xp_total = calcular_xp_total(user_id, db)
     level = calcular_level(xp_total)
     xp_atual, xp_proximo = xp_para_proximo_level(xp_total)
