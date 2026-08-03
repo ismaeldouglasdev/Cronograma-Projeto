@@ -350,9 +350,9 @@ function handleReset() {
   
   async function onTimerComplete() {
     playBeep();
-    showDesktopNotification();
     
     if (!isBreak) {
+      showDesktopNotification();
       await completarPomodoro();
       
       if (elements.autoBreakCheckbox.checked) {
@@ -776,6 +776,7 @@ function handleReset() {
         coinsGanhos: 0,
         xpGanho: 0,
         novasConquistas: [],
+        erro: "Falha ao salvar sessão",
       };
       showPomoCompleteModal();
     }
