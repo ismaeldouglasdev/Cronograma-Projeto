@@ -415,6 +415,7 @@ function handleReset() {
         coinsGanhos: 0,
         xpGanho: 0,
         novasConquistas: [],
+        erro: "Falha ao salvar pomodoro",
       };
       showPomoCompleteModal();
     }
@@ -454,6 +455,15 @@ function handleReset() {
     if (!modal || !lastPomoData) return;
     
     const d = lastPomoData;
+    
+    if (d.erro) {
+      if (typeof showToast === "function") {
+        showToast(d.erro, "error");
+      } else {
+        alert(d.erro);
+      }
+      return;
+    }
     
     document.getElementById("pomo-modal-duracao").textContent = d.duracao;
     document.getElementById("pomo-modal-coins").textContent = "+" + d.coinsGanhos;
