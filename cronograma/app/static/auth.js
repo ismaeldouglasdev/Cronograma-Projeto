@@ -152,12 +152,17 @@ const Auth = (function() {
       body: JSON.stringify({ token }),
     });
     
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || (typeof t === 'function' ? t('auth.verify_error') : 'Erro ao verificar email'));
-    }
-    
-    return await response.json();
+     if (!response.ok) {
+       const error = await response.json();
+       throw new Error(error.detail || error.message || (typeof t === 'function' ? t('auth.verify_error') : 'Erro ao verificar email'));
+     }
+
+     const data = await response.json();
+     if (!data.success) {
+       throw new Error(data.message || (typeof t === 'function' ? t('auth.verify_error') : 'Erro ao verificar email'));
+     }
+
+     return data;
   }
 
   function logout() {

@@ -305,6 +305,11 @@ const i18n = {
       user_not_found: 'Usuário não encontrado',
       max_freezes: 'Limite máximo de freezes atingido (4).',
       max_coins: 'Limite máximo de 100 coins por chamada',
+      not_authenticated: 'Não autenticado',
+      invalid_token: 'Token inválido ou expirado',
+      invalid_secret: 'Segredo inválido',
+      negative_value: 'Valor não pode ser negativo',
+      rate_limited: 'Muitas requisições. Tente novamente em instantes.',
     },
   },
 
@@ -590,6 +595,11 @@ const i18n = {
       user_not_found: 'User not found',
       max_freezes: 'Maximum freeze limit reached (4).',
       max_coins: 'Maximum of 100 coins per call',
+      not_authenticated: 'Not authenticated',
+      invalid_token: 'Invalid or expired token',
+      invalid_secret: 'Invalid secret',
+      negative_value: 'Value cannot be negative',
+      rate_limited: 'Too many requests. Please try again shortly.',
     },
   },
 };
@@ -654,6 +664,11 @@ function translateBackendError(detail) {
     'Usuário não encontrado': 'validation.user_not_found',
     'Limite máximo de freezes atingido (4).': 'validation.max_freezes',
     'Limite máximo de 100 coins por chamada': 'validation.max_coins',
+    'Not authenticated': 'validation.not_authenticated',
+    'Invalid or expired token': 'validation.invalid_token',
+    'Invalid secret': 'validation.invalid_secret',
+    'Valor não pode ser negativo': 'validation.negative_value',
+    'Muitas requisições. Tente novamente em instantes.': 'validation.rate_limited',
   };
   const key = map[detail];
   return key ? t(key) : detail;
