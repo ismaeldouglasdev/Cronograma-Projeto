@@ -308,16 +308,16 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    created_at = Column(String(30), nullable=True)
+    created_at = Column(String(40), nullable=True)
     is_verified = Column(Boolean, default=False, nullable=True)
     verification_token = Column(String(255), nullable=True)
 
     # Gamification fields
     current_streak = Column(Integer, default=0, nullable=True)
     longest_streak = Column(Integer, default=0, nullable=True)
-    last_activity_date = Column(String(30), nullable=True)
+    last_activity_date = Column(String(40), nullable=True)
     streak_freezes = Column(Integer, default=0, nullable=True)
-    last_freeze_grant_date = Column(String(30), nullable=True)
+    last_freeze_grant_date = Column(String(40), nullable=True)
     coins = Column(Integer, default=0, nullable=True)
 
 
@@ -383,7 +383,7 @@ class UserAchievement(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     achievement_id = Column(Integer, ForeignKey("achievements.id"), nullable=False)
-    unlocked_at = Column(String(30), nullable=True)
+    unlocked_at = Column(String(40), nullable=True)
 
 
 Base.metadata.create_all(engine)
@@ -579,6 +579,24 @@ if "sqlite" in DATABASE_URL:
                 conn.commit()
         except Exception:
             pass
+else:
+    postgres_column_migrations = (
+        ("users", "created_at"),
+        ("users", "last_activity_date"),
+        ("users", "last_freeze_grant_date"),
+        ("user_achievements", "unlocked_at"),
+    )
+    with engine.begin() as conn:
+        for table, column in postgres_column_migrations:
+            try:
+                conn.execute(
+                    text(f"ALTER TABLE {table} ALTER COLUMN {column} TYPE VARCHAR(40)")
+                )
+            except Exception as e:
+                log.warning(
+                    "Migration widen column failed",
+                    extra={"table": table, "column": column, "error": str(e)},
+                )
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
@@ -592,7 +610,9 @@ def get_db():
 
 
 # Funções de autenticação simples (sem biblioteca JWT)
-SECRET_KEY = os.environ.get("JWT_SECRET", secrets.token_urlsafe(32))
+SECRET_KEY = os.environ.get(
+    "JWT_SECRET", hashlib.sha256(DATABASE_URL.encode()).hexdigest()
+)
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 
