@@ -1580,7 +1580,14 @@ def excluir_task(
     return None
 
 
-# --- Sessões de estudo ---
+# ============================================================
+# SESSÕES DE ESTUDO — REST
+# GET    /sessoes             listar sessões
+# POST   /sessoes             criar sessão
+# GET    /sessoes/resumo      horas por área (estático ANTES de rotas dinâmicas)
+# PATCH  /sessoes/{sessao_id} atualizar sessão
+# DELETE /sessoes/{sessao_id} excluir sessão
+# ============================================================
 @app.get("/sessoes", response_model=List[SessaoResponse])
 def listar_sessoes(
     user_id: int = Depends(get_current_user), db: Session = Depends(get_db)
@@ -1632,6 +1639,53 @@ def criar_sessao(
 
     db.refresh(sessao)
     return sessao
+
+
+@app.get("/sessoes/resumo", response_model=List[HorasPorArea])
+def resumo_horas(
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Retorna total de minutos/horas de estudo por área. Pode filtrar por período."""
+    query = (
+        db.query(
+            Sessoes.area_id,
+            Areas.nome,
+            Areas.cor,
+            func.sum(Sessoes.duracao_minutos).label("total_minutos"),
+        )
+        .join(Areas, (Sessoes.area_id == Areas.id) & (Areas.user_id == user_id))
+        .filter(Sessoes.user_id == user_id)
+    )
+
+    # Apply date filtering if provided
+    if start:
+        try:
+            start_date = datetime.strptime(start, "%Y-%m-%d").date()
+            query = query.filter(Sessoes.data >= start_date)
+        except ValueError:
+            pass  # Invalid date format, ignore
+
+    if end:
+        try:
+            end_date = datetime.strptime(end, "%Y-%m-%d").date()
+            query = query.filter(Sessoes.data <= end_date)
+        except ValueError:
+            pass  # Invalid date format, ignore
+
+    rows = query.group_by(Sessoes.area_id).all()
+    return [
+        HorasPorArea(
+            area_id=r.area_id,
+            area_nome=r.nome,
+            area_cor=r.cor,
+            total_minutos=int(r.total_minutos or 0),
+            total_horas=round((r.total_minutos or 0) / 60, 1),
+        )
+        for r in rows
+    ]
 
 
 @app.patch("/sessoes/{sessao_id}", response_model=SessaoResponse)
@@ -1745,53 +1799,6 @@ def completar_pomodoro(
         "novas_conquistas": novas_conquistas,
         "coins": user.coins if user else 0,
     }
-
-
-@app.get("/sessoes/resumo", response_model=List[HorasPorArea])
-def resumo_horas(
-    start: Optional[str] = None,
-    end: Optional[str] = None,
-    user_id: int = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Retorna total de minutos/horas de estudo por área. Pode filtrar por período."""
-    query = (
-        db.query(
-            Sessoes.area_id,
-            Areas.nome,
-            Areas.cor,
-            func.sum(Sessoes.duracao_minutos).label("total_minutos"),
-        )
-        .join(Areas, (Sessoes.area_id == Areas.id) & (Areas.user_id == user_id))
-        .filter(Sessoes.user_id == user_id)
-    )
-
-    # Apply date filtering if provided
-    if start:
-        try:
-            start_date = datetime.strptime(start, "%Y-%m-%d").date()
-            query = query.filter(Sessoes.data >= start_date)
-        except ValueError:
-            pass  # Invalid date format, ignore
-
-    if end:
-        try:
-            end_date = datetime.strptime(end, "%Y-%m-%d").date()
-            query = query.filter(Sessoes.data <= end_date)
-        except ValueError:
-            pass  # Invalid date format, ignore
-
-    rows = query.group_by(Sessoes.area_id).all()
-    return [
-        HorasPorArea(
-            area_id=r.area_id,
-            area_nome=r.nome,
-            area_cor=r.cor,
-            total_minutos=int(r.total_minutos or 0),
-            total_horas=round((r.total_minutos or 0) / 60, 1),
-        )
-        for r in rows
-    ]
 
 
 @app.get("/gamification-summary")

@@ -1960,11 +1960,136 @@ main {
 }
 
 /* Conquistas por Categoria */
-.gami-achievements {
-  margin-top: 1rem;
+.gami-shop-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.2s ease;
 }
 
-.gami-section-title {
+.gami-shop-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.gami-shop-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.gami-shop-icon {
+  font-size: 2rem;
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-input);
+  border-radius: 12px;
+}
+
+.gami-shop-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.gami-shop-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.gami-shop-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.gami-shop-saldo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-input);
+  padding: 0.5rem 0.9rem;
+  border-radius: 12px;
+}
+
+.gami-shop-saldo-icon {
+  font-size: 1.1rem;
+}
+
+.gami-shop-saldo-num {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.gami-shop-saldo-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.gami-shop-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.gami-shop-freezes {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.gami-shop-freezes-num {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.gami-shop-freezes-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.gami-shop-freezes-max {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.gami-shop-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover, var(--accent)));
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 0.7rem 1.4rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gami-shop-btn:hover:not(.disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.gami-shop-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gami-achievements {
+  margin-top: 1rem;
+}.gami-section-title {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--text);
@@ -2282,6 +2407,15 @@ main {
 
   .gami-badges-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gami-shop-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gami-shop-btn {
+    width: 100%;
   }
 }
 
