@@ -2,7 +2,8 @@
 # Cronograma - Dockerfile (SQLite local)
 # ============================================
 
-FROM python:3.11-slim
+# Stage base - deps + código (produção e dev compartilham)
+FROM python:3.11-slim AS base
 
 WORKDIR /app
 
@@ -25,5 +26,13 @@ COPY app/cronograma.db .
 # Expor porta
 EXPOSE 8000
 
-# Iniciar servidor
+# Stage development - usado pelo docker-compose (target: development)
+FROM base AS development
+
+# Iniciar servidor (com reload para desenvolvimento)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+# Stage production - alvo padrão
+FROM base AS production
+
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
