@@ -42,7 +42,13 @@ def create_tables(engine):
                 password_hash VARCHAR(255) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 is_verified BOOLEAN DEFAULT FALSE,
-                verification_token VARCHAR(255)
+                verification_token VARCHAR(255),
+                current_streak INTEGER DEFAULT 0,
+                longest_streak INTEGER DEFAULT 0,
+                last_activity_date VARCHAR(40),
+                streak_freezes INTEGER DEFAULT 0,
+                last_freeze_grant_date VARCHAR(40),
+                coins INTEGER DEFAULT 0
             )
         """)
         )
@@ -51,6 +57,7 @@ def create_tables(engine):
             text("""
             CREATE TABLE IF NOT EXISTS areas (
                 id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id),
                 nome VARCHAR(255) NOT NULL,
                 cor VARCHAR(20),
                 ordem INTEGER,
@@ -69,6 +76,7 @@ def create_tables(engine):
             text("""
             CREATE TABLE IF NOT EXISTS tasks (
                 id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id),
                 area_id INTEGER REFERENCES areas(id),
                 titulo VARCHAR(255) NOT NULL,
                 descricao VARCHAR(500),
@@ -86,6 +94,7 @@ def create_tables(engine):
             text("""
             CREATE TABLE IF NOT EXISTS sessoes (
                 id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id),
                 area_id INTEGER REFERENCES areas(id),
                 duracao_minutos INTEGER,
                 data DATE,
@@ -121,8 +130,12 @@ def migrate():
             )
             conn.execute(
                 text("""
-                INSERT INTO users (id, email, password_hash, created_at, is_verified, verification_token)
-                VALUES (:id, :email, :password_hash, :created_at, :is_verified, :verification_token)
+                INSERT INTO users (id, email, password_hash, created_at, is_verified, verification_token,
+                                   current_streak, longest_streak, last_activity_date, streak_freezes,
+                                   last_freeze_grant_date, coins)
+                VALUES (:id, :email, :password_hash, :created_at, :is_verified, :verification_token,
+                        :current_streak, :longest_streak, :last_activity_date, :streak_freezes,
+                        :last_freeze_grant_date, :coins)
                 ON CONFLICT (id) DO NOTHING
             """),
                 {
@@ -132,6 +145,12 @@ def migrate():
                     "created_at": user["created_at"],
                     "is_verified": is_verified,
                     "verification_token": user.get("verification_token"),
+                    "current_streak": user.get("current_streak") or 0,
+                    "longest_streak": user.get("longest_streak") or 0,
+                    "last_activity_date": user.get("last_activity_date"),
+                    "streak_freezes": user.get("streak_freezes") or 0,
+                    "last_freeze_grant_date": user.get("last_freeze_grant_date"),
+                    "coins": user.get("coins") or 0,
                 },
             )
         conn.commit()
@@ -142,11 +161,24 @@ def migrate():
         for area in data["areas"]:
             conn.execute(
                 text("""
-                INSERT INTO areas (id, nome, cor, ordem, tipo, dia_semana, horario, sala, bloco, professor, subcategoria)
-                VALUES (:id, :nome, :cor, :ordem, :tipo, :dia_semana, :horario, :sala, :bloco, :professor, :subcategoria)
+                INSERT INTO areas (id, user_id, nome, cor, ordem, tipo, dia_semana, horario, sala, bloco, professor, subcategoria)
+                VALUES (:id, :user_id, :nome, :cor, :ordem, :tipo, :dia_semana, :horario, :sala, :bloco, :professor, :subcategoria)
                 ON CONFLICT (id) DO NOTHING
             """),
-                area,
+                {
+                    "id": area["id"],
+                    "user_id": area.get("user_id"),
+                    "nome": area["nome"],
+                    "cor": area.get("cor"),
+                    "ordem": area.get("ordem"),
+                    "tipo": area.get("tipo") or "online",
+                    "dia_semana": area.get("dia_semana"),
+                    "horario": area.get("horario"),
+                    "sala": area.get("sala"),
+                    "bloco": area.get("bloco"),
+                    "professor": area.get("professor"),
+                    "subcategoria": area.get("subcategoria"),
+                },
             )
         conn.commit()
     print(f"   {len(data['areas'])} areas importadas")
@@ -157,12 +189,13 @@ def migrate():
             concluida = bool(task.get("concluida")) if task.get("concluida") else False
             conn.execute(
                 text("""
-                INSERT INTO tasks (id, area_id, titulo, descricao, data_entrega, concluida, duracao_minutos, prioridade, meta_pomodoros, pomodoros_concluidos)
-                VALUES (:id, :area_id, :titulo, :descricao, :data_entrega, :concluida, :duracao_minutos, :prioridade, :meta_pomodoros, :pomodoros_concluidos)
+                INSERT INTO tasks (id, user_id, area_id, titulo, descricao, data_entrega, concluida, duracao_minutos, prioridade, meta_pomodoros, pomodoros_concluidos)
+                VALUES (:id, :user_id, :area_id, :titulo, :descricao, :data_entrega, :concluida, :duracao_minutos, :prioridade, :meta_pomodoros, :pomodoros_concluidos)
                 ON CONFLICT (id) DO NOTHING
             """),
                 {
                     "id": task["id"],
+                    "user_id": task.get("user_id"),
                     "area_id": task["area_id"],
                     "titulo": task["titulo"],
                     "descricao": task.get("descricao"),
@@ -182,11 +215,18 @@ def migrate():
         for sessao in data["sessoes"]:
             conn.execute(
                 text("""
-                INSERT INTO sessoes (id, area_id, duracao_minutos, data, task_id)
-                VALUES (:id, :area_id, :duracao_minutos, :data, :task_id)
+                INSERT INTO sessoes (id, user_id, area_id, duracao_minutos, data, task_id)
+                VALUES (:id, :user_id, :area_id, :duracao_minutos, :data, :task_id)
                 ON CONFLICT (id) DO NOTHING
             """),
-                sessao,
+                {
+                    "id": sessao["id"],
+                    "user_id": sessao.get("user_id"),
+                    "area_id": sessao["area_id"],
+                    "duracao_minutos": sessao["duracao_minutos"],
+                    "data": sessao["data"],
+                    "task_id": sessao.get("task_id"),
+                },
             )
         conn.commit()
     print(f"   {len(data['sessoes'])} sessoes importadas")
