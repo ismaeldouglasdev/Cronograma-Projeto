@@ -138,6 +138,13 @@ const i18n = {
       cat_tarefas_concluidas: 'Tarefas Conclu\u00eddas',
       cat_niveis_alcancados: 'N\u00edveis Alcan\u00e7ados',
       cat_coins: 'Coins',
+      // Freeze shop
+      loja_freezes: 'Loja de Freezes',
+      loja_freezes_desc: 'Use freezes para não perder sua sequência em dias sem estudo',
+      coins_label: 'coins',
+      freezes_label: 'freezes disponíveis',
+      comprar_freeze: 'Comprar freeze (10 coins)',
+      freeze_comprado: 'Freeze comprado com sucesso!',
     },
 
     // Areas panel
@@ -304,6 +311,7 @@ const i18n = {
       session_not_found: 'Sessão não encontrada',
       user_not_found: 'Usuário não encontrado',
       max_freezes: 'Limite máximo de freezes atingido (4).',
+      coins_insuficientes: 'Coins insuficientes para comprar um freeze.',
       max_coins: 'Limite máximo de 100 coins por chamada',
       not_authenticated: 'Não autenticado',
       invalid_token: 'Token inválido ou expirado',
@@ -438,6 +446,13 @@ const i18n = {
       cat_tarefas_concluidas: 'Completed Tasks',
       cat_niveis_alcancados: 'Levels Reached',
       cat_coins: 'Coins',
+      // Freeze shop
+      loja_freezes: 'Freeze Shop',
+      loja_freezes_desc: 'Use freezes to keep your streak on days without studying',
+      coins_label: 'coins',
+      freezes_label: 'freezes available',
+      comprar_freeze: 'Buy freeze (10 coins)',
+      freeze_comprado: 'Freeze purchased successfully!',
     },
 
     areas: {
@@ -594,6 +609,7 @@ const i18n = {
       session_not_found: 'Session not found',
       user_not_found: 'User not found',
       max_freezes: 'Maximum freeze limit reached (4).',
+      coins_insuficientes: 'Not enough coins to buy a freeze.',
       max_coins: 'Maximum of 100 coins per call',
       not_authenticated: 'Not authenticated',
       invalid_token: 'Invalid or expired token',

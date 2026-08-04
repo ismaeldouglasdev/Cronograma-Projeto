@@ -888,6 +888,8 @@ function getPageTitle(tabName) {
   return titles[tabName] || tabName;
 }
 
+const VALID_TABS = ['areas', 'foco', 'gamificacao', 'horarios', 'tasks', 'sessoes', 'resumo'];
+
 function switchToTab(tabName) {
   // Update all tab/sidebar-link elements
   document.querySelectorAll('.tab, .sidebar-link').forEach((t) => t.classList.remove('active'));
@@ -920,6 +922,20 @@ function switchToTab(tabName) {
   if (tabName === 'resumo') {
     loadResumo();
   }
+
+  // Sync URL hash (skip when hash already matches to avoid redundant history entries)
+  const targetHash = '#/' + tabName;
+  if (window.location.hash !== targetHash) {
+    window.location.hash = targetHash;
+  }
+}
+
+function handleHashChange() {
+  const tab = window.location.hash.replace(/^#\//, '');
+  if (!VALID_TABS.includes(tab)) return;
+  const activePanel = document.querySelector('.panel.active');
+  if (activePanel && activePanel.id === tab) return;
+  switchToTab(tab);
 }
 
 function initTabs() {
@@ -959,6 +975,17 @@ async function init() {
   initModal();
   updateColorPreview();
   populateSubcategoriasDatalist();
+
+  window.addEventListener('hashchange', handleHashChange);
+  const initialTab = window.location.hash.replace(/^#\//, '');
+  if (VALID_TABS.includes(initialTab)) {
+    switchToTab(initialTab);
+  }
+
+  const shopBtn = document.getElementById("gami-shop-btn");
+  if (shopBtn) {
+    shopBtn.addEventListener("click", comprarFreeze);
+  }
 
   const searchAreas = document.getElementById("search-areas");
   const filterCategoria = document.getElementById("filter-categoria");
@@ -1101,6 +1128,44 @@ document.addEventListener("DOMContentLoaded", () => {
   // A inicialização será feita pelo Auth após login
 });
 
+async function comprarFreeze() {
+  const btn = document.getElementById("gami-shop-btn");
+  if (btn) {
+    btn.disabled = true;
+  }
+  try {
+    await post("/coins/buy-freeze", {});
+    const _t = typeof t === 'function' ? t : (s) => s;
+    showToast(_t('gamificacao.freeze_comprado'), "success");
+    if (typeof AppStore !== 'undefined') {
+      await AppStore.syncFromBackend();
+    }
+    if (typeof renderGamification === 'function') {
+      renderGamification();
+    }
+  } catch (err) {
+    let detail = err.message || '';
+    try {
+      const parsed = JSON.parse(detail);
+      if (parsed && parsed.detail) detail = parsed.detail;
+    } catch (_) {}
+    const msg = (typeof translateBackendError === 'function' && detail)
+      ? translateBackendError(detail)
+      : (typeof t === 'function' ? t('validation.coins_insuficientes') : 'Coins insuficientes para comprar um freeze.');
+    showToast(msg, "error");
+    if (typeof AppStore !== 'undefined') {
+      await AppStore.syncFromBackend();
+    }
+    if (typeof renderGamification === 'function') {
+      renderGamification();
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+    }
+  }
+}
+
 // Função para renderizar gamificação
 function renderGamification() {
   // Preferir AppStore (novo sistema centralizado)
@@ -1127,6 +1192,18 @@ function renderGamification() {
     if (sidebarStreak) sidebarStreak.textContent = stats.currentStreak;
     const sidebarCoins = document.getElementById("sidebar-coins");
     if (sidebarCoins) sidebarCoins.textContent = stats.coins;
+
+    // Atualizar loja de freezes
+    const shopCoins = document.getElementById("gami-shop-coins");
+    const shopFreezes = document.getElementById("gami-shop-freezes");
+    const shopBtn = document.getElementById("gami-shop-btn");
+    if (shopCoins) shopCoins.textContent = stats.coins;
+    if (shopFreezes) shopFreezes.textContent = stats.freezes;
+    if (shopBtn) {
+      const canBuy = stats.coins >= 10 && stats.freezes < 4;
+      shopBtn.disabled = !canBuy;
+      shopBtn.classList.toggle("disabled", !canBuy);
+    }
     
     // Barra de XP com percentual
     const xpPercent = stats.xpForNextLevel > 0 
