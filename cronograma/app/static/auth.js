@@ -75,9 +75,17 @@ const Auth = (function() {
       return;
     }
     try {
-      const response = await fetch('/auth/check', {
+      let response = await fetch('/auth/check', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
+      if (!response.ok) {
+        const newToken = await refreshSession();
+        if (newToken) {
+          response = await fetch('/auth/check', {
+            headers: { 'Authorization': `Bearer ${newToken}` },
+          });
+        }
+      }
       if (response.ok) {
         showMainApp();
         if (typeof window.initApp === 'function') {
@@ -192,10 +200,12 @@ const Auth = (function() {
      return data;
   }
 
-  function logout() {
-    fetch('/auth/logout', { method: 'POST' }).catch(() => {});
+  async function logout() {
     clearToken();
     showLoginScreen();
+    try {
+      await fetch('/auth/logout', { method: 'POST' });
+    } catch (e) {}
     window.location.reload();
   }
 
