@@ -17,14 +17,35 @@ const Auth = (function() {
     const token = getToken();
     if (!token) return null;
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload;
+      const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+      return JSON.parse(atob(padded));
     } catch (e) {
       return null;
     }
   }
 
-  async function apiFetch(url, options = {}) {
+  let refreshPromise = null;
+
+  function refreshSession() {
+    if (!refreshPromise) {
+      refreshPromise = fetch('/auth/refresh', { method: 'POST' })
+        .then(async (response) => {
+          if (!response.ok) return null;
+          const data = await response.json();
+          if (data && data.access_token) {
+            setToken(data.access_token);
+            return data.access_token;
+          }
+          return null;
+        })
+        .catch(() => null)
+        .finally(() => { refreshPromise = null; });
+    }
+    return refreshPromise;
+  }
+
+  async function apiFetch(url, options = {}, retried = false) {
     const token = getToken();
     const headers = {
       'Content-Type': 'application/json',
@@ -34,6 +55,12 @@ const Auth = (function() {
       headers['Authorization'] = `Bearer ${token}`;
     }
     const response = await fetch(url, { ...options, headers });
+    if (response.status === 401 && !retried && !url.startsWith('/auth/')) {
+      const newToken = await refreshSession();
+      if (newToken) {
+        return apiFetch(url, options, true);
+      }
+    }
     if (response.status === 401) {
       clearToken();
       showLoginScreen();
@@ -166,6 +193,7 @@ const Auth = (function() {
   }
 
   function logout() {
+    fetch('/auth/logout', { method: 'POST' }).catch(() => {});
     clearToken();
     showLoginScreen();
     window.location.reload();
@@ -278,6 +306,7 @@ const Auth = (function() {
     getToken,
     setToken,
     clearToken,
+    refreshSession,
     apiFetch,
     checkAuth,
     login,

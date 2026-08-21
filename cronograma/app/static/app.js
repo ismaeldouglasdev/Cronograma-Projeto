@@ -72,8 +72,20 @@ function populateSubcategoriasDatalist() {
   });
 }
 
+async function fetchWithAuthRetry(url, options) {
+  let r = await fetch(url, options);
+  if (r.status === 401 && window.Auth && typeof Auth.refreshSession === "function") {
+    const newToken = await Auth.refreshSession();
+    if (newToken) {
+      const headers = { ...(options.headers || {}), Authorization: `Bearer ${newToken}` };
+      r = await fetch(url, { ...options, headers });
+    }
+  }
+  return r;
+}
+
 async function get(url) {
-  const r = await fetch(API + url, { headers: getAuthHeader() });
+  const r = await fetchWithAuthRetry(API + url, { headers: getAuthHeader() });
   if (r.status === 401) { handleAuthFailure(); throw new Error("Unauthorized"); }
   if (!r.ok) {
     const text = await r.text();
@@ -85,7 +97,7 @@ async function get(url) {
 }
 
 async function post(url, body) {
-  const r = await fetch(API + url, {
+  const r = await fetchWithAuthRetry(API + url, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getAuthHeader() },
     body: JSON.stringify(body),
@@ -101,7 +113,7 @@ async function post(url, body) {
 }
 
 async function patch(url, body) {
-  const r = await fetch(API + url, {
+  const r = await fetchWithAuthRetry(API + url, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...getAuthHeader() },
     body: JSON.stringify(body),
@@ -117,7 +129,7 @@ async function patch(url, body) {
 }
 
 async function delReq(url) {
-  const r = await fetch(API + url, { method: "DELETE", headers: getAuthHeader() });
+  const r = await fetchWithAuthRetry(API + url, { method: "DELETE", headers: getAuthHeader() });
   if (r.status === 401) { handleAuthFailure(); throw new Error("Unauthorized"); }
   if (!r.ok) throw new Error(r.statusText);
   return null;
