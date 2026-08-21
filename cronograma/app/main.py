@@ -608,36 +608,137 @@ def get_db():
         db.close()
 
 
-# Funções de autenticação simples (sem biblioteca JWT)
+# JWT Authentication with python-jose
+# ------------------------------------
+# Access tokens: JWT curto (15 min), enviado via header Authorization.
+# Refresh tokens: JWTs stateless com type="refresh" (7 dias), entregues em
+# cookies httpOnly — sem estado em memória/DB, sobrevivem a restarts do
+# servidor (Render reinicia instâncias frequentemente).
+# Tokens legados (base64+hash) continuam aceitos em verify_token() durante
+# a migração.
+
+from jose import JWTError, jwt
+from jose.exceptions import ExpiredSignatureError
+
 SECRET_KEY = os.environ.get(
     "JWT_SECRET", hashlib.sha256(DATABASE_URL.encode()).hexdigest()
 )
-ACCESS_TOKEN_EXPIRE_HOURS = 24
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 15  # 15 minutes for access tokens
+REFRESH_TOKEN_EXPIRE_DAYS = 7  # 7 days for refresh tokens
 
 
 def create_access_token(user_id: int) -> str:
-    expire = int(time.time()) + (ACCESS_TOKEN_EXPIRE_HOURS * 3600)
-    data = f"{user_id}:{expire}"
-    encoded = base64.b64encode(data.encode()).decode()
-    signature = hashlib.sha256((data + SECRET_KEY).encode()).hexdigest()[:16]
-    return f"{encoded}.{signature}"
+    """Create a short-lived signed JWT access token.
+
+    Args:
+        user_id: The user ID to encode in the token
+
+    Returns:
+        Encoded JWT token string
+    """
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode = {
+        "sub": str(user_id),
+        "exp": expire,
+        "iat": datetime.now(timezone.utc),
+        "type": "access",
+    }
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_refresh_token(user_id: int) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode = {
+        "sub": str(user_id),
+        "exp": expire,
+        "iat": datetime.now(timezone.utc),
+        "type": "refresh",
+    }
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def verify_refresh_token(refresh_token: str) -> tuple[bool, int]:
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+    except ExpiredSignatureError:
+        auth_log.warning(
+            "Refresh token expired",
+            extra={"action": "refresh_token_expired"},
+        )
+        return False, 0
+    except JWTError:
+        return False, 0
+
+    if payload.get("type") != "refresh":
+        auth_log.warning(
+            "Access token used as refresh token",
+            extra={"action": "refresh_token_wrong_type"},
+        )
+        return False, 0
+
+    sub = payload.get("sub")
+    if sub is None:
+        return False, 0
+    try:
+        return True, int(sub)
+    except (TypeError, ValueError):
+        return False, 0
 
 
 def verify_token(token: str) -> tuple[bool, int]:
+    """Verify a JWT access token.
+    
+    This function handles both new python-jose tokens and legacy tokens
+    for backward compatibility during migration.
+    
+    Args:
+        token: The JWT token to verify
+        
+    Returns:
+        Tuple of (is_valid, user_id)
+    """
+    # First, try to decode as new JWT format
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        token_type = payload.get("type", "access")
+        
+        if token_type != "access":
+            auth_log.warning(
+                "Invalid token type used",
+                extra={"token_type": token_type, "action": "verify_token"},
+            )
+            return False, 0
+            
+        if user_id is None:
+            return False, 0
+        return True, int(user_id)
+    except ExpiredSignatureError:
+        auth_log.warning(
+            "Token expired",
+            extra={"action": "verify_token_expired"},
+        )
+        return False, 0
+    except JWTError:
+        # Not a valid JWT, try legacy format for backward compatibility
+        pass
+    
+    # Legacy token verification (for backward compatibility)
     try:
         parts = token.split(".")
         if len(parts) != 2:
             return False, 0
         encoded, signature = parts
         data = base64.b64decode(encoded.encode()).decode()
-        user_id, expire_str = data.split(":")
+        user_id_str, expire_str = data.split(":")
         expire = int(expire_str)
         if time.time() > expire:
             return False, 0
         expected_sig = hashlib.sha256((data + SECRET_KEY).encode()).hexdigest()[:16]
         if signature != expected_sig:
             return False, 0
-        return True, int(user_id)
+        return True, int(user_id_str)
     except Exception:
         return False, 0
 
@@ -1229,8 +1330,29 @@ def migrate_data(secret: str = "", user_id: int = Depends(get_current_user)):
 
 
 # --- Auth Endpoints ---
+def _set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
+    is_secure = os.environ.get("ENVIRONMENT", "development") == "production"
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        httponly=True,
+        secure=is_secure,
+        samesite="lax",
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
+        httponly=True,
+        secure=is_secure,
+        samesite="lax",
+    )
+
+
 @app.post("/auth/register", response_model=TokenResponse)
 def register(
+    response: Response,
     body: UserRegister,
     request: Request,
     db: Session = Depends(get_db),
@@ -1258,6 +1380,10 @@ def register(
     db.commit()
     db.refresh(user)
 
+    access_token = create_access_token(user.id)
+    refresh_token = create_refresh_token(user.id)
+    _set_auth_cookies(response, access_token, refresh_token)
+
     auth_log.info(
         "User registered (auto-verified)",
         extra={
@@ -1267,16 +1393,20 @@ def register(
         },
     )
 
-    token = create_access_token(user.id)
-    return TokenResponse(access_token=token)
+    return TokenResponse(access_token=access_token)
 
 
 @app.post("/auth/login", response_model=TokenResponse)
 def login(
+    response: Response,
     body: UserLogin,
     request: Request,
     db: Session = Depends(get_db),
 ):
+    """Authenticate user and return access token + refresh token.
+    
+    Sets httpOnly cookies for both tokens for enhanced security.
+    """
     client_ip = request.client.host if request.client else "unknown"
     rate_limit(f"login:{client_ip}", max_req=10, window=60)
     user = db.query(User).filter(User.email == body.email).first()
@@ -1291,8 +1421,84 @@ def login(
         "Login success",
         extra={"user_id": user.id, "email": user.email, "action": "login"},
     )
-    token = create_access_token(user.id)
-    return TokenResponse(access_token=token)
+    
+    access_token = create_access_token(user.id)
+    refresh_token = create_refresh_token(user.id)
+    _set_auth_cookies(response, access_token, refresh_token)
+
+    return TokenResponse(access_token=access_token)
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+@app.post("/auth/refresh", response_model=TokenResponse)
+def refresh_access_token(
+    request: Request,
+    response: Response,
+    body: Optional[RefreshTokenRequest] = None,
+    db: Session = Depends(get_db),
+):
+    """Valida o refresh token e emite novo par de tokens.
+
+    Aceita o refresh token do cookie httpOnly (preferido) ou do body
+    (fallback para clientes de API). Rotaciona também o refresh token.
+    """
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token and body:
+        refresh_token = body.refresh_token
+
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Refresh token não fornecido")
+
+    valid, user_id = verify_refresh_token(refresh_token)
+    if not valid:
+        auth_log.warning(
+            "Invalid refresh token used",
+            extra={"action": "refresh_token_invalid"},
+        )
+        raise HTTPException(status_code=401, detail="Refresh token inválido ou expirado")
+
+    new_access_token = create_access_token(user_id)
+    new_refresh_token = create_refresh_token(user_id)
+
+    is_secure = os.environ.get("ENVIRONMENT", "development") == "production"
+    response.set_cookie(
+        key="access_token",
+        value=new_access_token,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        httponly=True,
+        secure=is_secure,
+        samesite="lax",
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=new_refresh_token,
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
+        httponly=True,
+        secure=is_secure,
+        samesite="lax",
+    )
+
+    auth_log.info(
+        "Access token refreshed",
+        extra={"user_id": user_id, "action": "token_refresh"},
+    )
+
+    return TokenResponse(access_token=new_access_token)
+
+
+@app.post("/auth/logout")
+def logout(
+    request: Request,
+    response: Response,
+):
+    """Limpa os cookies de sessão (tokens são stateless)."""
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
+
+    return {"message": "Logout realizado com sucesso"}
 
 
 @app.get("/auth/check")
