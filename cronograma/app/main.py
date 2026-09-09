@@ -121,7 +121,20 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return _bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
+    try:
+        return _bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
+    except (ValueError, TypeError):
+        pass
+
+    # Legacy accounts created before bcrypt migration stored SHA-256 hex
+    if re.fullmatch(r"[0-9a-f]{64}", hashed_password):
+        return hashlib.sha256(plain_password.encode()).hexdigest() == hashed_password
+
+    auth_log.error(
+        "Unsupported password hash format",
+        extra={"action": "verify_password_unknown_hash"},
+    )
+    return False
 
 
 def generate_verification_token() -> str:
@@ -1443,6 +1456,15 @@ def login(
             extra={"email": body.email, "action": "login_failed"},
         )
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
+
+    if not user.password_hash.startswith("$2"):
+        user.password_hash = hash_password(body.password)
+        db.add(user)
+        db.commit()
+        auth_log.info(
+            "Password hash upgraded to bcrypt",
+            extra={"user_id": user.id, "action": "password_hash_upgrade"},
+        )
 
     auth_log.info(
         "Login success",
