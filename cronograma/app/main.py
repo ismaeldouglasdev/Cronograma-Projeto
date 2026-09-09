@@ -963,10 +963,10 @@ async def security_headers_middleware(request, call_next):
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
         "img-src 'self' data: blob:; "
         "connect-src 'self'; "
-        "font-src 'self'; "
+        "font-src 'self' https://fonts.gstatic.com; "
         "frame-ancestors 'none'"
     )
     return response
@@ -1881,7 +1881,7 @@ def resumo_horas(
         except ValueError:
             pass  # Invalid date format, ignore
 
-    rows = query.group_by(Sessoes.area_id).all()
+    rows = query.group_by(Sessoes.area_id, Areas.nome, Areas.cor).all()
     return [
         HorasPorArea(
             area_id=r.area_id,

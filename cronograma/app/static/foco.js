@@ -296,7 +296,24 @@ function updateAreaFromInput() {
     }
   }
   
-function handleReset() {
+function handleSkip() {
+    if (state === "idle") return;
+    clearInterval(intervalId);
+    intervalId = null;
+    startTimestamp = null;
+    document.title = originalTitle;
+    if (isBreak) {
+      try {
+        showDesktopNotification(
+          typeof t === 'function' ? t('foco.notif_descanso_titulo') : 'Descanso Conclu\u00eddo',
+          typeof t === 'function' ? t('foco.notif_descanso_corpo') : 'Hora de voltar ao foco!'
+        );
+      } catch (e) {}
+    }
+    resetTimer();
+  }
+
+  function handleReset() {
      if (state !== "idle") {
        if (!confirm(typeof t === 'function' ? t('foco.confirm_cancel') : 'Tem certeza que deseja cancelar a sessão de foco?')) {
          return;
