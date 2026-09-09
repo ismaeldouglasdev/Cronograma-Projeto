@@ -577,6 +577,78 @@ main {
     flex: 1 1 calc(50% - 0.25rem);
     min-width: 0;
   }
+
+  #lista-areas {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+  }
+
+  #lista-areas > .area-card {
+    padding: 0.6rem 0.4rem;
+    min-height: 78px;
+  }
+
+  #lista-areas .area-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    margin-bottom: 0.4rem;
+  }
+
+  #lista-areas .area-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  #lista-areas .area-title {
+    font-size: 0.78rem;
+    margin-bottom: 0.15rem;
+  }
+
+  #lista-areas .area-type {
+    font-size: 0.62rem;
+  }
+
+  .gami-hero {
+    padding: 1.1rem;
+    border-radius: 14px;
+    margin-bottom: 1rem;
+  }
+
+  .gami-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .gami-metric-card {
+    padding: 0.75rem;
+    border-radius: 12px;
+  }
+
+  .gami-badges-grid {
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .gami-badge {
+    padding: 0.65rem 0.5rem;
+  }
+
+  .horarios-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+  }
+
+  .dia-header {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .aula-item {
+    padding: 0.5rem;
+  }
 }
 
 #lista-areas {
@@ -591,12 +663,6 @@ main {
 @media (max-width: 900px) {
   #lista-areas {
     grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  #lista-areas {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -619,6 +685,11 @@ main {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
   border-color: var(--accent);
+}
+
+#lista-areas > .area-card:active {
+  background: var(--bg-input);
+  transform: scale(0.97);
 }
 
 #lista-areas .area-icon {
@@ -2461,6 +2532,10 @@ main {
   z-index: 50;
 }
 
+.sidebar-overlay {
+  display: none;
+}
+
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -2567,6 +2642,11 @@ main {
   color: var(--text);
 }
 
+.sidebar-link:active {
+  background: var(--bg-input);
+  color: var(--text);
+}
+
 .sidebar-link.active {
   background: var(--accent-subtle);
   color: var(--accent);
@@ -2628,6 +2708,49 @@ main {
   color: var(--text);
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.menu-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.menu-toggle span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--text);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.menu-toggle.open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.menu-toggle.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-toggle.open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
 .dashboard-header .header-controls {
   position: static;
   display: flex;
@@ -2640,28 +2763,51 @@ main {
   padding-top: 4rem;
 }
 
-/* Responsive: Mobile */
+/* Responsive: Mobile — sidebar vira drawer com menu hambúrguer */
 @media (max-width: 768px) {
   .sidebar {
-    width: 72px;
+    width: 260px;
     padding: 0.75rem 0.5rem;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.5);
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 45;
+  }
+
+  .sidebar-overlay.show {
+    display: block;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
   }
 
   .sidebar-header {
     padding: 1rem 0.5rem;
-    justify-content: center;
-  }
-
-  .sidebar-title {
-    display: none;
+    justify-content: flex-start;
   }
 
   .sidebar-logo {
     font-size: 1.5rem;
   }
 
+  .sidebar-title {
+    display: block;
+  }
+
   .sidebar-user {
-    display: none;
+    display: block;
   }
 
   .sidebar-nav {
@@ -2670,12 +2816,12 @@ main {
   }
 
   .sidebar-link {
-    padding: 0.75rem;
-    justify-content: center;
+    padding: 0.75rem 1rem;
+    justify-content: flex-start;
   }
 
   .sidebar-text {
-    display: none;
+    display: inline;
   }
 
   .sidebar-icon {
@@ -2692,7 +2838,7 @@ main {
   }
 
   .dashboard-main {
-    margin-left: 72px;
+    margin-left: 0;
   }
 
   .dashboard-header {
