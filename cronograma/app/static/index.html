@@ -115,8 +115,9 @@
   <div id="main-app" style="display: none;">
     <!-- Dashboard Layout with Sidebar -->
     <div class="dashboard-layout">
+      <div id="sidebar-overlay" class="sidebar-overlay"></div>
       <!-- Sidebar -->
-      <aside class="sidebar">
+      <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <h1 class="sidebar-logo" data-svg-icon="graduation" data-svg-size="26"></h1>
           <span class="sidebar-title">Cronograma</span>
@@ -196,7 +197,12 @@
       <!-- Main Content -->
       <main class="dashboard-main">
         <header class="dashboard-header">
-          <h1 class="page-title" id="page-title" data-i18n="pages.areas">Áreas</h1>
+          <div class="header-left">
+            <button id="menu-toggle" class="menu-toggle" aria-label="Menu" aria-expanded="false" aria-controls="sidebar">
+              <span></span><span></span><span></span>
+            </button>
+            <h1 class="page-title" id="page-title" data-i18n="pages.areas">Áreas</h1>
+          </div>
         </header>
     <!-- Áreas -->
     <section id="areas" class="panel active">

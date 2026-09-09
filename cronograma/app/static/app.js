@@ -944,6 +944,37 @@ function handleHashChange() {
   switchToTab(tab);
 }
 
+function initMobileMenu() {
+  const toggle = document.getElementById("menu-toggle");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+  if (!toggle || !sidebar || !overlay) return;
+
+  const closeMenu = () => {
+    sidebar.classList.remove("open");
+    overlay.classList.remove("show");
+    toggle.classList.remove("open");
+    toggle.setAttribute("aria-expanded", "false");
+  };
+
+  toggle.addEventListener("click", () => {
+    const open = sidebar.classList.toggle("open");
+    overlay.classList.toggle("show", open);
+    toggle.classList.toggle("open", open);
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+
+  overlay.addEventListener("click", closeMenu);
+
+  document.querySelectorAll(".sidebar-link").forEach((link) => {
+    link.addEventListener("click", closeMenu);
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 768) closeMenu();
+  });
+}
+
 function initTabs() {
   let alertShownThisSession = false;
   
@@ -978,6 +1009,7 @@ function initTabs() {
 
 async function init() {
   initTabs();
+  initMobileMenu();
   initModal();
   updateColorPreview();
   populateSubcategoriasDatalist();
