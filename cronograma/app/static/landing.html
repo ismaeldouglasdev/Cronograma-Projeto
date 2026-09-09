@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Cronograma — Seu plano de estudos gamificado. Organize matérias, foque com Pomodoro, ganhe XP e mantenha seu streak.">
   <title data-i18n="landing.page_title">Cronograma — Seu Plano de Estudos Gamificado</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  
+
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
+
     :root {
       --bg: #07070a;
       --bg-card: rgba(26, 26, 36, 0.45);
@@ -27,6 +27,8 @@
       --glow: rgba(245, 158, 11, 0.05);
     }
 
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
       background: var(--bg);
@@ -38,8 +40,7 @@
       overflow-x: hidden;
       position: relative;
     }
-    
-    /* Background glows */
+
     .glow-top {
       position: absolute;
       top: -150px;
@@ -51,7 +52,7 @@
       pointer-events: none;
       z-index: -1;
     }
-    
+
     .glow-bottom {
       position: absolute;
       bottom: -150px;
@@ -63,28 +64,27 @@
       z-index: -1;
     }
 
-    a { 
-      color: var(--accent); 
+    a {
+      color: var(--accent);
       text-decoration: none;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     a:hover { color: var(--accent-hover); }
 
-    /* Nav */
     .nav {
       position: sticky;
       top: 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1.25rem 2rem;
+      padding: 1rem 2rem;
       border-bottom: 1px solid var(--border);
       background: rgba(7, 7, 10, 0.7);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       z-index: 100;
     }
-    
+
     .nav-logo {
       font-family: 'Outfit', sans-serif;
       font-size: 1.3rem;
@@ -94,69 +94,113 @@
       align-items: center;
       gap: 0.5rem;
       letter-spacing: -0.02em;
+      white-space: nowrap;
     }
-    .nav-logo span { 
+    .nav-logo span {
       display: inline-block;
       animation: float 3s ease-in-out infinite;
     }
-    
+
     @keyframes float {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-3px); }
     }
 
-    .nav-links { display: flex; gap: 1rem; align-items: center; }
-    
-    .nav-links a {
+    .nav-links { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+
+    .nav-link {
       font-size: 0.85rem;
       color: var(--text-muted);
-      padding: 0.5rem 1.25rem;
-      border: 1px solid var(--border);
+      padding: 0.5rem 0.9rem;
       border-radius: 8px;
       font-weight: 500;
-      background: rgba(255, 255, 255, 0.02);
+      letter-spacing: 0.2px;
     }
-    .nav-links a:hover {
+    .nav-link:hover {
+      color: var(--text);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .nav-links a.btn-primary { font-size: 0.85rem; padding: 0.55rem 1.25rem; }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, var(--accent) 0%, #f97316 100%);
+      color: #07070a;
+      border: none;
+      font-weight: 700;
+      padding: 0.875rem 2.25rem;
+      font-size: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--accent-hover) 0%, #fb923c 100%);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+      transform: translateY(-1px);
+      color: #07070a;
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.875rem 2.25rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.02);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-secondary:hover {
       color: var(--text);
       border-color: var(--accent);
       background: rgba(245, 158, 11, 0.08);
-      box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
-      transform: translateY(-1px);
-    }
-    
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent) 0%, #f97316 100%) !important;
-      color: #07070a !important;
-      border: none !important;
-      font-weight: 700 !important;
-      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
-    }
-    .btn-primary:hover {
-      background: linear-gradient(135deg, var(--accent-hover) 0%, #fb923c 100%) !important;
-      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35) !important;
       transform: translateY(-1px);
     }
 
-    /* Hero */
     .hero {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 6rem 2rem 4rem;
+      padding: 5rem 1.5rem 3.5rem;
       text-align: center;
       max-width: 1000px;
       margin: 0 auto;
+      width: 100%;
     }
-    
-    .hero-icon { 
-      font-size: 4rem; 
-      margin-bottom: 1.5rem; 
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 1.1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      background: rgba(245, 158, 11, 0.08);
+      color: var(--accent-hover);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      margin-bottom: 1.75rem;
+      text-transform: uppercase;
+    }
+
+    .hero-icon {
+      font-size: 3.5rem;
+      margin-bottom: 1.25rem;
       filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.2));
       animation: pulseGlow 3s ease-in-out infinite;
     }
-    
+
     @keyframes pulseGlow {
       0%, 100% { filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.2)); }
       50% { filter: drop-shadow(0 0 30px rgba(245, 158, 11, 0.5)); transform: scale(1.05); }
@@ -164,13 +208,13 @@
 
     .hero h1 {
       font-family: 'Outfit', sans-serif;
-      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-size: clamp(2.5rem, 7vw, 4.25rem);
       font-weight: 900;
-      line-height: 1.1;
+      line-height: 1.08;
       margin-bottom: 1.25rem;
       letter-spacing: -0.03em;
     }
-    .hero h1 span {
+    .hero h1 span:last-child {
       background: linear-gradient(135deg, #f59e0b 20%, #f97316 80%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -179,8 +223,8 @@
     .hero p {
       font-size: clamp(1rem, 2.5vw, 1.25rem);
       color: var(--text-muted);
-      max-width: 600px;
-      margin: 0 auto 2.5rem;
+      max-width: 620px;
+      margin: 0 auto 2.25rem;
       font-weight: 400;
     }
     .hero-actions {
@@ -190,27 +234,94 @@
       justify-content: center;
       margin-bottom: 2rem;
     }
-    .hero-actions a {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.875rem 2.25rem;
-      font-size: 1rem;
-      font-weight: 700;
-      border-radius: 10px;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    .section {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem 4.5rem;
+      text-align: center;
     }
-    
-    /* Features */
+
+    .section h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(1.75rem, 4.5vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-sub {
+      color: var(--text-muted);
+      max-width: 560px;
+      margin: 0 auto 2.5rem;
+      font-size: 1.05rem;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      text-align: left;
+      counter-reset: step;
+    }
+
+    .step-card {
+      position: relative;
+      padding: 2rem;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--bg-card);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .step-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(245, 158, 11, 0.05);
+    }
+
+    .step-num {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.6rem;
+      height: 2.6rem;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(249, 115, 22, 0.12));
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: var(--accent-hover);
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+    }
+
+    .step-card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .step-card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
     .features {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1.5rem;
       width: 100%;
-      margin-top: 5rem;
+      margin-top: 0.5rem;
       text-align: left;
     }
-    
+
     .feature-card {
       padding: 2rem;
       border: 1px solid var(--border);
@@ -222,7 +333,7 @@
       position: relative;
       overflow: hidden;
     }
-    
+
     .feature-card::before {
       content: '';
       position: absolute;
@@ -240,22 +351,22 @@
       transform: translateY(-4px);
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(245, 158, 11, 0.05);
     }
-    
-    .feature-card .icon { 
-      font-size: 2rem; 
-      margin-bottom: 1.25rem; 
+
+    .feature-card .icon {
+      font-size: 2rem;
+      margin-bottom: 1.25rem;
       display: inline-block;
       transition: transform 0.3s ease;
     }
     .feature-card:hover .icon {
       transform: scale(1.15) rotate(5deg);
     }
-    
-    .feature-card h3 { 
+
+    .feature-card h3 {
       font-family: 'Outfit', sans-serif;
-      font-size: 1.2rem; 
+      font-size: 1.2rem;
       font-weight: 700;
-      margin-bottom: 0.5rem; 
+      margin-bottom: 0.5rem;
       color: var(--text);
       letter-spacing: -0.01em;
     }
@@ -265,7 +376,74 @@
       line-height: 1.6;
     }
 
-    /* Footer */
+    .cta-band {
+      position: relative;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+      border-radius: 24px;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      background:
+        radial-gradient(600px circle at 50% -20%, rgba(245, 158, 11, 0.15), transparent 60%),
+        var(--bg-card);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      text-align: center;
+    }
+    .cta-band h2 { margin-bottom: 0.75rem; }
+    .cta-band p {
+      color: var(--text-muted);
+      max-width: 480px;
+      margin: 0 auto 1.75rem;
+      font-size: 1.05rem;
+    }
+    .cta-band .btn-primary { font-size: 1.05rem; padding: 1rem 2.4rem; }
+
+    .faq-list {
+      max-width: 720px;
+      margin: 0 auto;
+      text-align: left;
+    }
+    .faq-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg-card);
+      margin-bottom: 0.9rem;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .faq-item:hover { border-color: var(--border-hover); }
+    .faq-item summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 1.1rem 1.4rem;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      user-select: none;
+    }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after {
+      content: '+';
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent);
+      transition: transform 0.2s;
+      line-height: 1;
+    }
+    .faq-item[open] summary::after { transform: rotate(45deg); }
+    .faq-item p {
+      padding: 0 1.4rem 1.2rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
     .footer {
       text-align: center;
       padding: 2rem;
@@ -275,6 +453,7 @@
       background: rgba(7, 7, 10, 0.5);
       margin-top: auto;
     }
+    .footer a { font-weight: 600; }
 
     .lang-switch {
       font-size: 0.75rem;
@@ -288,6 +467,7 @@
       transition: all 0.2s;
       letter-spacing: 0.5px;
       line-height: 1;
+      font-family: 'Plus Jakarta Sans', sans-serif;
     }
     .lang-switch:hover {
       color: var(--text);
@@ -295,15 +475,27 @@
       background: rgba(245, 158, 11, 0.08);
     }
 
+    @media (max-width: 720px) {
+      .nav { flex-wrap: wrap; gap: 0.6rem; }
+      .nav-links { width: 100%; justify-content: flex-end; }
+      .nav-link { display: none; }
+    }
+
     @media (max-width: 600px) {
       .nav { padding: 1rem; }
-      .hero { padding: 4rem 1rem 3rem; }
+      .hero { padding: 3.5rem 1rem 2.5rem; }
       .features { grid-template-columns: 1fr; gap: 1rem; }
       .feature-card { padding: 1.5rem; }
+      .steps { grid-template-columns: 1fr; gap: 1rem; }
+      .step-card { padding: 1.5rem; }
+      .section { padding: 1rem 1rem 3.5rem; }
+      .cta-band { padding: 2.25rem 1.25rem; }
+      .hero-actions .btn-primary, .hero-actions .btn-secondary { width: 100%; justify-content: center; }
+      .glow-top { width: 320px; height: 240px; top: -100px; }
+      .glow-bottom { width: 280px; height: 280px; }
     }
   </style>
   <script>
-    // Reveal interaction glow on cards
     document.addEventListener('DOMContentLoaded', () => {
       const cards = document.querySelectorAll('.feature-card');
       cards.forEach(card => {
@@ -325,22 +517,56 @@
   <nav class="nav">
     <div class="nav-logo"><span>📚</span> Cronograma</div>
     <div class="nav-links">
+      <a href="#recursos" class="nav-link" data-i18n="landing.nav_recursos">Recursos</a>
+      <a href="#como-funciona" class="nav-link" data-i18n="landing.nav_como">Como funciona</a>
+      <a href="#faq" class="nav-link" data-i18n="landing.nav_faq">FAQ</a>
       <button class="lang-switch" onclick="toggleLang()" title="Switch language">PT</button>
       <a href="/app" class="btn-primary" data-i18n="landing.nav_acessar">Acessar Cronograma</a>
     </div>
   </nav>
 
-  <main class="hero">
-    <div class="hero-icon">📚</div>
-    <h1><span data-i18n="landing.hero_title">Seus estudos</span><br><span data-i18n="landing.hero_title_highlight">com disciplina</span></h1>
-    <p data-i18n="landing.hero_desc">
-      Organize suas matérias, acompanhe tarefas, foque com Pomodoro e evolua
-      com um sistema de gamificação que transforma sua rotina de estudos.
-    </p>
-    <div class="hero-actions">
-      <a href="/app" class="btn-primary" data-i18n="landing.hero_cta">Acessar Cronograma →</a>
-    </div>
+  <main>
+    <section class="hero">
+      <div class="hero-badge" data-i18n="landing.hero_badge">100% grátis • Open Source</div>
+      <div class="hero-icon">📚</div>
+      <h1>
+        <span data-i18n="landing.hero_title">Seus estudos</span><br>
+        <span data-i18n="landing.hero_title_highlight">com disciplina</span>
+      </h1>
+      <p data-i18n="landing.hero_desc">
+        Organize suas matérias, acompanhe tarefas, foque com Pomodoro e evolua
+        com um sistema de gamificação que transforma sua rotina de estudos.
+      </p>
+      <div class="hero-actions">
+        <a href="/app" class="btn-primary" data-i18n="landing.hero_cta">Acessar Cronograma →</a>
+        <a href="#recursos" class="btn-secondary" data-i18n="landing.hero_cta2">Ver recursos ↓</a>
+      </div>
+    </section>
 
+    <section class="section" id="como-funciona">
+      <h2 data-i18n="landing.how_title">Como funciona</h2>
+      <p class="section-sub" data-i18n="landing.how_subtitle">Três passos simples para transformar seus estudos</p>
+      <div class="steps">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <h3 data-i18n="landing.step1_title">Organize</h3>
+          <p data-i18n="landing.step1_desc">Crie suas matérias, monte o quadro de horários e cadastre suas tarefas com prazos.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <h3 data-i18n="landing.step2_title">Estude com foco</h3>
+          <p data-i18n="landing.step2_desc">Use o timer Pomodoro, registre sessões e acompanhe o tempo dedicado a cada matéria.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <h3 data-i18n="landing.step3_title">Evolua</h3>
+          <p data-i18n="landing.step3_desc">Ganhe XP, moedas e conquistas a cada sessão — e mantenha seu streak no ritmo.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="recursos">
+      <h2 data-i18n="landing.features_title">Tudo para sua rotina de estudos</h2>
       <div class="features">
         <div class="feature-card">
           <div class="icon">🎯</div>
@@ -372,7 +598,38 @@
           <h3 data-i18n="landing.feature6_title">Streak & Moedas</h3>
           <p data-i18n="landing.feature6_desc">Mantenha a sequência de estudos, ganhe moedas, compre freezes e não perca o ritmo.</p>
         </div>
-    </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="cta-band">
+        <h2 data-i18n="landing.cta_title">Pronto para estudar com disciplina?</h2>
+        <p data-i18n="landing.cta_desc">Crie sua conta gratuita e transforme sua rotina de estudos hoje mesmo.</p>
+        <a href="/app" class="btn-primary" data-i18n="landing.cta_btn">Acessar Cronograma →</a>
+      </div>
+    </section>
+
+    <section class="section" id="faq">
+      <h2 data-i18n="landing.faq_title">Perguntas frequentes</h2>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary data-i18n="landing.faq1_q">O Cronograma é gratuito?</summary>
+          <p data-i18n="landing.faq1_a">Sim! O projeto é 100% gratuito e open source, sem anúncios e sem planos pagos.</p>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="landing.faq2_q">Preciso criar uma conta para usar?</summary>
+          <p data-i18n="landing.faq2_a">Sim — a conta é gratuita e permite sincronizar seus dados, progresso e conquistas.</p>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="landing.faq3_q">Como funciona o sistema de gamificação?</summary>
+          <p data-i18n="landing.faq3_a">Você ganha XP por minutos estudados e tarefas concluídas, sobe de nível, acumula moedas e desbloqueia conquistas.</p>
+        </details>
+        <details class="faq-item">
+          <summary data-i18n="landing.faq4_q">O que é o streak?</summary>
+          <p data-i18n="landing.faq4_a">É a sequência de dias com atividade de estudo. Use freezes para protegê-la em dias corridos.</p>
+        </details>
+      </div>
+    </section>
   </main>
 
   <footer class="footer" data-i18n="landing.footer">
