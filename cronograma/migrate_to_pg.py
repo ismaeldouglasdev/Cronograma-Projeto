@@ -231,7 +231,21 @@ def migrate():
         conn.commit()
     print(f"   {len(data['sessoes'])} sessoes importadas")
 
-    print("\n8. Verificando dados no PostgreSQL...")
+    print("\n8. Sincronizando sequences (prevencao de colisao de PK em inserts futuros)...")
+    with engine.connect() as conn:
+        for table in ["users", "areas", "tasks", "sessoes"]:
+            conn.execute(
+                text(
+                    "SELECT setval(pg_get_serial_sequence(:t, 'id'), "
+                    "COALESCE(MAX(id), 1)) FROM "
+                    + table
+                ),
+                {"t": table},
+            )
+        conn.commit()
+    print("   OK")
+
+    print("\n9. Verificando dados no PostgreSQL...")
     with engine.connect() as conn:
         for table in ["users", "areas", "tasks", "sessoes"]:
             result = conn.execute(text(f"SELECT COUNT(*) FROM {table}"))
