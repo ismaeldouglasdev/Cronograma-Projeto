@@ -4,14 +4,8 @@ let API = "";
 let chartResumo = null;
 
 // Auto-detect API URL based on current location
-(function() {
-  const loc = window.location;
-  if (loc.hostname === "localhost" || loc.hostname === "127.0.0.1") {
-    API = `${loc.protocol}//${loc.host}:${loc.port || "80"}`;
-  } else {
-    API = `${loc.protocol}//${loc.host}`;
-  }
-})();
+// location.origin already includes protocol + host + port (no double port)
+API = window.location.origin;
 
 let cachedAreas = null;
 let allAreas = [];
