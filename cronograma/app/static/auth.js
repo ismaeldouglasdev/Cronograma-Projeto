@@ -131,11 +131,17 @@ const Auth = (function() {
   }
   
   async function login(email, password) {
-    const response = await fetch("/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    const payload = JSON.stringify({ email, password });
+    let response = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      response = await fetch("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      });
+      if (response.status !== 500 && response.status !== 502 && response.status !== 503) break;
+      if (attempt === 0) await new Promise(r => setTimeout(r, 1200));
+    }
     
     if (!response.ok) {
       const error = await response.json();
@@ -158,11 +164,17 @@ const Auth = (function() {
   }
   
   async function register(email, password) {
-    const response = await fetch("/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    const payload = JSON.stringify({ email, password });
+    let response = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      response = await fetch("/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      });
+      if (response.status !== 500 && response.status !== 502 && response.status !== 503) break;
+      if (attempt === 0) await new Promise(r => setTimeout(r, 1200));
+    }
     
     if (!response.ok) {
       const error = await response.json();
