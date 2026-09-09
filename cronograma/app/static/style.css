@@ -3098,3 +3098,22 @@ main {
   animation: pomoModalBackdropIn 0.3s ease-out;
 }
 
+
+/* === SVG icons (emoji-free) === */
+[data-svg-icon] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+[data-svg-icon] svg {
+  flex-shrink: 0;
+}
+.inline-icon {
+  vertical-align: middle;
+}
+.pomo-ach-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  vertical-align: middle;
+}

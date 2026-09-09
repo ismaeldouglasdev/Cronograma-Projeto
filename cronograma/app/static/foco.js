@@ -457,8 +457,8 @@ function handleSkip() {
         var defaultBody = (dur / 60) + ' ' + (typeof t === 'function' ? t('foco.notif_pomodoro_corpo').replace('{minutos}', dur / 60) : (dur / 60) + ' min de foco registrados. \ud83c\udfaf');
         new Notification(title || defaultTitle, {
           body: body || defaultBody,
-          icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>",
-          badge: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍅</text></svg>",
+          icon: SVGI.svgData('graduation'),
+          badge: SVGI.svgData('timer'),
         });
       } catch (e) {
         console.error("Notification error:", e);
@@ -467,6 +467,14 @@ function handleSkip() {
   }
 
   // --- Completion Modal ---
+  function achievementIconSvg(name, size) {
+    const map = {
+      star: "star", fire: "flame", clock: "clock", check: "check",
+      "arrow-up": "arrowUp", crown: "crown", medal: "medal", trophy: "trophy"
+    };
+    return SVGI.icon(map[name] || "medal", "pomo-ach-icon", size || 20);
+  }
+
   function showPomoCompleteModal() {
     const modal = document.getElementById("modal-pomo-complete");
     if (!modal || !lastPomoData) return;
@@ -492,14 +500,7 @@ function handleSkip() {
       achContainer.style.display = "block";
       achList.innerHTML = d.novasConquistas.map(function(ach) {
         return '<div class="pomo-achievement-badge">' +
-          (ach.icone === "star" ? "⭐" :
-           ach.icone === "fire" ? "🔥" :
-           ach.icone === "clock" ? "⏰" :
-           ach.icone === "check" ? "✅" :
-           ach.icone === "arrow-up" ? "⬆️" :
-           ach.icone === "crown" ? "👑" :
-           ach.icone === "medal" ? "🏅" :
-           ach.icone === "trophy" ? "🏆" : "🎖️") +
+          achievementIconSvg(ach.icone) +
           " " + escapeHtml(ach.nome) + "</div>";
       }).join("");
     } else {
@@ -735,7 +736,7 @@ function handleSkip() {
       const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
       const _t = typeof t === 'function' ? t : (k => k === 'foco.timer_foco' ? 'Foco' : 'Descanso');
       const label = isBreak ? _t('foco.timer_descanso') : _t('foco.timer_foco');
-      document.title = `⏳ ${timeStr} - ${label}`;
+      document.title = `${timeStr} - ${label}`;
     } else {
       document.title = originalTitle;
     }

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="auth.page_title">Cronograma - Meus Estudos</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f59e0b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 10 12 5 2 10l10 5 10-5z'/%3E%3Cpath d='M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5'/%3E%3C/svg%3E">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,7 +72,7 @@
     <div class="login-container">
       <button class="lang-switch-auth" onclick="toggleLang()" title="Switch language">PT</button>
       <div class="login-header">
-        <span class="login-icon">📚</span>
+        <span class="login-icon" data-svg-icon="graduation" data-svg-size="48"></span>
         <h1>Cronograma</h1>
         <p data-i18n="auth.cronograma_subtitle">Organize seus estudos</p>
       </div>
@@ -118,7 +118,7 @@
       <!-- Sidebar -->
       <aside class="sidebar">
         <div class="sidebar-header">
-          <h1 class="sidebar-logo">📚</h1>
+          <h1 class="sidebar-logo" data-svg-icon="graduation" data-svg-size="26"></h1>
           <span class="sidebar-title">Cronograma</span>
         </div>
         
@@ -130,15 +130,15 @@
           </div>
           <div class="sidebar-user-stats">
             <div class="sidebar-stat">
-              <span class="sidebar-stat-icon">⭐</span>
+              <span class="sidebar-stat-icon" data-svg-icon="star" data-svg-size="15"></span>
               <span class="sidebar-stat-value" id="sidebar-xp">0</span>
             </div>
             <div class="sidebar-stat">
-              <span class="sidebar-stat-icon">🔥</span>
+              <span class="sidebar-stat-icon" data-svg-icon="flame" data-svg-size="15"></span>
               <span class="sidebar-stat-value" id="sidebar-streak">0</span>
             </div>
             <div class="sidebar-stat">
-              <span class="sidebar-stat-icon">🪙</span>
+              <span class="sidebar-stat-icon" data-svg-icon="coin" data-svg-size="15"></span>
               <span class="sidebar-stat-value" id="sidebar-coins">0</span>
             </div>
           </div>
@@ -146,45 +146,45 @@
         
         <nav class="sidebar-nav">
           <button class="sidebar-link active" data-tab="areas">
-            <span class="sidebar-icon">📁</span>
+            <span class="sidebar-icon" data-svg-icon="folder" data-svg-size="17"></span>
             <span class="sidebar-text" data-i18n="sidebar.areas">Áreas</span>
           </button>
           <button class="sidebar-link" data-tab="foco">
-            <span class="sidebar-icon">🎯</span>
+            <span class="sidebar-icon" data-svg-icon="target" data-svg-size="17"></span>
             <span class="sidebar-text" data-i18n="sidebar.foco">Foco</span>
           </button>
           <button class="sidebar-link" data-tab="gamificacao">
-            <span class="sidebar-icon">🏆</span>
+            <span class="sidebar-icon" data-svg-icon="trophy" data-svg-size="17"></span>
             <span class="sidebar-text" data-i18n="sidebar.gamificacao">Gamificação</span>
           </button>
           <button class="sidebar-link" data-tab="horarios">
-            <span class="sidebar-icon">📅</span>
+            <span class="sidebar-icon" data-svg-icon="calendar" data-svg-size="17"></span>
             <span class="sidebar-text" data-i18n="sidebar.horarios">Horários</span>
           </button>
           <button class="sidebar-link" data-tab="tasks">
-            <span class="sidebar-icon">✅</span>
+            <span class="sidebar-icon" data-svg-icon="check" data-svg-size="17"></span>
             <span class="sidebar-text" data-i18n="sidebar.tarefas">Tarefas</span>
           </button>
           <button class="sidebar-link" data-tab="sessoes">
-            <span class="sidebar-icon">⏱️</span>
+            <span class="sidebar-icon" data-svg-icon="timer" data-svg-size="17"></span>
             <span class="sidebar-text" data-i18n="sidebar.sessoes">Sessões</span>
           </button>
           <button class="sidebar-link" data-tab="resumo">
-            <span class="sidebar-icon">📊</span>
+            <span class="sidebar-icon" data-svg-icon="chart" data-svg-size="17"></span>
             <span class="sidebar-text" data-i18n="sidebar.resumo">Resumo</span>
           </button>
         </nav>
         
         <div class="sidebar-footer">
           <select id="theme-select-sidebar" class="theme-select" aria-label="Selecionar tema">
-            <option value="dark">🌙 Escuro</option>
-            <option value="light">☀️ Claro</option>
-            <option value="ocean">🌊 Ocean</option>
-            <option value="purple">🟣 Purple</option>
-            <option value="forest">🌲 Forest</option>
-            <option value="midnight">🌌 Midnight</option>
-            <option value="pastel">🎨 Pastel</option>
-            <option value="contrast">⬛ High Contrast</option>
+            <option value="dark">Escuro</option>
+            <option value="light">Claro</option>
+            <option value="ocean">Ocean</option>
+            <option value="purple">Purple</option>
+            <option value="forest">Forest</option>
+            <option value="midnight">Midnight</option>
+            <option value="pastel">Pastel</option>
+            <option value="contrast">High Contrast</option>
           </select>
           <div style="display:flex;align-items:center;gap:0.35rem;">
             <button class="lang-switch" onclick="toggleLang()" title="Switch language">PT</button>
@@ -260,11 +260,11 @@
           </div>
           
           <div class="foco-controls">
-            <button id="foco-start" class="foco-btn foco-start" data-i18n="foco.btn_iniciar">▶ Iniciar</button>
-            <button id="foco-pause" class="foco-btn foco-pause" style="display:none;" data-i18n="foco.btn_pausar">⏸ Pausar</button>
-            <button id="foco-end" class="foco-btn foco-end" style="display:none;" data-i18n="foco.btn_encerrar">⏹ Encerrar</button>
-            <button id="foco-reset" class="foco-btn foco-reset" data-i18n="foco.btn_reset">🔄 Reset</button>
-            <button id="foco-skip" class="foco-btn foco-reset" style="display:none;" data-i18n="foco.btn_pular">⏭️ Pular</button>
+            <button id="foco-start" class="foco-btn foco-start" data-i18n="foco.btn_iniciar">Iniciar</button>
+            <button id="foco-pause" class="foco-btn foco-pause" style="display:none;" data-i18n="foco.btn_pausar">Pausar</button>
+            <button id="foco-end" class="foco-btn foco-end" style="display:none;" data-i18n="foco.btn_encerrar">Encerrar</button>
+            <button id="foco-reset" class="foco-btn foco-reset" data-i18n="foco.btn_reset">Reset</button>
+            <button id="foco-skip" class="foco-btn foco-reset" style="display:none;" data-i18n="foco.btn_pular">Pular</button>
           </div>
         </div>
         
@@ -349,7 +349,7 @@
                 </div>
               </div>
               <div class="gami-streak-badge">
-                <span class="gami-streak-icon">🔥</span>
+                <span class="gami-streak-icon" data-svg-icon="flame" data-svg-size="26"></span>
                 <div class="gami-streak-info">
                   <span class="gami-streak-num" id="gami-streak">0</span>
                   <span class="gami-streak-label" data-i18n="gamificacao.dias_seguidos">dias seguidos</span>
@@ -362,28 +362,28 @@
         <!-- Métricas Secundárias - Grid 4 colunas -->
         <div class="gami-metrics-grid">
           <div class="gami-metric-card">
-            <div class="gami-metric-icon">🍅</div>
+            <div class="gami-metric-icon"><span data-svg-icon="timer" data-svg-size="26"></span></div>
             <div class="gami-metric-content">
               <span class="gami-metric-num" id="gami-pomodoros">0</span>
               <span class="gami-metric-label" data-i18n="gamificacao.pomodoros">Pomodoros</span>
             </div>
           </div>
           <div class="gami-metric-card">
-            <div class="gami-metric-icon">✅</div>
+            <div class="gami-metric-icon"><span data-svg-icon="check" data-svg-size="26"></span></div>
             <div class="gami-metric-content">
               <span class="gami-metric-num" id="gami-tarefas">0</span>
               <span class="gami-metric-label" data-i18n="gamificacao.tarefas">Tarefas</span>
             </div>
           </div>
           <div class="gami-metric-card">
-            <div class="gami-metric-icon">📚</div>
+            <div class="gami-metric-icon"><span data-svg-icon="book" data-svg-size="26"></span></div>
             <div class="gami-metric-content">
               <span class="gami-metric-num" id="gami-areas">0</span>
               <span class="gami-metric-label" data-i18n="gamificacao.areas">Áreas</span>
             </div>
           </div>
           <div class="gami-metric-card">
-            <div class="gami-metric-icon">⭐</div>
+            <div class="gami-metric-icon"><span data-svg-icon="star" data-svg-size="26"></span></div>
             <div class="gami-metric-content">
               <span class="gami-metric-num" id="gami-xp-total">0</span>
               <span class="gami-metric-label" data-i18n="gamificacao.xp_total">XP Total</span>
@@ -394,13 +394,13 @@
         <!-- Loja de Freezes -->
         <div class="gami-shop-card" id="gami-shop">
           <div class="gami-shop-header">
-            <span class="gami-shop-icon">🧊</span>
+            <span class="gami-shop-icon" data-svg-icon="ice" data-svg-size="26"></span>
             <div class="gami-shop-info">
               <h3 class="gami-shop-title" data-i18n="gamificacao.loja_freezes">Loja de Freezes</h3>
               <span class="gami-shop-subtitle" data-i18n="gamificacao.loja_freezes_desc">Use freezes para não perder sua sequência em dias sem estudo</span>
             </div>
             <div class="gami-shop-saldo">
-              <span class="gami-shop-saldo-icon">🪙</span>
+              <span class="gami-shop-saldo-icon" data-svg-icon="coin" data-svg-size="16"></span>
               <span class="gami-shop-saldo-num" id="gami-shop-coins">0</span>
               <span class="gami-shop-saldo-label" data-i18n="gamificacao.coins_label">coins</span>
             </div>
@@ -421,7 +421,7 @@
           
           <div class="gami-category" id="gami-cat-xp">
             <h3 class="gami-category-title">
-              <span class="gami-cat-icon">⭐</span>
+              <span class="gami-cat-icon" data-svg-icon="star" data-svg-size="18"></span>
               <span data-i18n="gamificacao.cat_experiencia">Experiência</span>
             </h3>
             <div class="gami-badges-grid" id="gami-badges-xp"></div>
@@ -429,7 +429,7 @@
 
           <div class="gami-category" id="gami-cat-streak">
             <h3 class="gami-category-title">
-              <span class="gami-cat-icon">🔥</span>
+              <span class="gami-cat-icon" data-svg-icon="flame" data-svg-size="18"></span>
               <span data-i18n="gamificacao.cat_dias_seguidos">Dias Seguidos</span>
             </h3>
             <div class="gami-badges-grid" id="gami-badges-streak"></div>
@@ -437,7 +437,7 @@
 
           <div class="gami-category" id="gami-cat-pomodoro">
             <h3 class="gami-category-title">
-              <span class="gami-cat-icon">🍅</span>
+              <span class="gami-cat-icon" data-svg-icon="timer" data-svg-size="18"></span>
               <span data-i18n="gamificacao.cat_pomodoros">Pomodoros</span>
             </h3>
             <div class="gami-badges-grid" id="gami-badges-pomodoro"></div>
@@ -445,7 +445,7 @@
 
           <div class="gami-category" id="gami-cat-tasks">
             <h3 class="gami-category-title">
-              <span class="gami-cat-icon">✅</span>
+              <span class="gami-cat-icon" data-svg-icon="check" data-svg-size="18"></span>
               <span data-i18n="gamificacao.cat_tarefas_concluidas">Tarefas Concluídas</span>
             </h3>
             <div class="gami-badges-grid" id="gami-badges-tasks"></div>
@@ -453,7 +453,7 @@
 
           <div class="gami-category" id="gami-cat-level">
             <h3 class="gami-category-title">
-              <span class="gami-cat-icon">🎖️</span>
+              <span class="gami-cat-icon" data-svg-icon="medal" data-svg-size="18"></span>
               <span data-i18n="gamificacao.cat_niveis_alcancados">Níveis Alcançados</span>
             </h3>
             <div class="gami-badges-grid" id="gami-badges-level"></div>
@@ -461,7 +461,7 @@
 
           <div class="gami-category" id="gami-cat-coins">
             <h3 class="gami-category-title">
-              <span class="gami-cat-icon">💰</span>
+              <span class="gami-cat-icon" data-svg-icon="coin" data-svg-size="18"></span>
               <span data-i18n="gamificacao.cat_coins">Coins</span>
             </h3>
             <div class="gami-badges-grid" id="gami-badges-coins"></div>
@@ -495,9 +495,9 @@
         <label class="form-label" for="task-prioridade" data-i18n="tasks.prioridade_label">Prioridade</label>
         <select name="prioridade" id="task-prioridade">
           <option value="" data-i18n="tasks.sem_prioridade">Sem prioridade</option>
-          <option value="3" data-i18n="tasks.alta">🔴 Alta</option>
-          <option value="2" data-i18n="tasks.media">🟡 Média</option>
-          <option value="1" data-i18n="tasks.baixa">🟢 Baixa</option>
+          <option value="3" data-i18n="tasks.alta">Alta</option>
+          <option value="2" data-i18n="tasks.media">Média</option>
+          <option value="1" data-i18n="tasks.baixa">Baixa</option>
         </select>
         <label class="form-label" for="task-meta-pomodoros" data-i18n="tasks.meta_pomodoros_label">Meta de Pomodoros</label>
         <input type="number" name="meta_pomodoros" id="task-meta-pomodoros" placeholder="Opcional" min="1" max="50">
@@ -589,9 +589,9 @@
         <label class="form-label" for="edit-task-prioridade" data-i18n="modal.prioridade_label">Prioridade</label>
         <select name="prioridade" id="edit-task-prioridade">
           <option value="" data-i18n="modal.sem_prioridade">Sem prioridade</option>
-          <option value="3" data-i18n="modal.alta">🔴 Alta</option>
-          <option value="2" data-i18n="modal.media">🟡 Média</option>
-          <option value="1" data-i18n="modal.baixa">🟢 Baixa</option>
+          <option value="3" data-i18n="modal.alta">Alta</option>
+          <option value="2" data-i18n="modal.media">Média</option>
+          <option value="1" data-i18n="modal.baixa">Baixa</option>
         </select>
         <label class="form-label" for="edit-task-meta-pomodoros" data-i18n="modal.meta_pomodoros_label">Meta de Pomodoros</label>
         <input type="number" name="meta_pomodoros" id="edit-task-meta-pomodoros" min="1" max="50">
@@ -683,39 +683,39 @@
     <div class="pomo-modal-content" id="pomo-modal-inner">
       <div class="pomo-confetti-container" id="pomo-confetti"></div>
       <div class="pomo-modal-header">
-        <div class="pomo-modal-icon">🎯</div>
+        <div class="pomo-modal-icon"><span data-svg-icon="target" data-svg-size="46"></span></div>
         <h2 data-i18n="pomo_modal.title">Pomodoro Concluído!</h2>
       </div>
       <div class="pomo-modal-body">
         <div class="pomo-modal-duration">
-          ⏱️ <span id="pomo-modal-duracao">25</span> <span data-i18n="pomo_modal.min_foco">min de foco</span>
+          <span class="inline-icon" data-svg-icon="clock" data-svg-size="16"></span> <span id="pomo-modal-duracao">25</span> <span data-i18n="pomo_modal.min_foco">min de foco</span>
         </div>
         <div class="pomo-modal-rewards">
           <div class="pomo-reward-card coins">
-            <div class="pomo-reward-icon">🪙</div>
+            <div class="pomo-reward-icon"><span data-svg-icon="coin" data-svg-size="24"></span></div>
             <div class="pomo-reward-value" id="pomo-modal-coins">+3</div>
             <div class="pomo-reward-label" data-i18n="pomo_modal.moedas">Moedas</div>
           </div>
           <div class="pomo-reward-card xp">
-            <div class="pomo-reward-icon">⭐</div>
+            <div class="pomo-reward-icon"><span data-svg-icon="star" data-svg-size="24"></span></div>
             <div class="pomo-reward-value" id="pomo-modal-xp">+0</div>
             <div class="pomo-reward-label" data-i18n="pomo_modal.xp">XP</div>
           </div>
         </div>
         <div id="pomo-modal-achievements" class="pomo-modal-achievements" style="display:none">
-          <div class="pomo-achievements-title" data-i18n="pomo_modal.novas_conquistas">🏆 Novas Conquistas</div>
+          <div class="pomo-achievements-title"><span class="inline-icon" data-svg-icon="trophy" data-svg-size="16"></span> <span data-i18n="pomo_modal.novas_conquistas">Novas Conquistas</span></div>
           <div id="pomo-modal-achievement-list" class="pomo-achievement-list"></div>
         </div>
         <div class="pomo-modal-streak" id="pomo-modal-streak" style="display:none">
-          🔥 <span data-i18n="pomo_modal.streak">Streak:</span> <strong><span id="pomo-modal-streak-count">0</span> <span data-i18n="pomo_modal.dias">dias</span></strong>
+          <span class="inline-icon" data-svg-icon="flame" data-svg-size="16"></span> <span data-i18n="pomo_modal.streak">Streak:</span> <strong><span id="pomo-modal-streak-count">0</span> <span data-i18n="pomo_modal.dias">dias</span></strong>
         </div>
         <div class="pomo-modal-level" id="pomo-modal-level" style="display:none">
-          🎊 <span data-i18n="pomo_modal.subiu_nivel">Subiu para o</span> <strong><span data-i18n="pomo_modal.nivel">Nível</span> <span id="pomo-modal-level-num">1</span></strong>!
+          <span class="inline-icon" data-svg-icon="rocket" data-svg-size="16"></span> <span data-i18n="pomo_modal.subiu_nivel">Subiu para o</span> <strong><span data-i18n="pomo_modal.nivel">Nível</span> <span id="pomo-modal-level-num">1</span></strong>!
         </div>
       </div>
       <div class="pomo-modal-footer">
         <button class="pomo-modal-btn" onclick="FocoTimer.closePomoModal()" data-i18n="pomo_modal.continuar">
-          Continuar 🚀
+          Continuar
         </button>
       </div>
     </div>
@@ -724,6 +724,8 @@
   <div><!-- End main-app -->
 
   <script src="/static/i18n.js"></script>
+  <script src="/static/svg.js"></script>
+  <script>SVGI.hydrate(document);</script>
   <script src="/static/theme.js"></script>
   <script>ThemeManager.init();</script>
   <script src="/static/auth.js"></script>
