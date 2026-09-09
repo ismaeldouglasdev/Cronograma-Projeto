@@ -1056,8 +1056,8 @@ async def log_requests_middleware(request, call_next):
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-# Serve icon_images from parent directory (project root)
-ICON_IMAGES_DIR = Path(__file__).parent.parent / "icon_images"
+# Serve icon_images from repository root
+ICON_IMAGES_DIR = Path(__file__).parent.parent.parent / "icon_images"
 if ICON_IMAGES_DIR.exists():
     app.mount(
         "/icon_images", StaticFiles(directory=str(ICON_IMAGES_DIR)), name="icon_images"
