@@ -142,16 +142,19 @@ const Auth = (function() {
   
   const RETRY_STATUSES = [500, 502, 503, 504];
 
+  // Render cold-start can take 30-60s during deploys; retry long enough
+  // to ride out the boot window instead of showing a hard 500.
   async function fetchWithRetry(url, payload) {
     let response = null;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    const delays = [3000, 4000, 6000, 8000, 12000];
+    for (let attempt = 0; attempt <= delays.length; attempt++) {
       response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: payload,
       });
       if (!RETRY_STATUSES.includes(response.status)) break;
-      if (attempt < 2) await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+      if (attempt < delays.length) await new Promise(r => setTimeout(r, delays[attempt]));
     }
     return response;
   }
