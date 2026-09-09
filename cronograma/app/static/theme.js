@@ -47,14 +47,14 @@ const ThemeManager = (function() {
     
     // Theme names mapping
     const themeNames = {
-      'dark': '🌙 Escuro',
-      'light': '☀️ Claro',
-      'ocean': '🌊 Ocean',
-      'purple': '🟣 Purple',
-      'forest': '🌲 Forest',
-      'midnight': '🌌 Midnight',
-      'pastel': '🎨 Pastel',
-      'contrast': '⬛ High Contrast'
+      'dark': 'Escuro',
+      'light': 'Claro',
+      'ocean': 'Ocean',
+      'purple': 'Purple',
+      'forest': 'Forest',
+      'midnight': 'Midnight',
+      'pastel': 'Pastel',
+      'contrast': 'High Contrast'
     };
     
     // Update main selector if exists
@@ -124,14 +124,14 @@ const ThemeManager = (function() {
     
     // Theme names mapping
     const themeNames = {
-      'dark': '🌙 Escuro',
-      'light': '☀️ Claro',
-      'ocean': '🌊 Ocean',
-      'purple': '🟣 Purple',
-      'forest': '🌲 Forest',
-      'midnight': '🌌 Midnight',
-      'pastel': '🎨 Pastel',
-      'contrast': '⬛ High Contrast'
+      'dark': 'Escuro',
+      'light': 'Claro',
+      'ocean': 'Ocean',
+      'purple': 'Purple',
+      'forest': 'Forest',
+      'midnight': 'Midnight',
+      'pastel': 'Pastel',
+      'contrast': 'High Contrast'
     };
     
     // Setup main selector
