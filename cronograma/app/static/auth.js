@@ -32,7 +32,7 @@ const Auth = (function() {
       refreshPromise = fetch('/auth/refresh', { method: 'POST' })
         .then(async (response) => {
           if (!response.ok) return null;
-          const data = await response.json();
+          const data = await parseJsonSafe(response, 'refresh');
           if (data && data.access_token) {
             setToken(data.access_token);
             return data.access_token;
@@ -43,6 +43,16 @@ const Auth = (function() {
         .finally(() => { refreshPromise = null; });
     }
     return refreshPromise;
+  }
+
+  async function parseJsonSafe(response, fallbackMsg) {
+    try {
+      return await response.json();
+    } catch (e) {
+      const status = response ? response.status : 0;
+      const suffix = status >= 500 || status === 0 ? ` (HTTP ${status})` : '';
+      return { detail: fallbackMsg + suffix, _unparseable: true };
+    }
   }
 
   async function apiFetch(url, options = {}, retried = false) {
@@ -130,29 +140,37 @@ const Auth = (function() {
     document.getElementById("main-app").style.display = "block";
   }
   
-  async function login(email, password) {
-    const payload = JSON.stringify({ email, password });
+  const RETRY_STATUSES = [500, 502, 503, 504];
+
+  async function fetchWithRetry(url, payload) {
     let response = null;
-    for (let attempt = 0; attempt < 2; attempt++) {
-      response = await fetch("/auth/login", {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: payload,
       });
-      if (response.status !== 500 && response.status !== 502 && response.status !== 503) break;
-      if (attempt === 0) await new Promise(r => setTimeout(r, 1200));
+      if (!RETRY_STATUSES.includes(response.status)) break;
+      if (attempt < 2) await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
     }
-    
+    return response;
+  }
+
+  async function login(email, password) {
+    const payload = JSON.stringify({ email, password });
+    const response = await fetchWithRetry("/auth/login", payload);
+
     if (!response.ok) {
-      const error = await response.json();
+      const error = await parseJsonSafe(response, (typeof t === 'function' ? t('auth.login_error') : 'Erro ao fazer login'));
       if (response.status === 403 && error.detail && error.detail.includes("não verificada")) {
         showVerifyScreen();
         throw new Error(error.detail);
       }
       throw new Error(error.detail || (typeof t === 'function' ? t('auth.login_error') : 'Erro ao fazer login'));
     }
-    
-    const data = await response.json();
+
+    const data = await parseJsonSafe(response, (typeof t === 'function' ? t('auth.login_error') : 'Erro ao fazer login'));
+    if (!data.access_token) throw new Error(data.detail || 'Resposta inválida do servidor');
     setToken(data.access_token);
     showMainApp();
     
@@ -165,23 +183,15 @@ const Auth = (function() {
   
   async function register(email, password) {
     const payload = JSON.stringify({ email, password });
-    let response = null;
-    for (let attempt = 0; attempt < 2; attempt++) {
-      response = await fetch("/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: payload,
-      });
-      if (response.status !== 500 && response.status !== 502 && response.status !== 503) break;
-      if (attempt === 0) await new Promise(r => setTimeout(r, 1200));
-    }
-    
+    const response = await fetchWithRetry("/auth/register", payload);
+
     if (!response.ok) {
-      const error = await response.json();
+      const error = await parseJsonSafe(response, (typeof t === 'function' ? t('auth.register_error') : 'Erro ao criar conta'));
       throw new Error(error.detail || (typeof t === 'function' ? t('auth.register_error') : 'Erro ao criar conta'));
     }
-    
-    const data = await response.json();
+
+    const data = await parseJsonSafe(response, (typeof t === 'function' ? t('auth.register_error') : 'Erro ao criar conta'));
+    if (!data.access_token) throw new Error(data.detail || 'Resposta inválida do servidor');
     setToken(data.access_token);
     showMainApp();
     
@@ -200,11 +210,11 @@ const Auth = (function() {
     });
     
      if (!response.ok) {
-       const error = await response.json();
+       const error = await parseJsonSafe(response, (typeof t === 'function' ? t('auth.verify_error') : 'Erro ao verificar email'));
        throw new Error(error.detail || error.message || (typeof t === 'function' ? t('auth.verify_error') : 'Erro ao verificar email'));
      }
 
-     const data = await response.json();
+     const data = await parseJsonSafe(response, (typeof t === 'function' ? t('auth.verify_error') : 'Erro ao verificar email'));
      if (!data.success) {
        throw new Error(data.message || (typeof t === 'function' ? t('auth.verify_error') : 'Erro ao verificar email'));
      }
