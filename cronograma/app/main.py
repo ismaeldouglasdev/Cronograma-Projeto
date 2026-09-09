@@ -388,6 +388,33 @@ class UserAchievement(Base):
 Base.metadata.create_all(engine)
 
 
+# Reparo de sequences (PostgreSQL): se houve import com id explícito, a sequence
+# fica dessincronizada e o próximo INSERT colide com a PK (erro 500). Sincroniza
+# cada sequence com o MAX(id) atual da tabela — idempotente e seguro.
+if "postgres" in DATABASE_URL:
+    try:
+        with engine.connect() as conn:
+            for table in ["users", "areas", "tasks", "sessoes"]:
+                try:
+                    conn.execute(
+                        text(
+                            "SELECT setval(pg_get_serial_sequence(:t, 'id'), "
+                            "COALESCE(MAX(id), 1)) FROM "
+                            + table
+                        ),
+                        {"t": table},
+                    )
+                except Exception as e:
+                    log.warning(
+                        "Sequence repair failed",
+                        extra={"table": table, "error": str(e)},
+                    )
+            conn.commit()
+        log.info("PostgreSQL sequences synchronized")
+    except Exception as e:
+        log.error("Sequence repair block failed", extra={"error": str(e)})
+
+
 def column_exists(conn, table: str, column: str) -> bool:
     """Check if column exists in table."""
     try:
