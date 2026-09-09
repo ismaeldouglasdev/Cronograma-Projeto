@@ -499,9 +499,10 @@ function handleSkip() {
     if (d.novasConquistas && d.novasConquistas.length > 0) {
       achContainer.style.display = "block";
       achList.innerHTML = d.novasConquistas.map(function(ach) {
+        const localized = localizedAchievement(ach.categoria, { title: ach.nome, desc: ach.descricao, requirement: ach.requisito });
         return '<div class="pomo-achievement-badge">' +
           achievementIconSvg(ach.icone) +
-          " " + escapeHtml(ach.nome) + "</div>";
+          " " + escapeHtml(localized.title) + "</div>";
       }).join("");
     } else {
       achContainer.style.display = "none";

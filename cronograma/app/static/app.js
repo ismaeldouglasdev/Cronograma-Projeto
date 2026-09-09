@@ -1172,6 +1172,16 @@ async function comprarFreeze() {
   }
 }
 
+// Tradução de conquistas: chave estável categoria_requisito; fallback ao texto do backend
+function localizedAchievement(category, ach) {
+  const key = `gamificacao.ach.${category}_${ach.requirement}`;
+  const entry = typeof t === 'function' ? t(key) : null;
+  if (entry && typeof entry === 'object' && entry.title && entry.desc) {
+    return entry;
+  }
+  return { title: ach.title, desc: ach.description };
+}
+
 // Função para renderizar gamificação
 function renderGamification() {
   // Preferir AppStore (novo sistema centralizado)
@@ -1225,15 +1235,18 @@ function renderGamification() {
     categorias.forEach(catId => {
       const container = document.getElementById(`gami-badges-${catId}`);
       if (!container || !achievements[catId]) return;
-      
+
       container.innerHTML = achievements[catId].map(ach => {
         const iconName = ach.icon || 'star';
         const imgSrc = `/icon_images/${iconName}.png`;
+        const localized = localizedAchievement(catId, ach);
+        const title = escapeHtml(localized.title);
+        const desc = escapeHtml(localized.desc);
         return `
-          <div class="gami-badge ${ach.unlocked ? 'unlocked' : 'locked'}" title="${ach.description}">
-            <span class="gami-badge-icon-fallback" style="display:none">${ach.title.charAt(0).toUpperCase()}</span>
-            <img class="gami-badge-icon-img" src="${imgSrc}" alt="${ach.title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <span class="gami-badge-name">${ach.title}</span>
+          <div class="gami-badge ${ach.unlocked ? 'unlocked' : 'locked'}" title="${desc}">
+            <span class="gami-badge-icon-fallback" style="display:none">${title.charAt(0).toUpperCase()}</span>
+            <img class="gami-badge-icon-img" src="${imgSrc}" alt="${title}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <span class="gami-badge-name">${title}</span>
           </div>
         `;
       }).join('');

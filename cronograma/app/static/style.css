@@ -552,12 +552,31 @@ main {
 .areas-filters input,
 .areas-filters select {
   flex: 1;
+  min-width: 0;
   padding: 0.75rem;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
   font-size: 1rem;
+}
+
+@media (max-width: 600px) {
+  .areas-filters,
+  .tasks-filters {
+    flex-wrap: wrap;
+  }
+
+  .areas-filters input,
+  .tasks-filters input {
+    flex: 1 1 100%;
+  }
+
+  .areas-filters select,
+  .tasks-filters select {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+  }
 }
 
 #lista-areas {

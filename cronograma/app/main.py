@@ -965,6 +965,8 @@ def verificar_conquistas(user_id: int, db: Session) -> list:
                         "nome": ach.nome,
                         "descricao": ach.descricao,
                         "icone": ach.icone,
+                        "categoria": cat,
+                        "requisito": ach.requisito,
                     }
                 )
     if new_unlocks:
