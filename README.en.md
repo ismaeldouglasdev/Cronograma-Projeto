@@ -18,6 +18,7 @@ Complete study management system with integrated Pomodoro timer, hour tracking, 
 
 ## Features
 
+- **Guest Mode** — Enter without creating an account, save progress later (upgrade to real account with same row, no data loss)
 - **Pomodoro Timer** — 25min focus with 5min breaks, area/task selection
 - **Areas/Subjects** — Registration with color, category, type (online/presential)
 - **Tasks** — CRUD with priority, due date, pomodoro goal
@@ -75,6 +76,9 @@ Cronograma(Projeto)/
 |--------|-------|-------------|
 | POST | `/auth/register` | Register user |
 | POST | `/auth/login` | Login (returns JWT) |
+| POST | `/auth/guest` | Login as guest (creates guest in DB, returns JWT with `guest:true` claim) |
+| POST | `/auth/upgrade` | Upgrade guest to real account (same row/user_id, real email + password) |
+| GET | `/auth/check` | Check current authentication |
 | GET | `/areas` | List areas |
 | POST | `/areas` | Create area |
 | PATCH | `/areas/{id}` | Update area |
