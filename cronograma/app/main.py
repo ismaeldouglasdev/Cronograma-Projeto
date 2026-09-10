@@ -1001,6 +1001,9 @@ async def security_headers_middleware(request, call_next):
     response.headers["X-XSS-Protection"] = "0"  # Desliga legacy, usamos CSP
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    # Estáticos: sempre revalidar via ETag (evita cache stale após deploys)
+    if request.url.path.startswith("/static") or request.url.path.startswith("/icon_images"):
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
     # CSP permissivo para app com CDN/Chart.js inline
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
