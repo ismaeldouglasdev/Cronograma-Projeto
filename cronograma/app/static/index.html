@@ -85,6 +85,8 @@
           <button type="submit" data-i18n="auth.login_btn">Entrar</button>
           <p class="auth-switch" data-i18n="auth.nao_tem_conta">Não tem conta? <a href="#" id="show-register">Cadastrar</a></p>
         </form>
+        <div class="auth-divider"><span data-i18n="auth.ou">ou</span></div>
+        <button type="button" id="guest-login-btn" class="guest-login-btn" data-i18n="auth.guest_btn">Entrar como convidado</button>
       </div>
 
       <div id="register-form-container" style="display: none;">
@@ -177,6 +179,10 @@
         </nav>
         
         <div class="sidebar-footer">
+          <div id="guest-banner" class="guest-banner" style="display:none;">
+            <span class="guest-banner-text" data-i18n="sidebar.guest_mode">Modo convidado</span>
+            <button id="save-progress-btn" class="guest-save-btn" data-i18n="sidebar.save_progress">Salvar progresso</button>
+          </div>
           <select id="theme-select-sidebar" class="theme-select" aria-label="Selecionar tema">
             <option value="dark">Escuro</option>
             <option value="light">Claro</option>
@@ -723,6 +729,21 @@
           Continuar
         </button>
       </div>
+    </div>
+  </div>
+
+  <div id="upgrade-modal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="showUpgradeForm(false)"></div>
+    <div class="modal-content">
+      <button class="modal-close" onclick="showUpgradeForm(false)">&times;</button>
+      <h3 class="modal-title" data-i18n="upgrade.title">Salvar progresso</h3>
+      <p class="upgrade-info" data-i18n="upgrade.info">Crie uma conta permanente para salvar seu progresso e continuar de onde parou.</p>
+      <form id="upgrade-form" class="auth-form">
+        <input type="email" name="email" data-i18n-placeholder="auth.email_placeholder" placeholder="Email" required>
+        <input type="password" name="password" data-i18n-placeholder="auth.password_placeholder" placeholder="Senha" required>
+        <input type="password" name="confirm_password" data-i18n-placeholder="auth.confirm_placeholder" placeholder="Confirmar senha" required>
+        <button type="submit" data-i18n="upgrade.btn">Criar conta e salvar</button>
+      </form>
     </div>
   </div>
 
