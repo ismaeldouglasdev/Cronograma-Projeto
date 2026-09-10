@@ -18,6 +18,7 @@ Sistema completo de gerenciamento de estudos com timer Pomodoro integrado, track
 
 ## Funcionalidades
 
+- **Modo Convidado** — Entre sem criar conta e salve o progresso depois (upgrade para conta real com mesma linha, sem perda de dados)
 - **Timer Pomodoro** — Foco de 25min com descanso de 5min, seleção de área/tarefa
 - **Áreas/Matérias** — Cadastro com cor, categoria, tipo (online/presencial)
 - **Tarefas** — CRUD com prioridade, data de entrega, meta de pomodoros
@@ -75,6 +76,9 @@ Cronograma(Projeto)/
 |--------|------|-----------|
 | POST | `/auth/register` | Registrar usuário |
 | POST | `/auth/login` | Login (retorna JWT) |
+| POST | `/auth/guest` | Login como convidado (cria guest no banco, retorna JWT com claim `guest:true`) |
+| POST | `/auth/upgrade` | Upgrade de convidado para conta real (mesma linha/user_id, email + senha reais) |
+| GET | `/auth/check` | Verificar autenticação atual |
 | GET | `/areas` | Listar áreas |
 | POST | `/areas` | Criar área |
 | PATCH | `/areas/{id}` | Atualizar área |
