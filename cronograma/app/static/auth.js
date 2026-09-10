@@ -25,6 +25,11 @@ const Auth = (function() {
     }
   }
 
+  function isGuest() {
+    const payload = getCurrentUser();
+    return payload && payload.guest === true;
+  }
+
   let refreshPromise = null;
 
   function refreshSession() {
@@ -234,6 +239,42 @@ const Auth = (function() {
     window.location.reload();
   }
 
+  async function loginAsGuest() {
+    const response = await fetch('/auth/guest', { method: 'POST' });
+    if (!response.ok) {
+      const error = await parseJsonSafe(response, (typeof t === 'function' ? t('auth.guest_error') : 'Erro ao entrar como convidado'));
+      throw new Error(error.detail || (typeof t === 'function' ? t('auth.guest_error') : 'Erro ao entrar como convidado'));
+    }
+    const data = await parseJsonSafe(response, (typeof t === 'function' ? t('auth.guest_error') : 'Erro ao entrar como convidado'));
+    if (!data.access_token) throw new Error(data.detail || 'Resposta inválida do servidor');
+    setToken(data.access_token);
+    showMainApp();
+    if (typeof window.initApp === "function") {
+      window.initApp().catch(err => console.error("Erro ao iniciar app:", err));
+    }
+    return data;
+  }
+
+  async function upgradeAccount(email, password) {
+    const payload = JSON.stringify({ email, password });
+    const response = await fetch('/auth/upgrade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+      body: payload,
+    });
+    if (!response.ok) {
+      const error = await parseJsonSafe(response, (typeof t === 'function' ? t('auth.upgrade_error') : 'Erro ao atualizar conta'));
+      throw new Error(error.detail || (typeof t === 'function' ? t('auth.upgrade_error') : 'Erro ao atualizar conta'));
+    }
+    const data = await parseJsonSafe(response, (typeof t === 'function' ? t('auth.upgrade_error') : 'Erro ao atualizar conta'));
+    if (!data.access_token) throw new Error(data.detail || 'Resposta inválida do servidor');
+    setToken(data.access_token);
+    if (typeof window.updateGuestUI === 'function') {
+      window.updateGuestUI();
+    }
+    return data;
+  }
+
   function init() {
     const loginForm = document.getElementById("login-form");
     const registerForm = document.getElementById("register-form");
@@ -333,6 +374,46 @@ const Auth = (function() {
     if (logoutBtnSidebar) {
       logoutBtnSidebar.addEventListener("click", logout);
     }
+
+    // Guest login button handler
+    const guestLoginBtn = document.getElementById("guest-login-btn");
+    if (guestLoginBtn) {
+      guestLoginBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        try {
+          await loginAsGuest();
+          alert(typeof t === 'function' ? t('auth.guest_welcome') : 'Bem-vindo como convidado! Você pode criar uma conta permanente agora para salvar seu progresso.');
+        } catch (err) {
+          alert(typeof translateBackendError === 'function' ? translateBackendError(err.message) : err.message);
+        }
+      });
+    }
+
+    // Upgrade account form handler
+    const upgradeForm = document.getElementById("upgrade-form");
+    if (upgradeForm) {
+      upgradeForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = upgradeForm.querySelector('input[name="email"]').value.trim();
+        const password = upgradeForm.querySelector('input[name="password"]').value;
+        const confirmPassword = upgradeForm.querySelector('input[name="confirm_password"]').value;
+
+        if (password !== confirmPassword) {
+          alert(typeof t === 'function' ? t('auth.passwords_dont_match') : 'As senhas não coincidem');
+          return;
+        }
+
+        try {
+          await upgradeAccount(email, password);
+          alert(typeof t === 'function' ? t('auth.upgrade_success') : 'Conta atualizada com sucesso!');
+          if (typeof window.showUpgradeForm === 'function') {
+            window.showUpgradeForm(false);
+          }
+        } catch (err) {
+          alert(typeof translateBackendError === 'function' ? translateBackendError(err.message) : err.message);
+        }
+      });
+    }
     
     checkAuth();
   }
@@ -341,6 +422,8 @@ const Auth = (function() {
     getToken,
     setToken,
     clearToken,
+    getCurrentUser,
+    isGuest,
     refreshSession,
     apiFetch,
     checkAuth,
@@ -348,6 +431,8 @@ const Auth = (function() {
     register,
     verifyEmail,
     logout,
+    loginAsGuest,
+    upgradeAccount,
     init,
   };
 })();

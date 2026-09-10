@@ -82,6 +82,12 @@ const i18n = {
       login_error: 'Erro ao fazer login',
       register_error: 'Erro ao criar conta',
       verify_error: 'Erro ao verificar email',
+      ou: 'ou',
+      guest_btn: 'Entrar como convidado',
+      guest_error: 'Erro ao entrar como convidado',
+      guest_welcome: 'Bem-vindo como convidado! Voc\u00ea pode criar uma conta permanente para salvar seu progresso.',
+      upgrade_error: 'Erro ao atualizar conta',
+      upgrade_success: 'Conta atualizada com sucesso!',
     },
 
     // Sidebar
@@ -95,6 +101,14 @@ const i18n = {
       sessoes: 'Sess\u00f5es',
       resumo: 'Resumo',
       sair: 'Sair',
+      guest_mode: 'Modo convidado',
+      save_progress: 'Salvar progresso',
+    },
+
+    upgrade: {
+      title: 'Salvar progresso',
+      info: 'Crie uma conta permanente para salvar seu progresso e continuar de onde parou.',
+      btn: 'Criar conta e salvar',
     },
 
     // Page titles
@@ -454,6 +468,12 @@ btn_iniciar: 'Iniciar',
       login_error: 'Error logging in',
       register_error: 'Error creating account',
       verify_error: 'Error verifying email',
+      or: 'or',
+      guest_btn: 'Continue as guest',
+      guest_error: 'Error joining as guest',
+      guest_welcome: 'Welcome as guest! You can create a permanent account now to save your progress.',
+      upgrade_error: 'Error upgrading account',
+      upgrade_success: 'Account updated successfully!',
     },
 
     sidebar: {
@@ -466,6 +486,14 @@ btn_iniciar: 'Iniciar',
       sessoes: 'Sessions',
       resumo: 'Summary',
       sair: 'Logout',
+      guest_mode: 'Guest mode',
+      save_progress: 'Save progress',
+    },
+
+    upgrade: {
+      title: 'Save progress',
+      info: 'Create a permanent account to save your progress and continue where you left off.',
+      btn: 'Create account and save',
     },
 
     pages: {

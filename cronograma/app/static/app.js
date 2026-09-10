@@ -1157,13 +1157,34 @@ async function init() {
 }
 
 async function initApp() {
+  updateGuestUI();
   return init();
 }
 
 window.initApp = initApp;
 
+function updateGuestUI() {
+  const isGuest = typeof Auth !== 'undefined' && Auth.isGuest();
+  const banner = document.getElementById('guest-banner');
+  if (banner) banner.style.display = isGuest ? 'flex' : 'none';
+  const saveBtn = document.getElementById('save-progress-btn');
+  if (saveBtn && !saveBtn.dataset.bound) {
+    saveBtn.dataset.bound = '1';
+    saveBtn.addEventListener('click', function() { showUpgradeForm(true); });
+  }
+}
+
+window.updateGuestUI = updateGuestUI;
+
+function showUpgradeForm(visible) {
+  const modal = document.getElementById('upgrade-modal');
+  if (!modal) return;
+  modal.style.display = visible ? 'flex' : 'none';
+}
+
+window.showUpgradeForm = showUpgradeForm;
+
 document.addEventListener("DOMContentLoaded", () => {
-  // A inicialização será feita pelo Auth após login
 });
 
 async function comprarFreeze() {

@@ -324,6 +324,11 @@ class User(Base):
     is_verified = Column(Boolean, default=False, nullable=True)
     verification_token = Column(String(255), nullable=True)
 
+    # Guest accounts: /auth/guest creates a row used only by guests; the
+    # upgrade keeps the SAME row/user_id so all progress is preserved
+    # without any data migration. is_guest=True with stale created_at is swept.
+    is_guest = Column(Boolean, default=False, nullable=True)
+
     # Gamification fields
     current_streak = Column(Integer, default=0, nullable=True)
     longest_streak = Column(Integer, default=0, nullable=True)
@@ -479,6 +484,7 @@ if "sqlite" in DATABASE_URL:
         add_column_if_not_exists(conn, "users", "streak_freezes", "INTEGER DEFAULT 0")
         add_column_if_not_exists(conn, "users", "last_freeze_grant_date", "VARCHAR(20)")
         add_column_if_not_exists(conn, "users", "coins", "INTEGER DEFAULT 0")
+        add_column_if_not_exists(conn, "users", "is_guest", "BOOLEAN DEFAULT 0")
         try:
             conn.execute(text("ALTER TABLE tasks ADD COLUMN duracao_minutos INTEGER"))
             conn.commit()
@@ -636,6 +642,17 @@ else:
                     "Migration widen column failed",
                     extra={"table": table, "column": column, "error": str(e)},
                 )
+        try:
+            conn.execute(
+                text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_guest BOOLEAN DEFAULT FALSE"
+                )
+            )
+        except Exception as e:
+            log.warning(
+                "Migration add is_guest failed",
+                extra={"error": str(e)},
+            )
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
@@ -668,21 +685,14 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 15  # 15 minutes for access tokens
 REFRESH_TOKEN_EXPIRE_DAYS = 7  # 7 days for refresh tokens
 
 
-def create_access_token(user_id: int) -> str:
-    """Create a short-lived signed JWT access token.
-
-    Args:
-        user_id: The user ID to encode in the token
-
-    Returns:
-        Encoded JWT token string
-    """
+def create_access_token(user_id: int, is_guest: bool = False) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode = {
         "sub": str(user_id),
         "exp": expire,
         "iat": datetime.now(timezone.utc),
         "type": "access",
+        "guest": is_guest,
     }
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -974,7 +984,38 @@ def verificar_conquistas(user_id: int, db: Session) -> list:
     return new_unlocks
 
 
+def cleanup_stale_guests(db: Session, max_age_days: int = 30) -> int:
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=max_age_days)).isoformat()
+    guests = db.query(User).filter(User.is_guest == True, User.created_at < cutoff).all()
+    removed = 0
+    for g in guests:
+        db.query(UserAchievement).filter(UserAchievement.user_id == g.id).delete()
+        db.query(Sessoes).filter(Sessoes.user_id == g.id).delete()
+        db.query(Tasks).filter(Tasks.user_id == g.id).delete()
+        db.query(Areas).filter(Areas.user_id == g.id).delete()
+        db.delete(g)
+        removed += 1
+    if removed:
+        db.commit()
+    return removed
+
+
+def _startup_guest_cleanup():
+    try:
+        db = SessionLocal()
+        try:
+            removed = cleanup_stale_guests(db)
+            if removed:
+                log.info("Stale guest accounts removed", extra={"removed": removed})
+        finally:
+            db.close()
+    except Exception as e:
+        log.warning("Guest cleanup failed", extra={"error": str(e)})
+
+
 app = FastAPI()
+
+app.on_event("startup")(_startup_guest_cleanup)
 
 app.add_middleware(
     CORSMiddleware,
@@ -1476,7 +1517,7 @@ def login(
         extra={"user_id": user.id, "email": user.email, "action": "login"},
     )
     
-    access_token = create_access_token(user.id)
+    access_token = create_access_token(user.id, is_guest=bool(user.is_guest))
     refresh_token = create_refresh_token(user.id)
     _set_auth_cookies(response, access_token, refresh_token)
 
@@ -1514,7 +1555,12 @@ def refresh_access_token(
         )
         raise HTTPException(status_code=401, detail="Refresh token inválido ou expirado")
 
-    new_access_token = create_access_token(user_id)
+    is_guest = False
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        is_guest = bool(user.is_guest)
+
+    new_access_token = create_access_token(user_id, is_guest=is_guest)
     new_refresh_token = create_refresh_token(user_id)
 
     is_secure = os.environ.get("ENVIRONMENT", "development") == "production"
@@ -1558,6 +1604,82 @@ def logout(
 @app.get("/auth/check")
 def check_auth(user_id: int = Depends(get_current_user)):
     return {"user_id": user_id, "authenticated": True}
+
+
+@app.post("/auth/guest", response_model=TokenResponse)
+def guest_login(
+    response: Response,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    client_ip = request.client.host if request.client else "unknown"
+    rate_limit(f"guest:{client_ip}", max_req=20, window=60)
+
+    email = f"guest-{uuid.uuid4().hex[:12]}@local.guest"
+    guest_password = secrets.token_urlsafe(24)
+    user = User(
+        email=email,
+        password_hash=hash_password(guest_password),
+        created_at=datetime.now(timezone.utc).isoformat(),
+        is_verified=True,
+        is_guest=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    access_token = create_access_token(user.id, is_guest=True)
+    refresh_token = create_refresh_token(user.id)
+    _set_auth_cookies(response, access_token, refresh_token)
+
+    auth_log.info(
+        "Guest session created",
+        extra={"user_id": user.id, "email": email, "action": "guest_login"},
+    )
+    return TokenResponse(access_token=access_token)
+
+
+@app.post("/auth/upgrade", response_model=TokenResponse)
+def upgrade_guest(
+    response: Response,
+    body: UserRegister,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuário não encontrado")
+    if not user.is_guest:
+        raise HTTPException(status_code=400, detail="Conta não é convidada")
+
+    if not validate_email(body.email):
+        raise HTTPException(status_code=400, detail="Email inválido")
+
+    senha_valida, msg_erro = validate_password(body.password)
+    if not senha_valida:
+        raise HTTPException(status_code=400, detail=msg_erro)
+
+    existing = db.query(User).filter(User.email == body.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email já cadastrado")
+
+    user.email = body.email
+    user.password_hash = hash_password(body.password)
+    user.is_guest = False
+    user.is_verified = True
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    access_token = create_access_token(user.id, is_guest=False)
+    refresh_token = create_refresh_token(user.id)
+    _set_auth_cookies(response, access_token, refresh_token)
+
+    auth_log.info(
+        "Guest account upgraded to real account",
+        extra={"user_id": user.id, "email": user.email, "action": "guest_upgrade"},
+    )
+    return TokenResponse(access_token=access_token)
 
 
 @app.get("/auth/verify-email")

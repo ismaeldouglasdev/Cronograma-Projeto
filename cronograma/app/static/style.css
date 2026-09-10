@@ -3287,3 +3287,75 @@ main {
   flex-shrink: 0;
   vertical-align: middle;
 }
+
+/* === Guest mode === */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.25rem 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.guest-login-btn {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.guest-login-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.guest-banner {
+  display: none;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.5rem 0.75rem 0.5rem;
+  padding: 0.75rem;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: var(--radius-sm);
+}
+.guest-banner.show {
+  display: flex;
+}
+.guest-banner-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+.guest-save-btn {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.guest-save-btn:hover {
+  opacity: 0.9;
+}
+
+.upgrade-info {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+}
