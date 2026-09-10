@@ -578,37 +578,6 @@ main {
     min-width: 0;
   }
 
-  #lista-areas {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.6rem;
-  }
-
-  #lista-areas > .area-card {
-    padding: 0.6rem 0.4rem;
-    min-height: 78px;
-  }
-
-  #lista-areas .area-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 9px;
-    margin-bottom: 0.4rem;
-  }
-
-  #lista-areas .area-icon svg {
-    width: 17px;
-    height: 17px;
-  }
-
-  #lista-areas .area-title {
-    font-size: 0.78rem;
-    margin-bottom: 0.15rem;
-  }
-
-  #lista-areas .area-type {
-    font-size: 0.62rem;
-  }
-
   .gami-hero {
     padding: 1.1rem;
     border-radius: 14px;
@@ -712,6 +681,7 @@ main {
   font-size: 1.1rem;
   margin-bottom: 0.5rem;
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 #lista-areas .area-category {
@@ -740,6 +710,41 @@ main {
 
 #lista-areas .resumo-empty {
   grid-column: 1 / -1;
+}
+
+@media (max-width: 600px) {
+  #lista-areas {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+    justify-content: start;
+  }
+
+  #lista-areas > .area-card {
+    padding: 0.6rem 0.4rem;
+    min-height: 78px;
+    min-width: 0;
+  }
+
+  #lista-areas .area-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    margin-bottom: 0.4rem;
+  }
+
+  #lista-areas .area-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  #lista-areas .area-title {
+    font-size: 0.78rem;
+    margin-bottom: 0.15rem;
+  }
+
+  #lista-areas .area-type {
+    font-size: 0.62rem;
+  }
 }
 
 .horarios-grid {
