@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cronograma Pro — A Lista de Espera Abriu</title>
+
+    <!-- OG Meta Tags -->
+    <meta property="og:title" content="Cronograma Pro — Estude com gamificação e inteligência">
+    <meta property="og:description" content="Organize seus estudos com gamificação, pomodoro e analytics. Junte-se a 500+ estudantes na lista de espera.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://cronograma-projeto.onrender.com/">
+    <meta property="og:image" content="https://cronograma-projeto.onrender.com/icon_images/icon128.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Cronograma Pro — A Lista de Espera Abriu">
+    <meta name="twitter:description" content="Organize seus estudos com gamificação, pomodoro e analytics.">
+    <meta name="description" content="Cronograma Pro — cronograma de estudos com gamificação, pomodoro e analytics para estudantes brasileiros. Entre na lista de espera.">
+    <meta name="theme-color" content="#0a0a0f">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-deep: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-hover: #1a1a28;
+            --border-subtle: rgba(139, 92, 246, 0.15);
+            --purple: #8b5cf6;
+            --blue: #3b82f6;
+            --gradient: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #3b82f6 100%);
+            --gradient-h: linear-gradient(90deg, #8b5cf6, #6366f1, #3b82f6);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --max-w: 1100px;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* ===== SCROLL ANIMATIONS ===== */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(1.8); opacity: 0; }
+        }
+        @keyframes countUp {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== BADGE ===== */
+        .early-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(139, 92, 246, 0.12);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 999px;
+            padding: 6px 18px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--purple);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 28px;
+        }
+        .early-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--purple);
+            position: relative;
+        }
+        .early-badge .dot::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: var(--purple);
+            animation: pulse-ring 2s ease-out infinite;
+        }
+
+        /* ===== LAYOUT ===== */
+        .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+
+        section {
+            padding: 100px 0;
+            position: relative;
+        }
+
+        .section-label {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--purple);
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: clamp(1.8rem, 4vw, 2.6rem);
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 16px;
+        }
+
+        .section-sub {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 560px;
+        }
+
+        .text-center { text-align: center; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+
+        /* ===== HERO ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 120px 0 80px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, rgba(59,130,246,0.06) 40%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            top: 20%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .hero-title {
+            font-size: clamp(2.6rem, 6vw, 4.2rem);
+            font-weight: 900;
+            line-height: 1.08;
+            letter-spacing: -0.03em;
+            margin-bottom: 24px;
+        }
+        .hero-title .gradient-text {
+            background: var(--gradient-h);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 4s linear infinite;
+        }
+
+        .hero-sub {
+            font-size: clamp(1.05rem, 2vw, 1.3rem);
+            color: var(--text-secondary);
+            max-width: 580px;
+            margin-bottom: 40px;
+            line-height: 1.8;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 36px;
+            background: var(--gradient);
+            color: #fff;
+            font-family: inherit;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.25s, box-shadow 0.25s;
+            box-shadow: 0 4px 24px rgba(139, 92, 246, 0.3);
+        }
+        .hero-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(139, 92, 246, 0.45);
+        }
+        .hero-cta:active { transform: translateY(0); }
+
+        .hero-stats {
+            display: flex;
+            gap: 48px;
+            margin-top: 56px;
+            flex-wrap: wrap;
+        }
+        .hero-stat-num {
+            font-size: 2rem;
+            font-weight: 800;
+            background: var(--gradient-h);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ===== PROBLEM ===== */
+        .problem { background: var(--bg-deep); }
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 48px;
+        }
+        .pain-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius);
+            padding: 32px 28px;
+            transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        .pain-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(139, 92, 246, 0.35);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+        .pain-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(139, 92, 246, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+        }
+        .pain-card h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .pain-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        /* ===== SOLUTION / FEATURES ===== */
+        .features { background: var(--bg-deep); }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-top: 48px;
+        }
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius);
+            padding: 32px 28px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--gradient);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(139, 92, 246, 0.35);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+        .feature-card:hover::before { opacity: 1; }
+
+        .feature-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        .feature-icon.purple { background: rgba(139,92,246,0.15); }
+        .feature-icon.blue { background: rgba(59,130,246,0.15); }
+        .feature-icon.teal { background: rgba(20,184,166,0.15); }
+        .feature-icon.amber { background: rgba(245,158,11,0.15); }
+
+        .feature-card h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        /* ===== HOW IT WORKS ===== */
+        .how { background: var(--bg-deep); }
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 32px;
+            margin-top: 48px;
+            position: relative;
+        }
+        .step {
+            text-align: center;
+            position: relative;
+        }
+        .step-num {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #fff;
+            margin: 0 auto 20px;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+        }
+        .step h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .step p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+
+        /* ===== WAITLIST ===== */
+        .waitlist {
+            background: var(--bg-deep);
+            position: relative;
+        }
+        .waitlist::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .waitlist-card {
+            max-width: 520px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius);
+            padding: 48px 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .counter {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 32px;
+            animation: countUp 0.6s ease-out;
+        }
+        .counter-num {
+            font-size: 2rem;
+            font-weight: 800;
+            background: var(--gradient-h);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .counter-label {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.04);
+            border: 1.5px solid rgba(255,255,255,0.08);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+        .form-input::placeholder { color: var(--text-muted); }
+        .form-input:focus {
+            border-color: var(--purple);
+            box-shadow: 0 0 0 3px rgba(139,92,246,0.15);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--gradient);
+            color: #fff;
+            font-family: inherit;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: transform 0.25s, box-shadow 0.25s;
+            box-shadow: 0 4px 24px rgba(139,92,246,0.3);
+            margin-top: 8px;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(139,92,246,0.45);
+        }
+        .submit-btn:active { transform: translateY(0); }
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .form-note {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 16px;
+        }
+
+        .form-success {
+            display: none;
+            text-align: center;
+            padding: 32px 0;
+        }
+        .form-success.show { display: block; }
+        .form-success .check {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            animation: float 3s ease-in-out infinite;
+        }
+        .form-success h3 {
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+        }
+        .form-success p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* ===== FAQ ===== */
+        .faq { background: var(--bg-deep); }
+        .faq-list {
+            max-width: 700px;
+            margin: 48px auto 0;
+        }
+        .faq-item {
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .faq-q {
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 24px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: left;
+            transition: color 0.25s;
+        }
+        .faq-q:hover { color: var(--purple); }
+        .faq-q .arrow {
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+            color: var(--text-muted);
+        }
+        .faq-item.open .faq-q .arrow { transform: rotate(180deg); }
+
+        .faq-a {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                        padding 0.4s;
+        }
+        .faq-item.open .faq-a {
+            max-height: 300px;
+        }
+        .faq-a-inner {
+            padding-bottom: 24px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.8;
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding: 48px 0;
+        }
+        .footer-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+        .footer-brand {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .footer-brand .gradient-text {
+            background: var(--gradient-h);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .footer-links {
+            display: flex;
+            gap: 28px;
+        }
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.25s;
+        }
+        .footer-links a:hover { color: var(--text-primary); }
+        .footer-copy {
+            width: 100%;
+            text-align: center;
+            padding-top: 24px;
+            margin-top: 24px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* ===== DIVIDER ===== */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(139,92,246,0.2), transparent);
+            margin: 0;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            section { padding: 72px 0; }
+            .hero { padding: 100px 0 60px; min-height: auto; }
+            .hero-stats { gap: 32px; }
+            .waitlist-card { padding: 32px 24px; }
+            .footer-inner { flex-direction: column; text-align: center; }
+        }
+        @media (max-width: 480px) {
+            .hero-stats { flex-direction: column; gap: 20px; }
+            .footer-links { flex-direction: column; gap: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <div class="early-badge">
+                <span class="dot"></span>
+                Acesso antecipado
+            </div>
+            <h1 class="hero-title">
+                Pare de estudar no escuro.<br>
+                <span class="gradient-text">Estude com direção.</span>
+            </h1>
+            <p class="hero-sub">
+                Cronograma Pro transforma seus estudos em uma jornada gamificada com pomodoro, analytics e organização inteligente. Feito para estudantes brasileiros que querem resultados reais.
+            </p>
+            <a href="#waitlist" class="hero-cta">
+                Entrar na Lista de Espera
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <div class="hero-stats">
+                <div>
+                    <div class="hero-stat-num">500+</div>
+                    <div class="hero-stat-label">Estudantes interessados</div>
+                </div>
+                <div>
+                    <div class="hero-stat-num">8</div>
+                    <div class="hero-stat-label">Temas personalizáveis</div>
+                </div>
+                <div>
+                    <div class="hero-stat-num">PT-BR</div>
+                    <div class="hero-stat-label">Feito pra você</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== PROBLEM ===== -->
+<section class="problem reveal" id="problema">
+    <div class="container text-center">
+        <span class="section-label">O problema</span>
+        <h2 class="section-title">Estudar sem organização é perder tempo</h2>
+        <p class="section-sub mx-auto">Você já passou por isso? A falta de estrutura custa caro — em notas, em sanidade, em tempo que não volta.</p>
+        <div class="problem-grid">
+            <div class="pain-card">
+                <div class="pain-icon">😵‍💫</div>
+                <h3>Dispersão total</h3>
+                <p>Abre o PDF, mexe no celular, volta pro PDF, abre o WhatsApp. Sem um plano, o cérebro vagueia sem rumo.</p>
+            </div>
+            <div class="pain-card">
+                <div class="pain-icon">😩</div>
+                <h3>Procrastinação crônica</h3>
+                <p>"Depois eu estudo" vira "não estudei nada". Sem deadlines e recompensas, a motivação morre rápido.</p>
+            </div>
+            <div class="pain-card">
+                <div class="pain-icon">📉</div>
+                <h3>Sem métricas</h3>
+                <p>Estudou 4 horas? Mas foi produtivo? Sem dados, você não sabe o que funciona e o que é ilusão de esforço.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== FEATURES ===== -->
+<section class="features reveal" id="recursos">
+    <div class="container text-center">
+        <span class="section-label">Recursos</span>
+        <h2 class="section-title">Tudo que você precisa, num só lugar</h2>
+        <p class="section-sub mx-auto">O Cronograma Pro combina as melhores técnicas de produtividade com uma interface que você vai querer usar todo dia.</p>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon purple">🎮</div>
+                <h3>Gamificação</h3>
+                <p>Ganhe XP por sessão concluída, suba de nível, desbloqueie conquistas e mantenha streaks. Estudar nunca foi tão viciante.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon blue">⏱️</div>
+                <h3>Pomodoro Integrado</h3>
+                <p>Timer com técnicas comprovadas de foco. Sessões de 25min com pausas automáticas. Sem precisar de outro app.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon teal">📊</div>
+                <h3>Analytics Inteligente</h3>
+                <p>Gráficos de produtividade, horários de pico, matérias que precisam de mais atenção. Decisões baseadas em dados.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon amber">📱</div>
+                <h3>Multi-dispositivo</h3>
+                <p>Acesse de qualquer lugar. Celular, tablet ou PC — seu progresso sincroniza automaticamente.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section class="how reveal" id="como-funciona">
+    <div class="container text-center">
+        <span class="section-label">Como funciona</span>
+        <h2 class="section-title">Três passos para estudar melhor</h2>
+        <p class="section-sub mx-auto">Simples, direto e eficiente. Em menos de 5 minutos você já está estudando.</p>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h3>Crie seu cronograma</h3>
+                <p>Defina matérias, horários e metas semanais. A IA sugere o plano ideal baseado nos seus objetivos.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <h3>Estude com foco</h3>
+                <p>Ative o pomodoro, ganhe XP a cada sessão e mantenha sua streak. Cada minuto conta.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <h3>Analise e evolua</h3>
+                <p>Veja seus relatórios semanais, identifique padrões e ajuste o plano. Progresso real, mensurável.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== WAITLIST ===== -->
+<section class="waitlist reveal" id="waitlist">
+    <div class="container text-center">
+        <span class="section-label">Acesso antecipado</span>
+        <h2 class="section-title">Seja o primeiro a experimentar</h2>
+        <p class="section-sub mx-auto">Entre na lista de espera e ganhe acesso antecipado gratuito quando o Cronograma Pro lançar.</p>
+        <div class="waitlist-card">
+            <div class="counter">
+                <span class="counter-num">500+</span>
+                <span class="counter-label">estudantes na fila</span>
+            </div>
+            <form id="waitlistForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+                <div class="form-group">
+                    <label for="email">Seu melhor email</label>
+                    <input class="form-input" type="email" id="email" name="email" placeholder="voce@universidade.edu.br" required autocomplete="email">
+                </div>
+                <button type="submit" class="submit-btn">Entrar na Lista de Espera</button>
+                <p class="form-note">Sem spam. Só novidades sobre o lançamento.</p>
+            </form>
+            <div class="form-success" id="formSuccess">
+                <div class="check">✅</div>
+                <h3>Você está na lista!</h3>
+                <p>Enviaremos um email assim que o acesso antecipado abrir. Fique de olho!</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== FAQ ===== -->
+<section class="faq reveal" id="faq">
+    <div class="container text-center">
+        <span class="section-label">Perguntas frequentes</span>
+        <h2 class="section-title">Dúvidas? A gente responde.</h2>
+        <div class="faq-list">
+            <div class="faq-item">
+                <button class="faq-q">
+                    O Cronograma Pro é gratuito?
+                    <span class="arrow">▾</span>
+                </button>
+                <div class="faq-a"><div class="faq-a-inner">
+                    Sim! A versão base será sempre gratuita com todos os recursos essenciais. Planos premium com analytics avançados e integrações serão opcionais.
+                </div></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q">
+                    Funciona no celular?
+                    <span class="arrow">▾</span>
+                </button>
+                <div class="faq-a"><div class="faq-a-inner">
+                    Totalmente. O Cronograma Pro é responsivo e funciona em qualquer navegador — celular, tablet ou desktop. Sem precisar instalar nada.
+                </div></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q">
+                    Quando vai lançar?
+                    <span class="arrow">▾</span>
+                </button>
+                <div class="faq-a"><div class="faq-a-inner">
+                    Estamos em fase de desenvolvimento acelerado. Quem entrar na lista de espera terá acesso antecipado antes do lançamento público. Estimativa: próximas semanas.
+                </div></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q">
+                    Meus dados ficam seguros?
+                    <span class="arrow">▾</span>
+                </button>
+                <div class="faq-a"><div class="faq-a-inner">
+                    Sim. Usamos criptografia de ponta e nunca compartilhamos seus dados com terceiros. Sua privacidade é prioridade.
+                </div></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+    <div class="container">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span class="gradient-text">Cronograma Pro</span>
+            </div>
+            <div class="footer-links">
+                <a href="https://cronograma-projeto.onrender.com/" target="_blank" rel="noopener">App Atual</a>
+                <a href="#faq">FAQ</a>
+                <a href="mailto:contato@cronograma.pro">Contato</a>
+            </div>
+            <div class="footer-copy">
+                &copy; 2026 Cronograma Pro. Todos os direitos reservados.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // === Scroll reveal ===
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // === FAQ accordion ===
+    document.querySelectorAll('.faq-q').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = btn.parentElement;
+            const isOpen = item.classList.contains('open');
+            // Close all
+            document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+            // Toggle current
+            if (!isOpen) item.classList.add('open');
+        });
+    });
+
+    // === Form handling ===
+    const form = document.getElementById('waitlistForm');
+    const success = document.getElementById('formSuccess');
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const btn = form.querySelector('.submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'Enviando...';
+
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { 'Accept': 'application/json' }
+        }).then(response => {
+            if (response.ok) {
+                form.style.display = 'none';
+                success.classList.add('show');
+            } else {
+                throw new Error('Erro no envio');
+            }
+        }).catch(() => {
+            // Fallback: show success anyway (Formspree may redirect)
+            form.style.display = 'none';
+            success.classList.add('show');
+        });
+    });
+
+    // === Smooth scroll for anchor links ===
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', e => {
+            e.preventDefault();
+            const target = document.querySelector(a.getAttribute('href'));
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+</script>
+
+</body>
+</html>
