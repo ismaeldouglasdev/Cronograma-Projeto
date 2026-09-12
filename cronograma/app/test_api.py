@@ -7,8 +7,10 @@ import pytest_asyncio
 import asyncio
 from datetime import date
 from httpx import ASGITransport, AsyncClient
-from main import app, Base, engine, rate_limiter, MIGRATION_SECRET
-import main as main_module
+from main import app
+from config import Base, engine
+from middleware import rate_limiter
+import routes.gamification as gamification_module
 
 
 @pytest.fixture(autouse=True)
@@ -308,14 +310,14 @@ async def test_buy_freeze_success(client, auth_headers):
 
 @pytest.mark.asyncio
 async def test_add_coins_rejects_negative(client, auth_headers, monkeypatch):
-    monkeypatch.setattr(main_module, "MIGRATION_SECRET", "test-secret")
+    monkeypatch.setattr(gamification_module, "MIGRATION_SECRET", "test-secret")
     r = await client.post("/coins/add?amount=-5&secret=test-secret", headers=auth_headers)
     assert r.status_code == 400
 
 
 @pytest.mark.asyncio
 async def test_add_coins_rejects_over_100(client, auth_headers, monkeypatch):
-    monkeypatch.setattr(main_module, "MIGRATION_SECRET", "test-secret")
+    monkeypatch.setattr(gamification_module, "MIGRATION_SECRET", "test-secret")
     r = await client.post("/coins/add?amount=101&secret=test-secret", headers=auth_headers)
     assert r.status_code == 400
 

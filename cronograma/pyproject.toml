@@ -5,3 +5,8 @@ requires-python = ">=3.11,<3.12"
 
 [tool.uv]
 python = "3.11"
+
+[tool.basedpyright]
+# Testes rodam via pytest a partir de cronograma/app (padrão pytest de raiz).
+# Imports de/para módulos do app são resolvidos pelo sys.path do pytest.
+reportImplicitRelativeImport = "none"

@@ -10,7 +10,9 @@ import pytest
 import pytest_asyncio
 import time
 from httpx import ASGITransport, AsyncClient
-from main import app, Base, engine, rate_limiter
+from main import app
+from config import Base, engine
+from middleware import rate_limiter
 
 
 @pytest.fixture(autouse=True)
