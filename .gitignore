@@ -9,3 +9,10 @@ OpenCode.html
 *.sqlite
 *.sqlite3
 .vercel
+
+# Backup do main.py monolítico (pré-modularização)
+main.py.bak
+
+# dados com credenciais
+cronograma/app/data_clean.json
+cronograma/app/data_export.json
