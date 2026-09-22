@@ -16,3 +16,8 @@ main.py.bak
 # dados com credenciais
 cronograma/app/data_clean.json
 cronograma/app/data_export.json
+
+# Python bytecode + dump de migração
+__pycache__/
+*.pyc
+cronograma/migrate.sql
