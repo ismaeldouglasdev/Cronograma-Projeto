@@ -7,6 +7,7 @@ pelo antigo main.py monolítico.
 """
 
 import hashlib
+import logging
 import os
 from pathlib import Path
 
@@ -29,9 +30,34 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 # ─── JWT ──────────────────────────────────────────────────────────────────────
 
-SECRET_KEY: str = os.environ.get(
-    "JWT_SECRET", hashlib.sha256(DATABASE_URL.encode()).hexdigest()
-)
+logger = logging.getLogger("cronograma.config")
+
+
+def _resolve_secret_key() -> str:
+    """
+    Resolve a chave de assinatura JWT.
+
+    Preferência: JWT_SECRET do ambiente. Sem ele, deriva de DATABASE_URL —
+    comportamento legado mantido para não derrubar instalações existentes,
+    mas sinalizado: derivar de DATABASE_URL faz a chave mudar toda vez que a
+    senha do banco rotaciona, o que invalida todos os tokens e derruba o
+    ambiente inteiro. Ver docs/rotacao-credenciais.md.
+    """
+    from_env = os.environ.get("JWT_SECRET")
+    if from_env:
+        return from_env
+
+    derived = hashlib.sha256(DATABASE_URL.encode()).hexdigest()
+    if os.environ.get("ENVIRONMENT", "").lower() == "production":
+        logger.warning(
+            "JWT_SECRET ausente: chave derivada de DATABASE_URL. Rotacionar a "
+            "senha do banco vai invalidar todos os tokens e deslogar todos os "
+            "usuarios. Defina JWT_SECRET no ambiente antes de rotacionar."
+        )
+    return derived
+
+
+SECRET_KEY: str = _resolve_secret_key()
 ALGORITHM: str = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
 REFRESH_TOKEN_EXPIRE_DAYS: int = 7

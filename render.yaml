@@ -10,3 +10,18 @@ services:
         value: 3.11.12
       - key: ENVIRONMENT
         value: production
+      # Assina os tokens JWT. generateValue faz o Render criar um valor
+      # aleatorio uma unica vez e mantê-lo estavel entre deploys.
+      # IMPORTANTE: sem esta variavel o app deriva a chave de DATABASE_URL
+      # (config.py::_resolve_secret_key), e ai rotacionar a senha do banco
+      # invalida todos os tokens e desloga todos os usuarios de uma vez.
+      # Ver docs/rotacao-credenciais.md.
+      - key: JWT_SECRET
+        generateValue: true
+      # Preenchida no dashboard do Render (nunca versionada):
+      # postgresql://USER:PASSWORD@HOST/DB?sslmode=require
+      - key: DATABASE_URL
+        sync: false
+      # Protege /admin/* e /coins/add. Vazio = endpoints admin bloqueados.
+      - key: MIGRATION_SECRET
+        generateValue: true
