@@ -77,6 +77,9 @@ const i18n = {
       ja_verificado: 'J\u00e1 verificado? <a href="#" id="show-login-verify">Entrar</a>',
       // Validation messages
       passwords_dont_match: 'As senhas n\u00e3o coincidem',
+      pwd_rule_length: 'Pelo menos 8 caracteres',
+      pwd_rule_letter: 'Pelo menos uma letra',
+      pwd_rule_number: 'Pelo menos um n\u00famero',
       enter_token: 'Por favor, insira o token de verifica\u00e7\u00e3o',
       email_verified: 'Email verificado com sucesso! Agora voc\u00ea pode fazer login.',
       login_error: 'Erro ao fazer login',
@@ -378,6 +381,7 @@ btn_iniciar: 'Iniciar',
       password_special: 'Senha deve conter pelo menos um caractere especial',
       invalid_email: 'Email inválido',
       email_exists: 'Email já cadastrado',
+      email_exists_login: 'Este email já está cadastrado. Faça login.',
       invalid_credentials: 'Credenciais inválidas',
       area_not_found: 'Área não encontrada',
       task_not_found: 'Tarefa não encontrada',
@@ -391,6 +395,7 @@ btn_iniciar: 'Iniciar',
       invalid_secret: 'Segredo inválido',
       negative_value: 'Valor não pode ser negativo',
       rate_limited: 'Muitas requisições. Tente novamente em instantes.',
+      rate_limited_retry: 'Muitas requisições. Tente novamente em {n}s.',
     },
   },
 
@@ -463,6 +468,9 @@ btn_iniciar: 'Iniciar',
       ja_tem_conta: 'Already have an account? <a href="#" id="show-login">Sign In</a>',
       ja_verificado: 'Already verified? <a href="#" id="show-login-verify">Sign In</a>',
       passwords_dont_match: 'Passwords do not match',
+      pwd_rule_length: 'At least 8 characters',
+      pwd_rule_letter: 'At least one letter',
+      pwd_rule_number: 'At least one number',
       enter_token: 'Please enter the verification token',
       email_verified: 'Email verified successfully! You can now log in.',
       login_error: 'Error logging in',
@@ -749,6 +757,7 @@ btn_iniciar: 'Start',
       password_special: 'Password must contain at least one special character',
       invalid_email: 'Invalid email',
       email_exists: 'Email already registered',
+      email_exists_login: 'This email is already registered. Please sign in.',
       invalid_credentials: 'Invalid credentials',
       area_not_found: 'Area not found',
       task_not_found: 'Task not found',
@@ -762,6 +771,7 @@ btn_iniciar: 'Start',
       invalid_secret: 'Invalid secret',
       negative_value: 'Value cannot be negative',
       rate_limited: 'Too many requests. Please try again shortly.',
+      rate_limited_retry: 'Too many requests. Please try again in {n}s.',
     },
   },
 };
@@ -812,6 +822,15 @@ function t(key) {
  */
 function translateBackendError(detail) {
   if (!detail || typeof detail !== 'string') return detail;
+
+  // Mensagens com número variável não batem com o mapa exato. O 429 do rate
+  // limit virou "Muitas requisições. Tente novamente em 42s." depois do fix
+  // do Retry-After, e o map por igualdade devolvia o português cru mesmo em EN.
+  const retryMatch = detail.match(/^Muitas requisições\. Tente novamente em (\d+)s\.$/);
+  if (retryMatch) {
+    return t('validation.rate_limited_retry').replace('{n}', retryMatch[1]);
+  }
+
   const map = {
     'Senha deve ter pelo menos 8 caracteres': 'validation.password_length',
     'Senha deve conter pelo menos uma letra': 'validation.password_letter',
@@ -832,8 +851,15 @@ function translateBackendError(detail) {
     'Valor não pode ser negativo': 'validation.negative_value',
     'Muitas requisições. Tente novamente em instantes.': 'validation.rate_limited',
   };
+
   const key = map[detail];
-  return key ? t(key) : detail;
+  if (key) return t(key);
+
+  // Sufixos acrescentados depois do mapa foi escrito.
+  if (detail.startsWith('Email já cadastrado')) return t('validation.email_exists_login');
+  if (detail.startsWith('Muitas requisições')) return t('validation.rate_limited');
+
+  return detail;
 }
 
 /**

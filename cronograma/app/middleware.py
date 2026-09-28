@@ -10,7 +10,7 @@ from html import escape
 import bcrypt as _bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
@@ -55,13 +55,34 @@ class RateLimiter:
             self._store[key].append(now)
             return True
 
+    def retry_after(self, key: str, window_seconds: int = 60) -> int:
+        """Segundos ate a janela liberar uma vaga (minimo 1, nunca 0)."""
+        with self._lock:
+            hits = self._store.get(key) or []
+            if not hits:
+                return 1
+            oldest = min(hits)
+            return max(1, int(window_seconds - (time.time() - oldest)) + 1)
+
 
 rate_limiter = RateLimiter()
 
 
+class RateLimitExceeded(HTTPException):
+    """429 com Retry-After, para o cliente poder esperar o tempo exato."""
+
+    def __init__(self, retry_after: int, detail: str):
+        super().__init__(status_code=429, detail=detail, headers={"Retry-After": str(retry_after)})
+        self.retry_after = retry_after
+
+
 def rate_limit(key: str, max_req: int = 30, window: int = 60):
     if not rate_limiter.check(key, max_req, window):
-        raise HTTPException(status_code=429, detail="Muitas requisições. Tente novamente em instantes.")
+        retry_after = rate_limiter.retry_after(key, window)
+        raise RateLimitExceeded(
+            retry_after,
+            f"Muitas requisições. Tente novamente em {retry_after}s.",
+        )
 
 
 # ─── Security Headers Middleware ────────────────────────────────────────────────
@@ -96,15 +117,21 @@ async def security_headers_middleware(request, call_next):
 async def log_requests_middleware(request, call_next):
     """Loga todas as requisições HTTP com duração."""
     # General rate limit: 120 req/min por IP (pula para /static/)
+    ip = get_client_ip(request)
     if not request.url.path.startswith("/static"):
-        ip = request.client.host if request.client else "unknown"
         try:
             rate_limit(f"general:{ip}", max_req=120, window=60)
         except HTTPException as e:
-            return Response(status_code=e.status_code, content={"detail": e.detail})
+            # JSONResponse, não Response: content tem de ser str/bytes. Passar
+            # o dict direto fazia o limiter geral estourado responder 500 em
+            # vez de 429 ("'dict' object has no attribute 'encode'").
+            return JSONResponse(
+                status_code=e.status_code,
+                content={"detail": e.detail},
+                headers=getattr(e, "headers", None) or {},
+            )
 
     start_time = time.time()
-    ip = request.client.host if request.client else None
     response = await call_next(request)
     duration_ms = (time.time() - start_time) * 1000
 
@@ -134,6 +161,47 @@ async def log_requests_middleware(request, call_next):
 # ─── Helper Functions ───────────────────────────────────────────────────────────
 
 
+def _is_private(host: str) -> bool:
+    """True para loopback/private/link-local — nunca é o IP real de um cliente."""
+    try:
+        import ipaddress
+
+        return ipaddress.ip_address(host).is_private or ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
+def get_client_ip(request) -> str:
+    """Resolve o IP real do cliente para usar como chave de rate limit.
+
+    O uvicorn roda com --proxy-headers ligado e reescreve `request.client.host`
+    com a entrada MAIS À ESQUERDA do X-Forwarded-For — que é o que o cliente
+    mandar. Usar isso como chave deixa o rate limit burlável: verificado em
+    produção, 8 requests com `X-Forwarded-For` variando passaram todos, com
+    limite de 5/min.
+
+    Ordem de confiança:
+      1. CF-Connecting-IP — a Cloudflare SUBSTITUI esse header pelo IP real do
+         visitante (nunca anexa o valor do cliente). Confirmado que a Cloudflare
+         esta na frente: todo response volta com `server: cloudflare` + `cf-ray`.
+      2. Peer TCP — nunca falsificavel. O startCommand desliga a confiança em
+         X-Forwarded-For (`--forwarded-allow-ips=""`) justamente para que
+         `request.client.host` seja o peer de verdade e nao um header.
+
+    X-Forwarded-For e ignorado de proposito: nenhuma das entradas dele e
+    confiavel quando o cliente pode escolher o proprio header.
+
+    Ressalva: se a Cloudflare um dia sair de frente, todo mundo cai no peer TCP
+    (compartilhado no Render) e o limite volta a ser global em vez de por IP.
+    Nesse caso o certo e apontar um proxy proprio ou trocar a estrategia.
+    """
+    connecting_ip = request.headers.get("cf-connecting-ip")
+    if connecting_ip and not _is_private(connecting_ip):
+        return connecting_ip
+
+    return request.client.host if request.client else "unknown"
+
+
 def verify_token(token: str):
     """Helper: verifica token JWT (usado no middleware de logging)."""
     # Esta é uma versão simplificada para o middleware.
@@ -156,15 +224,26 @@ def validate_email(email: str) -> bool:
     return bool(re.match(pattern, email))
 
 
+# Regras de senha. Mantidas em Python e espelhadas em static/auth.js
+# (PASSWORD_RULES) — as duas listas precisam continuar iguais, senao o
+# frontend aceita o que o backend rejeita (e vice-versa).
+PASSWORD_MIN_LENGTH = 8
+PASSWORD_RULES: tuple[tuple[str, str], ...] = (
+    (r".{%d,}" % PASSWORD_MIN_LENGTH, f"Senha deve ter pelo menos {PASSWORD_MIN_LENGTH} caracteres"),
+    (r"[a-zA-Z]", "Senha deve conter pelo menos uma letra"),
+    (r"[0-9]", "Senha deve conter pelo menos um número"),
+)
+
+
 def validate_password(password: str) -> tuple[bool, str]:
-    if len(password) < 8:
-        return False, "Senha deve ter pelo menos 8 caracteres"
-    if not re.search(r"[a-zA-Z]", password):
-        return False, "Senha deve conter pelo menos uma letra"
-    if not re.search(r"[0-9]", password):
-        return False, "Senha deve conter pelo menos um número"
-    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
-        return False, "Senha deve conter pelo menos um caractere especial"
+    """Valida a senha e devolve a PRIMEIRA regra violada, em pt-BR.
+
+    Devolve a mensagem em vez de so um bool porque a UI precisa dizer qual
+    regra faltou — um 400 com "senha inválida" não ajuda ninguém a corrigir.
+    """
+    for pattern, message in PASSWORD_RULES:
+        if not re.search(pattern, password):
+            return False, message
     return True, ""
 
 

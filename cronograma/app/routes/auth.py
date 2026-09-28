@@ -20,6 +20,7 @@ from config import (
 from logger import get_logger
 from middleware import (
     generate_verification_token,
+    get_client_ip,
     hash_password,
     rate_limit,
     sendVerificationEmail,
@@ -86,8 +87,13 @@ def register(
     request: Request,
     db: Session = Depends(get_db),
 ):
-    client_ip = request.client.host if request.client else "unknown"
-    rate_limit(f"register:{client_ip}", max_req=5, window=60)
+    client_ip = get_client_ip(request)
+
+    # Validação local primeiro: é O(1), não toca o banco e não revela nada
+    # sobre outras contas. Não consome cota de rate limit de propósito — antes
+    # o limite ficava no topo do handler, então cada 400 de senha fraca gastava
+    # uma das 5 vagas e o 2o erro que o usuário via já era 429 em vez do
+    # motivo real.
     if not validate_email(body.email):
         raise HTTPException(status_code=400, detail="Email inválido")
 
@@ -95,9 +101,16 @@ def register(
     if not senha_valida:
         raise HTTPException(status_code=400, detail=msg_erro)
 
+    # Limite de spam, generoso: conta só os pedidos que passaram na validação.
+    rate_limit(f"register:{client_ip}", max_req=20, window=60)
+
+    # Limite de enumeração, apertado: cada uma destas tentativas consulta o
+    # banco e diz se o email existe, então precisa ser bem mais restrito.
+    rate_limit(f"register-enum:{client_ip}", max_req=5, window=60)
+
     existing = db.query(User).filter(User.email == body.email).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Email já cadastrado")
+        raise HTTPException(status_code=400, detail="Email já cadastrado — faça login.")
 
     user = User(
         email=body.email,
@@ -136,7 +149,7 @@ def login(
 
     Sets httpOnly cookies for both tokens for enhanced security.
     """
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request)
     rate_limit(f"login:{client_ip}", max_req=10, window=60)
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not verify_password(body.password, user.password_hash):
@@ -251,7 +264,7 @@ def guest_login(
     request: Request,
     db: Session = Depends(get_db),
 ):
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request)
     rate_limit(f"guest:{client_ip}", max_req=20, window=60)
 
     email = f"guest-{uuid.uuid4().hex[:12]}@local.guest"

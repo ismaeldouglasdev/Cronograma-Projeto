@@ -1746,6 +1746,49 @@ main {
   background: var(--accent-hover);
 }
 
+/* Checklist de senha: mostra qual regra falta enquanto a pessoa digita, em vez
+   de devolver um 400 do servidor só no submit. */
+.pwd-rules {
+  list-style: none;
+  margin: -0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pwd-rule {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.pwd-rule__mark {
+  flex: 0 0 auto;
+  width: 1rem;
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+.pwd-rule--ok {
+  color: var(--accent);
+}
+
+.pwd-rule--ok .pwd-rule__mark {
+  color: var(--accent);
+}
+
+.pwd-rule--fail {
+  color: var(--danger);
+}
+
+.pwd-rule--fail .pwd-rule__mark {
+  color: var(--danger);
+}
+
 .auth-switch {
   text-align: center;
   margin-top: 1.5rem;

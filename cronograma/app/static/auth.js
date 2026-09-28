@@ -147,6 +147,86 @@ const Auth = (function() {
   
   const RETRY_STATUSES = [500, 502, 503, 504];
 
+  // ─── Regras de senha ────────────────────────────────────────────────────────
+  // Espelha PASSWORD_RULES em app/middleware.py. As duas listas precisam
+  // continuar iguais: o bug de 2026-09-27 foi exatamente o frontend aceitar
+  // senha que o backend rejeitava, porque aqui não havia regra nenhuma.
+  // O teste test_api.py::test_regras_de_senha_js_e_python_batem_valida a paridade.
+  const PASSWORD_RULES = [
+    { key: "auth.pwd_rule_length", test: (v) => v.length >= 8 },
+    { key: "auth.pwd_rule_letter", test: (v) => /[a-zA-Z]/.test(v) },
+    { key: "auth.pwd_rule_number", test: (v) => /[0-9]/.test(v) },
+  ];
+
+  function passwordIssues(password) {
+    return PASSWORD_RULES.filter((rule) => !rule.test(password || ""));
+  }
+
+  function isPasswordValid(password) {
+    return passwordIssues(password).length === 0;
+  }
+
+  // Checklist vivo: mostra quais regras faltam em vez de só recusar no submit.
+  function mountPasswordChecklist(form) {
+    if (!form || form.dataset.pwdChecklist === "on") return;
+    const passwordInput = form.querySelector('input[name="password"]');
+    if (!passwordInput) return;
+    form.dataset.pwdChecklist = "on";
+
+    const list = document.createElement("ul");
+    list.className = "pwd-rules";
+    list.setAttribute("aria-live", "polite");
+
+    const confirmInput = form.querySelector('input[name="confirm_password"]');
+    if (confirmInput) {
+      passwordInput.closest(".auth-form").insertBefore(list, confirmInput);
+    } else {
+      passwordInput.insertAdjacentElement("afterend", list);
+    }
+
+    const render = () => {
+      const value = passwordInput.value;
+      // Não julga a senha enquanto o campo está vazio — evita listar tudo
+      // como falha no primeiro focus.
+      if (!value) {
+        list.innerHTML = "";
+        return;
+      }
+      const failing = new Set(passwordIssues(value).map((r) => r.key));
+      list.innerHTML = PASSWORD_RULES.map((rule) => {
+        const ok = !failing.has(rule.key);
+        const label = typeof t === "function" ? t(rule.key) : rule.key;
+        const state = ok ? "ok" : "fail";
+        return (
+          '<li class="pwd-rule pwd-rule--' + state + '">' +
+          '<span class="pwd-rule__mark" aria-hidden="true">' + (ok ? "&#10003;" : "&#9679;") + "</span>" +
+          '<span class="pwd-rule__label">' + label + "</span>" +
+          "</li>"
+        );
+      }).join("");
+    };
+
+    passwordInput.addEventListener("input", render);
+    form.addEventListener("reset", () => setTimeout(render, 0));
+    render();
+  }
+
+  function guardPassword(form, password, confirmPassword) {
+    /** @returns {boolean} true se o envio pode seguir. */
+    if (!isPasswordValid(password)) {
+      const first = passwordIssues(password)[0];
+      alert(typeof t === "function" ? t(first.key) : "Senha fraca demais");
+      const input = form.querySelector('input[name="password"]');
+      if (input) input.focus();
+      return false;
+    }
+    if (password !== confirmPassword) {
+      alert(typeof t === "function" ? t("auth.passwords_dont_match") : "As senhas não coincidem");
+      return false;
+    }
+    return true;
+  }
+
   // Render cold-start can take 30-60s during deploys; retry long enough
   // to ride out the boot window instead of showing a hard 500.
   async function fetchWithRetry(url, payload) {
@@ -300,17 +380,15 @@ const Auth = (function() {
     }
     
     if (registerForm) {
+      mountPasswordChecklist(registerForm);
       registerForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
         const password = fd.get("password");
         const confirmPassword = fd.get("confirm_password");
-        
-        if (password !== confirmPassword) {
-          alert(typeof t === 'function' ? t('auth.passwords_dont_match') : 'As senhas n\u00e3o coincidem');
-          return;
-        }
-        
+
+        if (!guardPassword(e.target, password, confirmPassword)) return;
+
         try {
           await register(fd.get("email"), password);
           e.target.reset();
@@ -392,16 +470,14 @@ const Auth = (function() {
     // Upgrade account form handler
     const upgradeForm = document.getElementById("upgrade-form");
     if (upgradeForm) {
+      mountPasswordChecklist(upgradeForm);
       upgradeForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const email = upgradeForm.querySelector('input[name="email"]').value.trim();
         const password = upgradeForm.querySelector('input[name="password"]').value;
         const confirmPassword = upgradeForm.querySelector('input[name="confirm_password"]').value;
 
-        if (password !== confirmPassword) {
-          alert(typeof t === 'function' ? t('auth.passwords_dont_match') : 'As senhas não coincidem');
-          return;
-        }
+        if (!guardPassword(upgradeForm, password, confirmPassword)) return;
 
         try {
           await upgradeAccount(email, password);
@@ -433,6 +509,9 @@ const Auth = (function() {
     logout,
     loginAsGuest,
     upgradeAccount,
+    PASSWORD_RULES,
+    passwordIssues,
+    isPasswordValid,
     init,
   };
 })();

@@ -4,7 +4,14 @@ services:
     runtime: python
     rootDir: cronograma
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # O codigo faz imports planos (`from config import ...`), que so resolvem
+    # com o app/ no path. `uvicorn app.main:app` a partir da rootDir quebra com
+    # "No module named 'app'" — por isso o `cd app`, que e o comando que o
+    # servico real usa hoje.
+    # --forwarded-allow-ips="" impede o uvicorn de reescrever request.client.host
+    # com a entrada mais a esquerda do X-Forwarded-For, que e controlada pelo
+    # cliente e viraria a chave do rate limit. Ver middleware.get_client_ip.
+    startCommand: cd app && uvicorn main:app --host 0.0.0.0 --port $PORT --forwarded-allow-ips=""
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.12
