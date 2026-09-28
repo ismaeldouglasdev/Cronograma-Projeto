@@ -231,6 +231,47 @@ async def test_create_task_with_invalid_area(client, auth_headers):
 
 
 @pytest.mark.asyncio
+async def test_create_task_persists_meta_pomodoros(client, auth_headers):
+    """POST /tasks deve gravar meta_pomodoros.
+
+    Regressão: o schema TaskCreate aceitava o campo, mas criar_task não o
+    passava para o construtor Tasks() — o valor era aceito e descartado.
+    """
+    r = await client.post(
+        "/tasks",
+        json={
+            "titulo": "Com meta",
+            "data_entrega": str(date.today()),
+            "meta_pomodoros": 7,
+        },
+        headers=auth_headers,
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["meta_pomodoros"] == 7
+
+    r2 = await client.get("/tasks", headers=auth_headers)
+    persisted = next(t for t in r2.json() if t["id"] == r.json()["id"])
+    assert persisted["meta_pomodoros"] == 7
+
+
+@pytest.mark.asyncio
+async def test_create_task_without_data_entrega(client, auth_headers):
+    """POST /tasks sem data_entrega não pode estourar 500.
+
+    A coluna é NOT NULL e o schema marca o campo como opcional. Sem um valor
+    padrão no servidor, o INSERT recebia NULL e o banco devolvia
+    IntegrityError — 500 para o usuário, em vez de um 422 de validação.
+    """
+    r = await client.post(
+        "/tasks",
+        json={"titulo": "Sem prazo"},
+        headers=auth_headers,
+    )
+    assert r.status_code != 500, r.text
+    assert r.status_code == 422, r.text
+
+
+@pytest.mark.asyncio
 async def test_complete_task_awards_xp(client, auth_headers):
     r = await client.post(
         "/tasks",

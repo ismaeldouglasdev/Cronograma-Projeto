@@ -53,6 +53,7 @@ def criar_task(
         descricao=body.descricao,
         data_entrega=body.data_entrega,
         prioridade=body.prioridade,
+        meta_pomodoros=body.meta_pomodoros,
     )
     db.add(task)
     db.commit()
