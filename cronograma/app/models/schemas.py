@@ -93,7 +93,11 @@ class TaskCreate(BaseModel):
     area_id: Optional[int] = None
     titulo: str
     descricao: Optional[str] = None
-    data_entrega: Optional[date] = None
+    # Obrigatorio: a coluna tasks.data_entrega e NOT NULL e o form do front
+    # marca o campo como required. Declarar aqui como Optional deixava o
+    # INSERT enviar NULL e o banco responder IntegrityError (500) em vez de
+    # um 422 de validacao.
+    data_entrega: date
     prioridade: Optional[int] = None  # 1=baixa, 2=media, 3=alta
     meta_pomodoros: Optional[int] = None
 
