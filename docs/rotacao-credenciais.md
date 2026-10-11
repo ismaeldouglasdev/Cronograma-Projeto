@@ -2,6 +2,14 @@
 
 Checklist para trocar as senhas do Neon e do Supabase sem derrubar o app.
 
+> **STATUS: CONCLUÍDO em 2026-10-11.** Executado ponta a ponta:
+> - [x] Passo 1 — `JWT_SECRET` congelado (já existia; 64 chars, estável no Render) -> sem logout em massa.
+> - [x] Passo 2 — senha da role `neondb_owner` (branch `production`, Neon São Paulo) resetada e validada via `psql`.
+> - [~] Passo 3 — Supabase: **obsoleto**. Não há variável de Supabase no serviço de produção; apenas o Neon é usado.
+> - [x] Passo 4 — `DATABASE_URL` atualizada no Render via API (somente a senha trocou); deploy `dep-db5q2jnlk1mc73arv5j0` = live.
+> - [x] Passo 5 — verificado: `/` = 200 e `/auth/login` com credencial falsa = 401 (conexão ao DB OK).
+> - [x] Auto-deploy — provado: push em `main` gerou deploy `trigger=new_commit` -> live.
+
 > **Contexto:** em 2026-09-25 as connection strings de produção ficaram
 > hardcoded em `cronograma/migrate_to_pg.py` e `cronograma/import_to_supabase.py`
 > e foram publicadas no histórico do GitHub. O histórico foi reescrito com
