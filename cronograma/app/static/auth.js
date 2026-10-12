@@ -84,14 +84,11 @@ const Auth = (function() {
   }
 
   async function checkAuth() {
+    // Sem token não desistir: OAuth (Google) autentica por cookie httpOnly.
     const token = getToken();
-    if (!token) {
-      showLoginScreen();
-      return;
-    }
     try {
       let response = await fetch('/auth/check', {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
       });
       if (!response.ok) {
         const newToken = await refreshSession();
