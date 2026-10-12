@@ -134,7 +134,6 @@ def register(
             "action": "register",
         },
     )
-
     return TokenResponse(access_token=access_token)
 
 
@@ -384,7 +383,283 @@ def verify_email_post(body: VerifyEmailRequest, db: Session = Depends(get_db)):
         return {"success": False, "message": "Erro ao verificar email"}
 
 
+# ─── Google OAuth ─────────────────────────────────────────────────────────────
+
+@router.get("/google")
+def google_auth(request: Request, response: Response):
+    """Initiate Google OAuth (Auth Code + PKCE + state)."""
+    from config import GOOGLE_CLIENT_ID, GOOGLE_REDIRECT_URI, GOOGLE_OAUTH_SCOPES, APP_URL
+    from services.auth_service import generate_pkce_pair, generate_state
+
+    code_verifier, code_challenge = generate_pkce_pair()
+    state = generate_state()
+
+    params = {
+        "client_id": GOOGLE_CLIENT_ID,
+        "redirect_uri": GOOGLE_REDIRECT_URI,
+        "response_type": "code",
+        "scope": " ".join(GOOGLE_OAUTH_SCOPES),
+        "state": state,
+        "code_challenge": code_challenge,
+        "code_challenge_method": "S256",
+        "access_type": "online",
+        "prompt": "select_account",
+    }
+    from urllib.parse import urlencode
+
+    auth_url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
+
+    from fastapi.responses import RedirectResponse
+
+    # IMPORTANTE: os cookies precisam ser setados no MESMO objeto retornado.
+    # Setá-los no `response` injetado é silenciosamente descartado quando
+    # retornamos um RedirectResponse (comportamento do FastAPI), o que fazia o
+    # callback falhar sempre com `oauth_invalid_state`.
+    is_secure = os.environ.get("ENVIRONMENT", "development") == "production"
+    resp = RedirectResponse(url=auth_url)
+    resp.set_cookie(
+        key="google_oauth_state",
+        value=state,
+        max_age=600,
+        httponly=True,
+        secure=is_secure,
+        samesite="lax",
+    )
+    resp.set_cookie(
+        key="google_oauth_verifier",
+        value=code_verifier,
+        max_age=600,
+        httponly=True,
+        secure=is_secure,
+        samesite="lax",
+    )
+    return resp
+
+
+@router.get("/google/callback")
+def google_callback(
+    request: Request,
+    response: Response,
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """Handle Google OAuth callback. Exchanges code, creates/links user, sets session."""
+    from config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, APP_URL
+    from fastapi.responses import RedirectResponse
+    from datetime import datetime, timezone
+
+    if not code or not state:
+        return RedirectResponse(url=f"{APP_URL}/?error=oauth_missing_params")
+
+    stored_state = request.cookies.get("google_oauth_state")
+    stored_verifier = request.cookies.get("google_oauth_verifier")
+
+    if not stored_state or not stored_verifier or stored_state != state:
+        return RedirectResponse(url=f"{APP_URL}/?error=oauth_invalid_state")
+
+    # Exchange code
+    try:
+        import httpx
+
+        token_resp = httpx.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "code": code,
+                "grant_type": "authorization_code",
+                "redirect_uri": GOOGLE_REDIRECT_URI,
+                "code_verifier": stored_verifier,
+            },
+            timeout=10.0,
+        )
+    except Exception as e:
+        auth_log.error("Google token exchange error", extra={"error": str(e)})
+        return RedirectResponse(url=f"{APP_URL}/?error=oauth_token_exchange_failed")
+
+    if token_resp.status_code != 200:
+        auth_log.error(
+            "Google token exchange failed", extra={"status": token_resp.status_code}
+        )
+        return RedirectResponse(url=f"{APP_URL}/?error=oauth_token_exchange_failed")
+
+    token_data = token_resp.json()
+    access_token_google = token_data.get("access_token")
+
+    # Get userinfo
+    try:
+        import httpx
+
+        userinfo_resp = httpx.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {access_token_google}"},
+            timeout=10.0,
+        )
+    except Exception as e:
+        auth_log.error("Google userinfo error", extra={"error": str(e)})
+        return RedirectResponse(url=f"{APP_URL}/?error=oauth_userinfo_failed")
+
+    if userinfo_resp.status_code != 200:
+        return RedirectResponse(url=f"{APP_URL}/?error=oauth_userinfo_failed")
+
+    info = userinfo_resp.json()
+    email = info.get("email")
+    if not email:
+        return RedirectResponse(url=f"{APP_URL}/?error=oauth_missing_email")
+
+    google_sub = info.get("sub")
+    google_name = info.get("name") or ""
+    google_picture = info.get("picture") or ""
+    email_verified = bool(info.get("email_verified", False))
+
+    # Find or create user
+    user = db.query(User).filter(User.email == email).first()
+
+    if not user:
+        # Create new OAuth user
+        user = User(
+            email=email,
+            password_hash=None,
+            created_at=datetime.now(timezone.utc).isoformat(),
+            is_verified=email_verified or True,
+            verification_token=None,
+            is_guest=False,
+            auth_provider="google",
+            google_provider_id=google_sub,
+            email_verified_at=datetime.now(timezone.utc).isoformat()
+            if email_verified
+            else None,
+            display_name=google_name or email.split("@")[0],
+            name=google_name or email.split("@")[0],
+            avatar_url=google_picture or None,
+            avatar_type="google" if google_picture else None,
+            avatar_source="google" if google_picture else None,
+            profile_completed=False,
+            has_seen_tutorial=False,
+            onboarded_at=None,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        auth_log.info(
+            "User created via Google OAuth",
+            extra={"user_id": user.id, "email": user.email, "action": "google_signup"},
+        )
+    else:
+        # Account linking or login
+        updated = False
+        if not user.auth_provider or user.auth_provider == "password":
+            user.auth_provider = "both"
+            updated = True
+        elif user.auth_provider == "google":
+            user.auth_provider = "google"
+        if not user.google_provider_id:
+            user.google_provider_id = google_sub
+            updated = True
+        if email_verified and not user.email_verified_at:
+            user.email_verified_at = datetime.now(timezone.utc).isoformat()
+            updated = True
+        if not user.avatar_url and google_picture:
+            user.avatar_url = google_picture
+            user.avatar_type = "google"
+            user.avatar_source = "google"
+            updated = True
+        if not user.name and google_name:
+            user.name = google_name
+            user.display_name = google_name
+            updated = True
+        if not user.is_verified and email_verified:
+            user.is_verified = True
+            updated = True
+        if updated:
+            db.commit()
+            db.refresh(user)
+        auth_log.info(
+            "User logged in via Google OAuth",
+            extra={"user_id": user.id, "email": user.email, "action": "google_login"},
+        )
+
+    # Issue tokens
+    from services.auth_service import create_access_token, create_refresh_token
+
+    access_token = create_access_token(user.id, is_guest=bool(user.is_guest))
+    refresh_token = create_refresh_token(user.id)
+
+    # IMPORTANTE: os cookies (tanto o delete dos cookies OAuth temporários quanto
+    # o set de access/refresh) precisam ficar no MESMO objeto retornado; setá-los
+    # no `response` injetado é descartado ao retornar um RedirectResponse.
+    redirect_url = f"{APP_URL}/"
+    is_secure = os.environ.get("ENVIRONMENT", "development") == "production"
+    resp = RedirectResponse(url=redirect_url)
+    resp.delete_cookie("google_oauth_state", httponly=True, secure=is_secure, samesite="lax")
+    resp.delete_cookie("google_oauth_verifier", httponly=True, secure=is_secure, samesite="lax")
+    _set_auth_cookies(resp, access_token, refresh_token)
+    return resp
+
+
 # ─── Dependências ─────────────────────────────────────────────────────────────
 
 # get_db: from config (imported below)
 # get_current_user: from services.auth_service (imported below)
+
+@router.get("/me")
+def get_me(current_user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == current_user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    return {
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "display_name": user.display_name,
+        "avatar_url": user.avatar_url,
+        "avatar_type": user.avatar_type,
+        "avatar_source": user.avatar_source,
+        # NULL (contas antigas, anteriores ao campo) => None, para NÃO forçar
+        # onboarding. Contas novas (ex.: via Google) gravam False explicitamente.
+        "profile_completed": bool(user.profile_completed) if user.profile_completed is not None else None,
+        "has_seen_tutorial": bool(user.has_seen_tutorial) if user.has_seen_tutorial is not None else None,
+        "auth_provider": user.auth_provider or "password",
+        "is_guest": bool(user.is_guest) if user.is_guest is not None else False,
+    }
+
+@router.patch("/profile")
+def update_profile(
+    data: dict,
+    current_user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == current_user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    name = data.get("name") or data.get("display_name")
+    if name is not None:
+        user.name = name
+        user.display_name = name
+    if data.get("avatar_url") is not None:
+        user.avatar_url = data.get("avatar_url")
+    if data.get("avatar_source") is not None:
+        user.avatar_source = data.get("avatar_source")
+    if data.get("avatar_type") is not None:
+        user.avatar_type = data.get("avatar_type")
+    if data.get("has_seen_tutorial") is not None:
+        user.has_seen_tutorial = bool(data.get("has_seen_tutorial"))
+    # Mark profile completed if not explicitly false? Keep existing behavior: setting profile fields implies completion
+    user.profile_completed = True
+    from datetime import datetime, timezone
+
+    if not user.onboarded_at:
+        user.onboarded_at = datetime.now(timezone.utc).isoformat()
+    db.commit()
+    db.refresh(user)
+    return {
+        "id": user.id,
+        "name": user.name,
+        "display_name": user.display_name,
+        "avatar_url": user.avatar_url,
+        "avatar_source": user.avatar_source,
+        "avatar_type": user.avatar_type,
+        "profile_completed": bool(user.profile_completed),
+        "has_seen_tutorial": bool(getattr(user, "has_seen_tutorial", False)),
+    }

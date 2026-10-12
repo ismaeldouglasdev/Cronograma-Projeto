@@ -32,3 +32,13 @@ services:
       # Protege /admin/* e /coins/add. Vazio = endpoints admin bloqueados.
       - key: MIGRATION_SECRET
         generateValue: true
+      # Google OAuth — crie o client (Web application) no Google Cloud Console e
+      # autorize o redirect URI abaixo. Valores preenchidos no dashboard do Render.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        value: https://cronograma-projeto.onrender.com/auth/google/callback
+      - key: APP_URL
+        value: https://cronograma-projeto.onrender.com

@@ -95,6 +95,19 @@ def run_sqlite_migrations(engine) -> None:
         add_column_if_not_exists(conn, "users", "last_freeze_grant_date", "VARCHAR(20)")
         add_column_if_not_exists(conn, "users", "coins", "INTEGER DEFAULT 0")
         add_column_if_not_exists(conn, "users", "is_guest", "BOOLEAN DEFAULT 0")
+        # OAuth / Profile fields (SQLite)
+        add_column_if_not_exists(conn, "users", "auth_provider", "TEXT DEFAULT 'password'")
+        add_column_if_not_exists(conn, "users", "google_provider_id", "TEXT")
+        add_column_if_not_exists(conn, "users", "email_verified_at", "TEXT")
+        add_column_if_not_exists(conn, "users", "display_name", "TEXT")
+        add_column_if_not_exists(conn, "users", "name", "TEXT")
+        add_column_if_not_exists(conn, "users", "avatar_url", "TEXT")
+        add_column_if_not_exists(conn, "users", "avatar_type", "TEXT")
+        add_column_if_not_exists(conn, "users", "avatar_source", "TEXT")
+        # Sem DEFAULT de proposito: usuarios antigos ficam NULL (nao forcar onboarding).
+        add_column_if_not_exists(conn, "users", "profile_completed", "INTEGER")
+        add_column_if_not_exists(conn, "users", "has_seen_tutorial", "INTEGER")
+        add_column_if_not_exists(conn, "users", "onboarded_at", "TEXT")
         try:
             conn.execute(text("ALTER TABLE tasks ADD COLUMN duracao_minutos INTEGER"))
             conn.commit()
@@ -260,16 +273,54 @@ def run_postgres_migrations(engine) -> None:
                     extra={"table": table, "column": column, "error": str(e)},
                 )
         try:
-            conn.execute(
-                text(
-                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_guest BOOLEAN DEFAULT FALSE"
-                )
-            )
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_guest BOOLEAN DEFAULT FALSE"))
         except Exception as e:
-            log.warning(
-                "Migration add is_guest failed",
-                extra={"error": str(e)},
-            )
+            log.warning("Migration add column failed", extra={"column": "is_guest", "table": "users", "error": str(e)})
+        # OAuth / Profile fields (Postgres)
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20) DEFAULT 'password'"))
+        except Exception as e:
+            log.warning("Migration add column failed", extra={"column": "auth_provider", "table": "users", "error": str(e)})
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS google_provider_id VARCHAR(255)"))
+        except Exception as e:
+            log.warning("Migration add column failed", extra={"column": "google_provider_id", "table": "users", "error": str(e)})
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at VARCHAR(40)"))
+        except Exception as e:
+            log.warning("Migration add column failed", extra={"column": "email_verified_at", "table": "users", "error": str(e)})
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name VARCHAR(255)"))
+        except Exception as e:
+            log.warning("Migration add column failed", extra={"column": "display_name", "table": "users", "error": str(e)})
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255)"))
+        except Exception as e:
+            log.warning("Migration add column failed", extra={"column": "name", "table": "users", "error": str(e)})
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(512)"))
+        except Exception as e:
+            log.warning("Migration add column failed", extra={"column": "avatar_url", "table": "users", "error": str(e)})
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_type VARCHAR(20)"))
+        except Exception as e:
+            log.warning("Migration add column failed", extra={"column": "avatar_type", "table": "users", "error": str(e)})
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_source VARCHAR(20)"))
+        except Exception as e:
+            log.warning("Migration add column failed", extra={"column": "avatar_source", "table": "users", "error": str(e)})
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_completed BOOLEAN"))
+        except Exception as e:
+            log.warning("Migration add column failed", extra={"column": "profile_completed", "table": "users", "error": str(e)})
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS has_seen_tutorial BOOLEAN"))
+        except Exception as e:
+            log.warning("Migration add column failed", extra={"column": "has_seen_tutorial", "table": "users", "error": str(e)})
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarded_at VARCHAR(40)"))
+        except Exception as e:
+            log.warning("Migration add column failed", extra={"column": "onboarded_at", "table": "users", "error": str(e)})
 
 
 def run_migrations(engine) -> None:

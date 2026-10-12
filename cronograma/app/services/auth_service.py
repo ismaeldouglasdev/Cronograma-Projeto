@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import bcrypt as _bcrypt
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from jose.exceptions import ExpiredSignatureError
@@ -61,12 +61,14 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
+        if not hashed_password:
+            return False
         return _bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
     except (ValueError, TypeError):
         pass
 
     # Legacy accounts created before bcrypt migration stored SHA-256 hex
-    if re.fullmatch(r"[0-9a-f]{64}", hashed_password):
+    if hashed_password and re.fullmatch(r"[0-9a-f]{64}", hashed_password):
         return hashlib.sha256(plain_password.encode()).hexdigest() == hashed_password
 
     auth_log.error(
@@ -146,6 +148,26 @@ def verify_refresh_token(refresh_token: str) -> tuple[bool, int]:
         return False, 0
 
 
+# ─── OAuth (Google) ────────────────────────────────────────────────────────────
+
+def generate_pkce_pair() -> tuple[str, str]:
+    """Return (code_verifier, code_challenge) using S256."""
+    import base64
+    import hashlib
+    import secrets
+
+    code_verifier = secrets.token_urlsafe(64)
+    digest = hashlib.sha256(code_verifier.encode("utf-8")).digest()
+    code_challenge = base64.urlsafe_b64encode(digest).decode("utf-8").rstrip("=")
+    return code_verifier, code_challenge
+
+
+def generate_state() -> str:
+    import secrets
+
+    return secrets.token_urlsafe(32)
+
+
 def verify_token(token: str) -> tuple[bool, int]:
     """Verify a JWT access token.
 
@@ -204,12 +226,14 @@ def verify_token(token: str) -> tuple[bool, int]:
 
 
 def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
 ) -> int:
-    if not credentials:
+    token = credentials.credentials if credentials else request.cookies.get("access_token")
+    if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    valid, user_id = verify_token(credentials.credentials)
+    valid, user_id = verify_token(token)
     if not valid:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     return user_id

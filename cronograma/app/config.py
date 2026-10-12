@@ -84,6 +84,16 @@ CORS_ORIGINS: list[str] = [
     "http://localhost:3000",
 ]
 
+# ─── Google OAuth ─────────────────────────────────────────────────────────────
+
+GOOGLE_CLIENT_ID: str = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET: str = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REDIRECT_URI: str = os.environ.get(
+    "GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback"
+)
+APP_URL: str = os.environ.get("APP_URL", "http://localhost:8000")
+GOOGLE_OAUTH_SCOPES: list[str] = ["openid", "email", "profile"]
+
 # ─── Coins ────────────────────────────────────────────────────────────────────
 
 FREEZE_COST: int = 10

@@ -5,6 +5,9 @@ FastAPI setup, startup event, middleware, routers.
 A lógica de negócio ficou em services/, models/, routes/.
 """
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 

@@ -889,12 +889,13 @@ function getPageTitle(tabName) {
     'horarios': _t('pages.horarios'),
     'tasks': _t('pages.tarefas'),
     'sessoes': _t('pages.sessoes'),
-    'resumo': _t('pages.resumo')
+    'resumo': _t('pages.resumo'),
+    'perfil': _t('pages.perfil')
   };
   return titles[tabName] || tabName;
 }
 
-const VALID_TABS = ['areas', 'foco', 'gamificacao', 'horarios', 'tasks', 'sessoes', 'resumo'];
+const VALID_TABS = ['areas', 'foco', 'gamificacao', 'perfil', 'horarios', 'tasks', 'sessoes', 'resumo'];
 
 function switchToTab(tabName) {
   // Update all tab/sidebar-link elements
@@ -927,6 +928,9 @@ function switchToTab(tabName) {
   }
   if (tabName === 'resumo') {
     loadResumo();
+  }
+  if (tabName === 'perfil') {
+    initProfileTab();
   }
 
   // Sync URL hash (skip when hash already matches to avoid redundant history entries)
@@ -1158,7 +1162,184 @@ async function init() {
 
 async function initApp() {
   updateGuestUI();
+  try {
+    const prof = await fetchProfile();
+    applyProfileToUI(prof);
+    // Enforce onboarding if not completed
+    if (prof && prof.profile_completed === false) {
+      const perfilBtn = document.querySelector('.sidebar-link[data-tab="perfil"]');
+      if (perfilBtn) {
+        setTimeout(() => perfilBtn.click(), 0);
+      }
+    } else if (prof && prof.profile_completed === true && !prof.has_seen_tutorial) {
+      setTimeout(() => {
+        if (window.startTutorial) window.startTutorial();
+      }, 400);
+    }
+  } catch (e) {}
   return init();
+}
+
+
+
+// ============================================
+// PROFILE
+// ============================================
+const PROFILE_PRESET_AVATARS = [
+  '/static/avatars/avatar1.png','/static/avatars/avatar2.png','/static/avatars/avatar3.png','/static/avatars/avatar4.png','/static/avatars/avatar5.png',
+  '/static/avatars/avatar6.png','/static/avatars/avatar7.png','/static/avatars/avatar8.png','/static/avatars/avatar9.png','/static/avatars/avatar10.png',
+  '/static/avatars/avatar11.png','/static/avatars/avatar12.png','/static/avatars/avatar13.png','/static/avatars/avatar14.png','/static/avatars/avatar15.png',
+  '/static/avatars/avatar16.png','/static/avatars/avatar17.png','/static/avatars/avatar18.png','/static/avatars/avatar19.png','/static/avatars/avatar20.png'
+];
+
+let currentProfile = null;
+let selectedAvatarUrl = null;
+let selectedAvatarSource = 'preset';
+
+async function fetchProfile() {
+  try {
+    currentProfile = await get('/auth/me');
+    return currentProfile;
+  } catch (e) {
+    currentProfile = null;
+    return null;
+  }
+}
+
+function applyProfileToUI(profile) {
+  if (!profile) return;
+  const name = profile.name || profile.display_name || profile.email;
+  const avatar = profile.avatar_url;
+  // Update sidebar user area if exists? Maybe add small avatar/name
+  const sidebar = document.querySelector('.sidebar-user');
+  if (sidebar && !sidebar.querySelector('.sidebar-user-avatar')) {
+    const avatarEl = document.createElement('div');
+    avatarEl.className = 'sidebar-user-avatar';
+    avatarEl.style.cssText = 'display:flex;align-items:center;justify-content:center;margin-bottom:8px;';
+    const img = document.createElement('img');
+    img.src = avatar || '/static/avatars/avatar1.png';
+    img.alt = 'Avatar';
+    img.style.cssText = 'width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid var(--border)';
+    avatarEl.appendChild(img);
+    sidebar.insertBefore(avatarEl, sidebar.firstChild);
+  } else if (sidebar && sidebar.querySelector('.sidebar-user-avatar img')) {
+    sidebar.querySelector('.sidebar-user-avatar img').src = avatar || '/static/avatars/avatar1.png';
+  }
+  if (sidebar && name && !sidebar.querySelector('.sidebar-user-name')) {
+    const nameEl = document.createElement('div');
+    nameEl.className = 'sidebar-user-name';
+    nameEl.textContent = name;
+    nameEl.style.cssText = 'text-align:center;font-size:0.85rem;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;';
+    sidebar.appendChild(nameEl);
+  } else if (sidebar && sidebar.querySelector('.sidebar-user-name')) {
+    sidebar.querySelector('.sidebar-user-name').textContent = name;
+  }
+}
+
+function renderAvatarGrid() {
+  const grid = document.getElementById('avatar-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  PROFILE_PRESET_AVATARS.forEach(url => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.style.cssText = 'border:1px solid var(--border);border-radius:8px;padding:4px;background:var(--card-bg);cursor:pointer;';
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.cssText = 'width:48px;height:48px;border-radius:6px;object-fit:cover;';
+    btn.appendChild(img);
+    btn.onclick = () => selectAvatar(url, 'preset', 'preset');
+    grid.appendChild(btn);
+  });
+}
+
+function selectAvatar(url, source, type) {
+  selectedAvatarUrl = url;
+  selectedAvatarSource = source;
+  const preview = document.getElementById('profile-avatar-preview');
+  if (preview) {
+    preview.src = url;
+    preview.style.display = 'block';
+  }
+  const urlInput = document.getElementById('profile-avatar-url');
+  if (urlInput) urlInput.value = url || '';
+  const srcInput = document.getElementById('profile-avatar-source');
+  if (srcInput) srcInput.value = source || 'preset';
+  const typeInput = document.getElementById('profile-avatar-type');
+  if (typeInput) typeInput.value = type || source || 'preset';
+}
+
+async function handleProfileSubmit(e) {
+  e.preventDefault();
+  const nameInput = document.getElementById('profile-name');
+  const name = nameInput ? nameInput.value.trim() : '';
+  if (name.length < 2) {
+    const t = window.t || ((s)=>s);
+    alert(t('perfil.nome_obrigatorio'));
+    return;
+  }
+  try {
+    await patch('/auth/profile', {
+      name: name,
+      display_name: name,
+      avatar_url: selectedAvatarUrl,
+      avatar_source: selectedAvatarSource,
+      avatar_type: selectedAvatarSource,
+    });
+    const t = window.t || ((s)=>s);
+    if (typeof showToast === 'function') showToast(t('perfil.perfil_salvo'), 'success');
+    await fetchProfile();
+    applyProfileToUI(currentProfile);
+    // Switch to first tab
+    const first = document.querySelector('.sidebar-link');
+    if (first) first.click();
+  } catch (err) {
+    alert(err.message || 'Erro ao salvar perfil');
+  }
+}
+
+function initProfileTab() {
+  renderAvatarGrid();
+  const form = document.getElementById('profile-form');
+  if (form && !form.dataset.bound) {
+    form.dataset.bound = '1';
+    form.addEventListener('submit', handleProfileSubmit);
+  }
+  const useGoogleBtn = document.getElementById('profile-use-google');
+  if (useGoogleBtn && !useGoogleBtn.dataset.bound) {
+    useGoogleBtn.dataset.bound = '1';
+    useGoogleBtn.addEventListener('click', () => {
+      if (currentProfile && currentProfile.avatar_url) {
+        selectAvatar(currentProfile.avatar_url, 'google', 'google');
+      }
+    });
+  }
+  const resetBtn = document.getElementById('profile-reset');
+  if (resetBtn && !resetBtn.dataset.bound) {
+    resetBtn.dataset.bound = '1';
+    resetBtn.addEventListener('click', () => {
+      selectedAvatarUrl = null;
+      selectedAvatarSource = 'preset';
+      const preview = document.getElementById('profile-avatar-preview');
+      if (preview) preview.style.display = 'none';
+    });
+  }
+  const showTutBtn = document.getElementById('profile-show-tutorial');
+  if (showTutBtn && !showTutBtn.dataset.bound) {
+    showTutBtn.dataset.bound = '1';
+    showTutBtn.addEventListener('click', () => {
+      if (window.startTutorial) window.startTutorial();
+    });
+  }
+  // Fill form if profile loaded
+  if (currentProfile) {
+    const nameInput = document.getElementById('profile-name');
+    if (nameInput) nameInput.value = currentProfile.name || currentProfile.display_name || '';
+    if (currentProfile.avatar_url) {
+      selectAvatar(currentProfile.avatar_url, currentProfile.avatar_source || 'google', currentProfile.avatar_type || 'google');
+      if (useGoogleBtn) useGoogleBtn.style.display = 'inline-flex';
+    }
+  }
 }
 
 window.initApp = initApp;

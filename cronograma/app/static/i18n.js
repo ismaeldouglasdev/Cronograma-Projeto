@@ -86,6 +86,8 @@ const i18n = {
       register_error: 'Erro ao criar conta',
       verify_error: 'Erro ao verificar email',
       ou: 'ou',
+      google_signin: "Continuar com Google",
+      google_signup: "Continuar com Google",
       guest_btn: 'Entrar como convidado',
       guest_error: 'Erro ao entrar como convidado',
       guest_welcome: 'Bem-vindo como convidado! Voc\u00ea pode criar uma conta permanente para salvar seu progresso.',
@@ -106,12 +108,26 @@ const i18n = {
       sair: 'Sair',
       guest_mode: 'Modo convidado',
       save_progress: 'Salvar progresso',
+      perfil: 'Perfil',
     },
 
     upgrade: {
       title: 'Salvar progresso',
       info: 'Crie uma conta permanente para salvar seu progresso e continuar de onde parou.',
       btn: 'Criar conta e salvar',
+    },
+    perfil: {
+      subtitle: 'Configure seu perfil básico',
+      dados: 'Dados do Perfil',
+      nome: 'Nome',
+      avatar: 'Avatar',
+      usar_google: 'Manter foto do Google',
+      avatar_hint: 'Escolha um avatar abaixo ou mantenha a foto do Google',
+      salvar: 'Salvar Perfil',
+      reset: 'Limpar seleção',
+      ver_tutorial: 'Ver tutorial',
+      perfil_salvo: 'Perfil salvo com sucesso!',
+      nome_obrigatorio: 'Nome é obrigatório (mín. 2 caracteres)',
     },
 
     // Page titles
@@ -123,6 +139,7 @@ const i18n = {
       tarefas: 'Tarefas',
       sessoes: 'Sess\u00f5es',
       resumo: 'Resumo',
+      perfil: 'Perfil',
     },
 
     // Pomodoro / Foco
@@ -477,6 +494,8 @@ btn_iniciar: 'Iniciar',
       register_error: 'Error creating account',
       verify_error: 'Error verifying email',
       or: 'or',
+      google_signin: 'Continue with Google',
+      google_signup: 'Continue with Google',
       guest_btn: 'Continue as guest',
       guest_error: 'Error joining as guest',
       guest_welcome: 'Welcome as guest! You can create a permanent account now to save your progress.',
@@ -496,12 +515,27 @@ btn_iniciar: 'Iniciar',
       sair: 'Logout',
       guest_mode: 'Guest mode',
       save_progress: 'Save progress',
+      perfil: 'Profile',
     },
 
     upgrade: {
       title: 'Save progress',
       info: 'Create a permanent account to save your progress and continue where you left off.',
       btn: 'Create account and save',
+    },
+
+    perfil: {
+      subtitle: 'Set up your basic profile',
+      dados: 'Profile Data',
+      nome: 'Name',
+      avatar: 'Avatar',
+      usar_google: 'Keep Google photo',
+      avatar_hint: 'Pick an avatar below or keep your Google photo',
+      salvar: 'Save Profile',
+      reset: 'Clear selection',
+      ver_tutorial: 'View tutorial',
+      perfil_salvo: 'Profile saved successfully!',
+      nome_obrigatorio: 'Name is required (min. 2 characters)',
     },
 
     pages: {
@@ -512,6 +546,7 @@ btn_iniciar: 'Iniciar',
       tarefas: 'Tasks',
       sessoes: 'Sessions',
       resumo: 'Summary',
+      perfil: 'Profile',
     },
 
     foco: {
