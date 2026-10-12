@@ -503,6 +503,69 @@ main {
   background: var(--accent-hover);
 }
 
+/* Perfil: override compacto do .form-card button (global força width:100% + min-height) */
+#perfil .form-card button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  gap: 0.5rem;
+}
+
+#perfil .form-card button[type="submit"] {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  font-weight: 600;
+}
+
+#perfil .form-card button[type="submit"]:hover {
+  background: var(--accent-hover);
+}
+
+#perfil .form-card button[type="button"] {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-weight: 500;
+}
+
+#perfil .form-card button[type="button"]:hover {
+  background: var(--bg-card);
+  border-color: var(--accent);
+}
+
+/* Grade de avatares */
+#perfil #avatar-grid button {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+#perfil #avatar-grid button:hover {
+  border-color: var(--accent);
+  background: var(--bg-card);
+}
+
+#perfil #avatar-grid img {
+  width: 48px;
+  height: 48px;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
 .list {
   list-style: none;
   padding: 0;

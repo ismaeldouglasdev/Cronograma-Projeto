@@ -103,7 +103,7 @@ async def security_headers_middleware(request, call_next):
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
         "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
-        "img-src 'self' data: blob:; "
+        "img-src 'self' data: blob: https:; "
         "connect-src 'self'; "
         "font-src 'self' https://fonts.gstatic.com; "
         "frame-ancestors 'none'"
