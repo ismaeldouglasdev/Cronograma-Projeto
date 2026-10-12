@@ -1366,6 +1366,31 @@ function showUpgradeForm(visible) {
 window.showUpgradeForm = showUpgradeForm;
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Contrato do backend: falhas no OAuth voltam como /app?error=oauth_*.
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get("error");
+    if (err) {
+      const keys = {
+        oauth_missing_params: "auth.oauth_missing_params",
+        oauth_invalid_state: "auth.oauth_invalid_state",
+        oauth_token_exchange_failed: "auth.oauth_token_exchange_failed",
+        oauth_userinfo_failed: "auth.oauth_userinfo_failed",
+        oauth_missing_email: "auth.oauth_missing_email",
+        oauth_not_configured: "auth.oauth_not_configured",
+      };
+      const key = keys[err] || "auth.login_error";
+      const msg = typeof t === "function" ? t(key) : err;
+      if (typeof showToast === "function") showToast(msg, "error");
+      params.delete("error");
+      const qs = params.toString();
+      history.replaceState(
+        null,
+        "",
+        window.location.pathname + (qs ? "?" + qs : "") + window.location.hash
+      );
+    }
+  } catch (_) {}
 });
 
 async function comprarFreeze() {

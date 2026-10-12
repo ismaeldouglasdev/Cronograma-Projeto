@@ -450,13 +450,13 @@ def google_callback(
     from datetime import datetime, timezone
 
     if not code or not state:
-        return RedirectResponse(url=f"{APP_URL}/?error=oauth_missing_params")
+        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_missing_params")
 
     stored_state = request.cookies.get("google_oauth_state")
     stored_verifier = request.cookies.get("google_oauth_verifier")
 
     if not stored_state or not stored_verifier or stored_state != state:
-        return RedirectResponse(url=f"{APP_URL}/?error=oauth_invalid_state")
+        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_invalid_state")
 
     # Exchange code
     try:
@@ -476,13 +476,13 @@ def google_callback(
         )
     except Exception as e:
         auth_log.error("Google token exchange error", extra={"error": str(e)})
-        return RedirectResponse(url=f"{APP_URL}/?error=oauth_token_exchange_failed")
+        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_token_exchange_failed")
 
     if token_resp.status_code != 200:
         auth_log.error(
             "Google token exchange failed", extra={"status": token_resp.status_code}
         )
-        return RedirectResponse(url=f"{APP_URL}/?error=oauth_token_exchange_failed")
+        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_token_exchange_failed")
 
     token_data = token_resp.json()
     access_token_google = token_data.get("access_token")
@@ -498,15 +498,15 @@ def google_callback(
         )
     except Exception as e:
         auth_log.error("Google userinfo error", extra={"error": str(e)})
-        return RedirectResponse(url=f"{APP_URL}/?error=oauth_userinfo_failed")
+        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_userinfo_failed")
 
     if userinfo_resp.status_code != 200:
-        return RedirectResponse(url=f"{APP_URL}/?error=oauth_userinfo_failed")
+        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_userinfo_failed")
 
     info = userinfo_resp.json()
     email = info.get("email")
     if not email:
-        return RedirectResponse(url=f"{APP_URL}/?error=oauth_missing_email")
+        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_missing_email")
 
     google_sub = info.get("sub")
     google_name = info.get("name") or ""
@@ -589,7 +589,7 @@ def google_callback(
     # IMPORTANTE: os cookies (tanto o delete dos cookies OAuth temporários quanto
     # o set de access/refresh) precisam ficar no MESMO objeto retornado; setá-los
     # no `response` injetado é descartado ao retornar um RedirectResponse.
-    redirect_url = f"{APP_URL}/"
+    redirect_url = f"{APP_URL}/app"
     is_secure = os.environ.get("ENVIRONMENT", "development") == "production"
     resp = RedirectResponse(url=redirect_url)
     resp.delete_cookie("google_oauth_state", httponly=True, secure=is_secure, samesite="lax")

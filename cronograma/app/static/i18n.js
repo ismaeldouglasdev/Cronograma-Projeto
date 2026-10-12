@@ -93,6 +93,12 @@ const i18n = {
       guest_welcome: 'Bem-vindo como convidado! Voc\u00ea pode criar uma conta permanente para salvar seu progresso.',
       upgrade_error: 'Erro ao atualizar conta',
       upgrade_success: 'Conta atualizada com sucesso!',
+      oauth_missing_params: 'N\u00e3o foi poss\u00edvel concluir o login com Google. Tente novamente.',
+      oauth_invalid_state: 'Sess\u00e3o de login expirada. Tente entrar com Google novamente.',
+      oauth_token_exchange_failed: 'Falha ao validar o login com Google. Tente novamente.',
+      oauth_userinfo_failed: 'N\u00e3o conseguimos obter seus dados do Google. Tente novamente.',
+      oauth_missing_email: 'Sua conta Google n\u00e3o retornou um e-mail. Tente outra conta.',
+      oauth_not_configured: 'O login com Google n\u00e3o est\u00e1 configurado neste servidor.',
     },
 
     // Sidebar
@@ -501,6 +507,12 @@ btn_iniciar: 'Iniciar',
       guest_welcome: 'Welcome as guest! You can create a permanent account now to save your progress.',
       upgrade_error: 'Error upgrading account',
       upgrade_success: 'Account updated successfully!',
+      oauth_missing_params: 'Could not complete Google sign-in. Please try again.',
+      oauth_invalid_state: 'Sign-in session expired. Please try Google sign-in again.',
+      oauth_token_exchange_failed: 'Failed to validate Google sign-in. Please try again.',
+      oauth_userinfo_failed: "We couldn't get your Google data. Please try again.",
+      oauth_missing_email: 'Your Google account did not return an email. Try another account.',
+      oauth_not_configured: 'Google sign-in is not configured on this server.',
     },
 
     sidebar: {
