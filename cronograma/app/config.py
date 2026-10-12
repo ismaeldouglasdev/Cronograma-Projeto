@@ -22,7 +22,14 @@ DATABASE_URL: str = os.environ.get("DATABASE_URL", "sqlite:///./cronograma.db")
 if "sqlite" in DATABASE_URL:
     engine_kwargs: dict = {"connect_args": {"check_same_thread": False}}
 else:
-    engine_kwargs = {}
+    # Neon (Postgres serverless) encerra conexões ociosas: valida no checkout
+    # (pool_pre_ping) e recicla antes do timeout de idle (pool_recycle).
+    engine_kwargs = {
+        "pool_pre_ping": True,
+        "pool_recycle": 180,
+        "pool_size": 5,
+        "max_overflow": 5,
+    }
 
 engine = create_engine(DATABASE_URL, **engine_kwargs)
 Base = declarative_base()
