@@ -503,6 +503,21 @@ main {
   background: var(--accent-hover);
 }
 
+/* Perfil: neutraliza o grid 3-col de .form-card (>=480px) que espalhava inputs/avatar-grid em telas grandes */
+#perfil .form-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  grid-template-columns: none;
+  width: 100%;
+  max-width: 640px;
+}
+
+#perfil #avatar-grid {
+  width: 100%;
+  max-width: 320px;
+}
+
 /* Perfil: override compacto do .form-card button (global força width:100% + min-height) */
 #perfil .form-card button {
   display: inline-flex;
