@@ -10,6 +10,34 @@ Checklist para trocar as senhas do Neon e do Supabase sem derrubar o app.
 > - [x] Passo 5 — verificado: `/` = 200 e `/auth/login` com credencial falsa = 401 (conexão ao DB OK).
 > - [x] Auto-deploy — provado: push em `main` gerou deploy `trigger=new_commit` -> live.
 
+> **STATUS pós-rotação — alinhamento de config (2026-10-19).** O serviço
+> `Cronograma-Projeto` (`srv-d6gbpm9drdic73ds050g`) tinha divergido do
+> `render.yaml`:
+> - `startCommand` no dashboard era `cd cronograma/app && uvicorn main:app
+>   --host 0.0.0.0 --port 8000` — **porta hardcoded 8000** em vez de `$PORT`.
+>   O Render injeta a porta em `$PORT`; fixar 8000 só funcionava por
+>   coincidência do ambiente atual e quebraria em outro plano/host. Também
+>   faltava `--forwarded-allow-ips=""`, que impede o uvicorn de reescrever
+>   `request.client.host` com o `X-Forwarded-For` controlado pelo cliente
+>   (ver `middleware.get_client_ip` — era exploitável para burlar o rate limit).
+> - `PYTHON_VERSION` era `3.11.11` contra `3.11.12` do `render.yaml`.
+>
+> Ambos corrigidos via API do Render e validados com redeploy `api` ->
+> `dep-dbb5qgu1egvs739772hg` = **live** (2026-10-19). Verificação: `/` = 200,
+> `/app` = 200, `POST /auth/login` com credencial falsa = 401 (DB OK), e
+> `X-Forwarded-For` spoofado não altera a chave do rate limit.
+>
+> **Lição:** a config do dashboard do Render **não** é a fonte da verdade
+> quando existe um `render.yaml` (Blueprint). Conferir os dois lados após
+> qualquer mudança de ambiente:
+>
+> ```bash
+> curl -sS -H "Authorization: Bearer $RENDER_API_KEY" \
+>   "https://api.render.com/v1/services/srv-d6gbpm9drdic73ds050g" \
+>   | python3 -c 'import sys,json;s=json.load(sys.stdin);print(s["serviceDetails"]["envSpecificDetails"]["startCommand"])'
+> # deve casar com o startCommand do render.yaml (--port $PORT --forwarded-allow-ips="")
+> ```
+
 > **Contexto:** em 2026-09-25 as connection strings de produção ficaram
 > hardcoded em `cronograma/migrate_to_pg.py` e `cronograma/import_to_supabase.py`
 > e foram publicadas no histórico do GitHub. O histórico foi reescrito com
