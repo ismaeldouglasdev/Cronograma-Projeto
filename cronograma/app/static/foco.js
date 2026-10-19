@@ -22,6 +22,11 @@ const FocoTimer = (function() {
 
   // Last API response data for modal
   let lastPomoData = null;
+
+  // Ambient sound (procedural, no external assets)
+  const AMBIENT_KEY = "cronograma_ambient_sounds";
+  let ambient = { name: "none", volume: 0.6 };
+  let ambientNodes = null;
   
   const elements = {
     timerTime: document.getElementById("foco-timer-time"),
@@ -37,6 +42,8 @@ const FocoTimer = (function() {
     minutesInput: document.getElementById("foco-minutes"),
     breakMinutesInput: document.getElementById("foco-break-minutes"),
     autoBreakCheckbox: document.getElementById("foco-auto-break"),
+    soundSelect: document.getElementById("foco-sound"),
+    soundVolume: document.getElementById("foco-sound-volume"),
     sessionsCount: document.getElementById("foco-sessions-count"),
     totalTime: document.getElementById("foco-total-time"),
     taskProgress: document.getElementById("foco-task-progress"),
@@ -49,10 +56,12 @@ const FocoTimer = (function() {
     cachedAreas = areas;
     cachedTasks = tasks;
     loadState();
+    loadAmbientPrefs();
     populateAreaInput();
     updateProgressDisplay();
     loadTodayStats();
     attachEventListeners();
+    attachAmbientListeners();
     checkActiveTimer();
     attachModalHandlers();
   }
@@ -272,6 +281,7 @@ function updateAreaFromInput() {
       requestNotificationPermission();
       startTick();
       saveState();
+      if (!isBreak) startAmbient();
     }
   }
   
@@ -284,6 +294,7 @@ function updateAreaFromInput() {
       duracaoTotal = tempoRestante;
       startTimestamp = null;
       state = "paused";
+      stopAmbient();
       elements.pauseBtn.textContent = typeof t === 'function' ? t('foco.btn_continuar') : '\u25b6 Continuar';
       saveState();
     } else if (state === "paused") {
@@ -293,6 +304,7 @@ function updateAreaFromInput() {
       elements.pauseBtn.textContent = typeof t === 'function' ? t('foco.btn_pausar') : '\u23f8 Pausar';
       startTick();
       saveState();
+      if (!isBreak) startAmbient();
     }
   }
   
@@ -328,6 +340,7 @@ function handleSkip() {
     startTimestamp = null;
     isBreak = false;
     state = "idle";
+    stopAmbient();
     tempoRestante = (parseInt(elements.minutesInput.value, 10) || 25) * 60;
     duracaoTotal = tempoRestante;
     originalDuracao = tempoRestante;
@@ -367,6 +380,7 @@ function handleSkip() {
   
   async function onTimerComplete() {
     playBeep();
+    stopAmbient();
     
     if (!isBreak) {
       showDesktopNotification();
@@ -560,6 +574,164 @@ function handleSkip() {
     }
   }
 
+  function loadAmbientPrefs() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(AMBIENT_KEY) || "null");
+      if (saved && typeof saved === "object") {
+        ambient.name = saved.name || "none";
+        ambient.volume = typeof saved.volume === "number" ? saved.volume : 0.6;
+      }
+    } catch (e) {}
+    if (elements.soundSelect) elements.soundSelect.value = ambient.name;
+    if (elements.soundVolume) elements.soundVolume.value = Math.round(ambient.volume * 100);
+  }
+
+  function saveAmbientPrefs() {
+    try {
+      localStorage.setItem(AMBIENT_KEY, JSON.stringify({ name: ambient.name, volume: ambient.volume }));
+    } catch (e) {}
+  }
+
+  function ensureAudioContext() {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioContext.state === "suspended") audioContext.resume();
+    return audioContext;
+  }
+
+  function makeNoiseBuffer(ctx, seconds) {
+    var len = Math.floor(ctx.sampleRate * seconds);
+    var buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+    var data = buffer.getChannelData(0);
+    for (var i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    return buffer;
+  }
+
+  function stopAmbient() {
+    if (!ambientNodes) return;
+    try {
+      if (ambientNodes.fadeTimer) clearTimeout(ambientNodes.fadeTimer);
+      ambientNodes.sources.forEach(function(s) { try { s.stop(); } catch (e) {} });
+      ambientNodes.sources.forEach(function(s) { try { s.disconnect(); } catch (e) {} });
+      if (ambientNodes.filter) try { ambientNodes.filter.disconnect(); } catch (e) {}
+      if (ambientNodes.gain) try { ambientNodes.gain.disconnect(); } catch (e) {}
+    } catch (e) {}
+    ambientNodes = null;
+  }
+
+  // Each preset is a small graph of Web Audio nodes layered to evoke the
+  // named ambience. They share one output gain so volume is a single knob.
+  function buildAmbient(name) {
+    var ctx = ensureAudioContext();
+    var sources = [];
+    var out = ctx.createGain();
+    out.gain.value = ambient.volume;
+    out.connect(ctx.destination);
+
+    var filter = null;
+    var noise = function(type, gainVal, freq, q, playbackRate) {
+      var src = ctx.createBufferSource();
+      src.buffer = makeNoiseBuffer(ctx, 2);
+      src.loop = true;
+      if (playbackRate) src.playbackRate.value = playbackRate;
+      var lp = ctx.createBiquadFilter();
+      lp.type = type;
+      lp.frequency.value = freq;
+      if (q != null) lp.Q.value = q;
+      var g = ctx.createGain();
+      g.gain.value = gainVal;
+      src.connect(lp).connect(g).connect(out);
+      src.start();
+      sources.push(src, lp, g);
+      return lp;
+    };
+
+    if (name === "white") {
+      noise("lowpass", 0.5, 8000, 0.7);
+    } else if (name === "rain") {
+      filter = noise("highpass", 0.35, 1000, 0.5);
+      noise("lowpass", 0.25, 600, 0.5, 0.5);
+    } else if (name === "waves") {
+      filter = noise("lowpass", 0.3, 700, 0.5);
+      var lfo = ctx.createOscillator();
+      var lfoGain = ctx.createGain();
+      lfo.frequency.value = 0.12;
+      lfoGain.gain.value = 0.22;
+      lfo.connect(lfoGain).connect(out.gain);
+      lfo.start();
+      sources.push(lfo, lfoGain);
+    } else if (name === "cafe") {
+      filter = noise("bandpass", 0.3, 500, 0.9);
+      var murmur = ctx.createOscillator();
+      var murmurGain = ctx.createGain();
+      murmur.frequency.value = 110;
+      murmur.type = "sine";
+      murmurGain.gain.value = 0.02;
+      murmur.connect(murmurGain).connect(out);
+      murmur.start();
+      sources.push(murmur, murmurGain);
+    } else if (name === "forest") {
+      filter = noise("highpass", 0.18, 2500, 0.6);
+      var chirp = ctx.createOscillator();
+      var chirpGain = ctx.createGain();
+      chirp.frequency.value = 3200;
+      chirp.type = "triangle";
+      chirpGain.gain.value = 0.0;
+      chirp.connect(chirpGain).connect(out);
+      chirp.start();
+      sources.push(chirp, chirpGain);
+      var chirpTimer = setInterval(function() {
+        try {
+          var now = ctx.currentTime;
+          chirpGain.gain.cancelScheduledValues(now);
+          chirpGain.gain.setValueAtTime(0.0, now);
+          chirpGain.gain.linearRampToValueAtTime(0.06, now + 0.05);
+          chirpGain.gain.linearRampToValueAtTime(0.0, now + 0.25);
+          chirp.frequency.setValueAtTime(2800 + Math.random() * 1200, now);
+        } catch (e) {}
+      }, 2200);
+      ambientNodes = { sources: sources, gain: out, filter: filter, interval: chirpTimer };
+      return;
+    }
+
+    ambientNodes = { sources: sources, gain: out, filter: filter, interval: null };
+  }
+
+  function startAmbient() {
+    if (ambient.name === "none") { stopAmbient(); return; }
+    stopAmbient();
+    try {
+      buildAmbient(ambient.name);
+    } catch (e) {
+      console.error("Ambient sound error:", e);
+      ambientNodes = null;
+    }
+  }
+
+  function setAmbientVolume(v) {
+    ambient.volume = Math.max(0, Math.min(1, v));
+    if (ambientNodes && ambientNodes.gain) {
+      try { ambientNodes.gain.gain.value = ambient.volume; } catch (e) {}
+    }
+    saveAmbientPrefs();
+  }
+
+  function attachAmbientListeners() {
+    if (elements.soundSelect) {
+      elements.soundSelect.addEventListener("change", function() {
+        ambient.name = elements.soundSelect.value;
+        saveAmbientPrefs();
+        if (state === "running" || state === "paused") startAmbient();
+      });
+    }
+    if (elements.soundVolume) {
+      elements.soundVolume.addEventListener("input", function() {
+        setAmbientVolume(parseInt(elements.soundVolume.value, 10) / 100);
+      });
+    }
+  }
+
   document.addEventListener("visibilitychange", function() {
     if (document.hidden) return;
     loadTodayStats();
@@ -567,7 +739,7 @@ function handleSkip() {
       AppStore.syncFromBackend();
     }
   });
-  
+
   function startBreak() {
     isBreak = true;
     tempoRestante = (parseInt(elements.breakMinutesInput.value, 10) || 5) * 60;
@@ -581,6 +753,7 @@ function handleSkip() {
     updateButtons();
     elements.taskSelect.disabled = true;
     
+    stopAmbient();
     startTick();
     saveState();
   }

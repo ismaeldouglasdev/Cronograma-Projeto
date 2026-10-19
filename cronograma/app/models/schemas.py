@@ -207,3 +207,25 @@ class ImportData(BaseModel):
 
 class ClientLogBatch(BaseModel):
     logs: List[dict]
+
+
+# ─── Missions ─────────────────────────────────────────────────────────────────
+
+
+class MissionItem(BaseModel):
+    key: str
+    label: str
+    kind: Optional[str] = None
+    target: int
+    progress: int
+    completed: bool
+    xp_reward: int
+
+
+class MissionsTodayResponse(BaseModel):
+    date: Optional[str] = None
+    missions: List[MissionItem]
+    completed_count: int
+    total: int
+    all_completed: bool
+    coins: int

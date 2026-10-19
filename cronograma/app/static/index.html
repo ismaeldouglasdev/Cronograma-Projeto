@@ -190,6 +190,10 @@
             <span class="sidebar-icon" data-svg-icon="chart" data-svg-size="17"></span>
             <span class="sidebar-text" data-i18n="sidebar.resumo">Resumo</span>
           </button>
+          <button class="sidebar-link" data-tab="heatmap">
+            <span class="sidebar-icon" data-svg-icon="calendar" data-svg-size="17"></span>
+            <span class="sidebar-text" data-i18n="sidebar.heatmap">Atividade</span>
+          </button>
         </nav>
         
         <div class="sidebar-footer">
@@ -326,6 +330,19 @@
               <input type="checkbox" id="foco-auto-break" checked>
               <label for="foco-auto-break" data-i18n="foco.label_descanso_auto">Descanso automático</label>
             </div>
+
+            <label for="foco-sound" data-i18n="foco.label_som_ambiente">Som ambiente</label>
+            <div class="foco-sound-row">
+              <select id="foco-sound">
+                <option value="none" data-i18n="foco.som_nenhum">Nenhum</option>
+                <option value="rain" data-i18n="foco.som_chuva">Chuva</option>
+                <option value="waves" data-i18n="foco.som_ondas">Ondas do mar</option>
+                <option value="cafe" data-i18n="foco.som_cafe">Café</option>
+                <option value="forest" data-i18n="foco.som_floresta">Floresta</option>
+                <option value="white" data-i18n="foco.som_branco">Ruído branco</option>
+              </select>
+              <input type="range" id="foco-sound-volume" min="0" max="100" value="60" aria-label="Volume">
+            </div>
           </div>
           
           <div class="foco-stats">
@@ -414,6 +431,21 @@
               <span class="gami-metric-label" data-i18n="gamificacao.xp_total">XP Total</span>
             </div>
           </div>
+        </div>
+
+        <!-- Missões Diárias -->
+        <div class="gami-missions-card" id="gami-missions">
+          <div class="gami-missions-header">
+            <span class="gami-missions-icon" data-svg-icon="target" data-svg-size="26"></span>
+            <div class="gami-missions-info">
+              <h3 class="gami-missions-title" data-i18n="gamificacao.missoes_titulo">Missões de Hoje</h3>
+              <span class="gami-missions-subtitle" data-i18n="gamificacao.missoes_desc">Complete missões diárias para ganhar coins</span>
+            </div>
+            <div class="gami-missions-progress">
+              <span id="gami-missions-count">0</span>/<span id="gami-missions-total">3</span>
+            </div>
+          </div>
+          <div class="gami-missions-list" id="gami-missions-list"></div>
         </div>
 
         <!-- Loja de Freezes -->
@@ -601,10 +633,88 @@
           </div>
         </div>
 
+        <!-- Analytics Avançado -->
+        <div class="analytics-section">
+          <h3 class="resumo-section-title" data-i18n="analytics.titulo">Analytics de Estudo (30 dias)</h3>
+
+          <div class="analytics-metrics" id="analytics-metrics">
+            <div class="analytics-metric">
+              <span class="analytics-metric-num" id="analytics-avg">0</span>
+              <span class="analytics-metric-label" data-i18n="analytics.media_dia">min/dia ativo</span>
+            </div>
+            <div class="analytics-metric">
+              <span class="analytics-metric-num" id="analytics-active-days">0</span>
+              <span class="analytics-metric-label" data-i18n="analytics.dias_ativos">dias ativos</span>
+            </div>
+            <div class="analytics-metric">
+              <span class="analytics-metric-num" id="analytics-total-min">0</span>
+              <span class="analytics-metric-label" data-i18n="analytics.minutos_totais">minutos totais</span>
+            </div>
+            <div class="analytics-metric">
+              <span class="analytics-metric-num" id="analytics-best-day">—</span>
+              <span class="analytics-metric-label" data-i18n="analytics.melhor_dia">melhor dia</span>
+            </div>
+          </div>
+
+          <div class="analytics-chart-wrap">
+            <h4 class="analytics-subtitle" data-i18n="analytics.tendencia">Tendência diária</h4>
+            <div class="analytics-chart-container">
+              <canvas id="chart-analytics-trend"></canvas>
+            </div>
+          </div>
+
+          <div class="analytics-chart-wrap">
+            <h4 class="analytics-subtitle" data-i18n="analytics.por_dia_semana">Por dia da semana</h4>
+            <div class="analytics-chart-container">
+              <canvas id="chart-analytics-weekday"></canvas>
+            </div>
+          </div>
+        </div>
+
         <!-- Lista de Áreas com Barras -->
         <div class="resumo-list-section">
           <h3 class="resumo-section-title" data-i18n="resumo.detalhamento">Detalhamento</h3>
           <div class="resumo-list" id="resumo-horas"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Heatmap de Atividade -->
+    <section id="heatmap" class="panel">
+      <div class="heatmap-page">
+        <p class="section-desc" data-i18n="heatmap.section_desc">Sua atividade de estudo ao longo do tempo</p>
+
+        <div class="heatmap-stats">
+          <div class="heatmap-stat-card">
+            <span class="heatmap-stat-num" id="heatmap-current-streak">0</span>
+            <span class="heatmap-stat-label" data-i18n="heatmap.streak_atual">streak atual</span>
+          </div>
+          <div class="heatmap-stat-card">
+            <span class="heatmap-stat-num" id="heatmap-longest-streak">0</span>
+            <span class="heatmap-stat-label" data-i18n="heatmap.maior_streak">maior streak</span>
+          </div>
+          <div class="heatmap-stat-card">
+            <span class="heatmap-stat-num" id="heatmap-active-days">0</span>
+            <span class="heatmap-stat-label" data-i18n="heatmap.dias_ativos">dias ativos</span>
+          </div>
+          <div class="heatmap-stat-card">
+            <span class="heatmap-stat-num" id="heatmap-total-min">0</span>
+            <span class="heatmap-stat-label" data-i18n="heatmap.minutos_totais">minutos totais</span>
+          </div>
+        </div>
+
+        <div class="heatmap-grid-wrap">
+          <div class="heatmap-grid" id="heatmap-grid"></div>
+        </div>
+
+        <div class="heatmap-legend">
+          <span data-i18n="heatmap.menos">Menos</span>
+          <span class="heatmap-legend-cell level-0"></span>
+          <span class="heatmap-legend-cell level-1"></span>
+          <span class="heatmap-legend-cell level-2"></span>
+          <span class="heatmap-legend-cell level-3"></span>
+          <span class="heatmap-legend-cell level-4"></span>
+          <span data-i18n="heatmap.mais">Mais</span>
         </div>
       </div>
     </section>

@@ -3,6 +3,9 @@ let API = "";
 // Chart instance for resumo page
 let chartResumo = null;
 
+let chartAnalyticsTrend = null;
+let chartAnalyticsWeekday = null;
+
 // Auto-detect API URL based on current location
 // location.origin already includes protocol + host + port (no double port)
 API = window.location.origin;
@@ -879,6 +882,139 @@ async function loadResumo() {
   }
 }
 
+async function loadHeatmap() {
+  try {
+    const data = await get("/heatmap?days=365");
+    const grid = document.getElementById("heatmap-grid");
+    if (!grid) return;
+
+    const entries = data.entries || [];
+    const totalMin = entries.reduce((sum, e) => sum + e.minutes, 0);
+    const activeDays = entries.filter((e) => e.minutes > 0).length;
+
+    const setText = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    };
+    setText("heatmap-current-streak", data.current_streak || 0);
+    setText("heatmap-longest-streak", data.longest_streak || 0);
+    setText("heatmap-active-days", activeDays);
+    setText("heatmap-total-min", totalMin);
+
+    const fmtDate = (iso) => {
+      try {
+        return new Date(iso + "T00:00:00").toLocaleDateString(getCurrentLang(), {
+          day: "2-digit", month: "short", year: "numeric",
+        });
+      } catch (e) {
+        return iso;
+      }
+    };
+
+    const _t = typeof t === "function" ? t : (k) => k;
+    grid.innerHTML = entries
+      .map((e) => {
+        const title = `${fmtDate(e.date)} — ${e.minutes} ${_t("heatmap.min_label")}`;
+        return `<span class="heatmap-cell level-${e.level}" title="${title}" aria-label="${title}"></span>`;
+      })
+      .join("");
+  } catch (e) {
+    console.error("Erro ao carregar heatmap:", e);
+  }
+}
+
+async function loadAnalytics() {
+  try {
+    const data = await get("/analytics?days=30");
+    const setText = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    };
+
+    const totals = data.totals || {};
+    setText("analytics-avg", Math.round(totals.avg_minutes_per_active_day || 0));
+    setText("analytics-active-days", totals.active_days || 0);
+    setText("analytics-total-min", totals.minutes || 0);
+
+    const bestEl = document.getElementById("analytics-best-day");
+    if (bestEl) {
+      if (data.best_day) {
+        const d = new Date(data.best_day.date + "T00:00:00");
+        bestEl.textContent = d.toLocaleDateString(getCurrentLang(), { day: "2-digit", month: "short" });
+      } else {
+        bestEl.textContent = "\u2014";
+      }
+    }
+
+    const _t = typeof t === "function" ? t : (k) => k;
+    const lang = getCurrentLang();
+    const weekdayLabels = [
+      _t("analytics.dow_seg"), _t("analytics.dow_ter"), _t("analytics.dow_qua"),
+      _t("analytics.dow_qui"), _t("analytics.dow_sex"), _t("analytics.dow_sab"),
+      _t("analytics.dow_dom"),
+    ];
+
+    if (chartAnalyticsTrend) { chartAnalyticsTrend.destroy(); chartAnalyticsTrend = null; }
+    const trendCanvas = document.getElementById("chart-analytics-trend");
+    if (typeof Chart !== "undefined" && trendCanvas) {
+      chartAnalyticsTrend = new Chart(trendCanvas, {
+        type: "line",
+        data: {
+          labels: (data.trend || []).map((t) => {
+            const d = new Date(t.date + "T00:00:00");
+            return d.toLocaleDateString(lang, { day: "2-digit", month: "2-digit" });
+          }),
+          datasets: [{
+            data: (data.trend || []).map((t) => t.minutes),
+            borderColor: "#6366f1",
+            backgroundColor: "rgba(99,102,241,0.15)",
+            fill: true,
+            tension: 0.3,
+            pointRadius: 0,
+            borderWidth: 2,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: "#9b9a97", maxTicksLimit: 8 }, grid: { display: false } },
+            y: { ticks: { color: "#9b9a97" }, grid: { color: "rgba(155,154,151,0.1)" }, beginAtZero: true },
+          },
+        },
+      });
+    }
+
+    if (chartAnalyticsWeekday) { chartAnalyticsWeekday.destroy(); chartAnalyticsWeekday = null; }
+    const wdCanvas = document.getElementById("chart-analytics-weekday");
+    if (typeof Chart !== "undefined" && wdCanvas) {
+      chartAnalyticsWeekday = new Chart(wdCanvas, {
+        type: "bar",
+        data: {
+          labels: weekdayLabels,
+          datasets: [{
+            data: data.by_weekday || [],
+            backgroundColor: "#8b5cf6",
+            borderRadius: 6,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: "#9b9a97" }, grid: { display: false } },
+            y: { ticks: { color: "#9b9a97" }, grid: { color: "rgba(155,154,151,0.1)" }, beginAtZero: true },
+          },
+        },
+      });
+    }
+  } catch (e) {
+    console.error("Erro ao carregar analytics:", e);
+  }
+}
+
 // Page titles for each tab
 function getPageTitle(tabName) {
   const _t = typeof t === 'function' ? t : (k => k);
@@ -890,12 +1026,13 @@ function getPageTitle(tabName) {
     'tasks': _t('pages.tarefas'),
     'sessoes': _t('pages.sessoes'),
     'resumo': _t('pages.resumo'),
+    'heatmap': _t('pages.heatmap'),
     'perfil': _t('pages.perfil')
   };
   return titles[tabName] || tabName;
 }
 
-const VALID_TABS = ['areas', 'foco', 'gamificacao', 'perfil', 'horarios', 'tasks', 'sessoes', 'resumo'];
+const VALID_TABS = ['areas', 'foco', 'gamificacao', 'perfil', 'horarios', 'tasks', 'sessoes', 'resumo', 'heatmap'];
 
 function switchToTab(tabName) {
   // Update all tab/sidebar-link elements
@@ -928,6 +1065,13 @@ function switchToTab(tabName) {
   }
   if (tabName === 'resumo') {
     loadResumo();
+    loadAnalytics();
+  }
+  if (tabName === 'heatmap') {
+    loadHeatmap();
+  }
+  if (tabName === 'gamificacao') {
+    loadMissions();
   }
   if (tabName === 'perfil') {
     initProfileTab();
@@ -1158,6 +1302,8 @@ async function init() {
   if (typeof renderGamification === 'function') {
     renderGamification();
   }
+  loadMissions();
+  loadAnalytics();
 }
 
 async function initApp() {
@@ -1512,5 +1658,48 @@ function renderGamification() {
     });
     
     return;
+  }
+}
+
+async function loadMissions() {
+  const list = document.getElementById("gami-missions-list");
+  if (!list) return;
+  try {
+    const data = await get("/missions/today");
+    const missions = data.missions || [];
+    const countEl = document.getElementById("gami-missions-count");
+    const totalEl = document.getElementById("gami-missions-total");
+    if (countEl) countEl.textContent = data.completed_count || 0;
+    if (totalEl) totalEl.textContent = data.total || missions.length;
+
+    if (!missions.length) {
+      list.innerHTML = '<p class="gami-missions-empty">' + escapeHtml(typeof t === "function" ? t("gamificacao.missoes_empty") : "Nenhuma miss\u00e3o hoje.") + '</p>';
+      return;
+    }
+
+    const _t = typeof t === "function" ? t : (k) => k;
+    list.innerHTML = missions
+      .map((m) => {
+        const pct = m.target > 0 ? Math.min(100, (m.progress / m.target) * 100) : 0;
+        const doneClass = m.completed ? " completed" : "";
+        return `
+          <div class="gami-mission-item${doneClass}">
+            <div class="gami-mission-check">${m.completed ? "✓" : ""}</div>
+            <div class="gami-mission-body">
+              <div class="gami-mission-header">
+                <span class="gami-mission-label">${escapeHtml(m.label)}</span>
+                <span class="gami-mission-reward">+${m.xp_reward} XP</span>
+              </div>
+              <div class="gami-mission-bar">
+                <div class="gami-mission-fill" style="width:${pct}%"></div>
+              </div>
+              <span class="gami-mission-progress">${m.progress}/${m.target}</span>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+  } catch (e) {
+    console.error("Erro ao carregar miss\u00f5es:", e);
   }
 }

@@ -192,6 +192,21 @@ def run_sqlite_migrations(engine) -> None:
             conn.commit()
         except Exception:
             pass
+        # Daily missions table
+        try:
+            conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS daily_missions (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, mission_date VARCHAR(10) NOT NULL, template_key VARCHAR(40) NOT NULL, target INTEGER NOT NULL, progress INTEGER DEFAULT 0, completed BOOLEAN DEFAULT 0, xp_reward INTEGER DEFAULT 0, created_at VARCHAR(40))"
+                )
+            )
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_daily_missions_user_date ON daily_missions (user_id, mission_date)"
+                )
+            )
+            conn.commit()
+        except Exception:
+            pass
         # Seed achievements
         try:
             result = conn.execute(text("SELECT COUNT(*) FROM achievements"))
@@ -321,6 +336,19 @@ def run_postgres_migrations(engine) -> None:
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarded_at VARCHAR(40)"))
         except Exception as e:
             log.warning("Migration add column failed", extra={"column": "onboarded_at", "table": "users", "error": str(e)})
+        try:
+            conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS daily_missions (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL, mission_date VARCHAR(10) NOT NULL, template_key VARCHAR(40) NOT NULL, target INTEGER NOT NULL, progress INTEGER DEFAULT 0, completed BOOLEAN DEFAULT FALSE, xp_reward INTEGER DEFAULT 0, created_at VARCHAR(40))"
+                )
+            )
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_daily_missions_user_date ON daily_missions (user_id, mission_date)"
+                )
+            )
+        except Exception as e:
+            log.warning("Migration create daily_missions failed", extra={"error": str(e)})
 
 
 def run_migrations(engine) -> None:

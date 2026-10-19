@@ -3,6 +3,7 @@ from models.area import Areas
 from models.task import Tasks
 from models.sessao import Sessoes
 from models.achievement import Achievement, UserAchievement
+from models.mission import DailyMission
 
 __all__ = [
     "User",
@@ -11,4 +12,5 @@ __all__ = [
     "Sessoes",
     "Achievement",
     "UserAchievement",
+    "DailyMission",
 ]

@@ -1695,6 +1695,24 @@ main {
   margin: 0;
 }
 
+.foco-sound-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.foco-sound-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.foco-sound-row input[type="range"] {
+  flex: 1;
+  min-width: 80px;
+  accent-color: var(--accent, #6366f1);
+}
+
 .foco-stats {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -3507,4 +3525,296 @@ main {
   color: var(--text-muted);
   font-size: 0.9rem;
   margin: 0 0 1rem;
+}
+
+/* ─── Heatmap de atividade ─────────────────────────────────────────────── */
+.heatmap-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.heatmap-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.heatmap-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.1rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.heatmap-stat-num {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent, #6366f1);
+}
+
+.heatmap-stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.heatmap-grid-wrap {
+  overflow-x: auto;
+  padding: 0.5rem 0;
+}
+
+.heatmap-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 12px);
+  grid-auto-columns: 12px;
+  gap: 3px;
+  width: max-content;
+}
+
+.heatmap-cell {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--bg-input, #1e1e2e);
+  cursor: default;
+  transition: transform 0.1s ease;
+}
+
+.heatmap-cell:hover {
+  transform: scale(1.25);
+}
+
+.heatmap-cell.level-0 { background: var(--bg-input, #1e1e2e); }
+.heatmap-cell.level-1 { background: #1e4620; }
+.heatmap-cell.level-2 { background: #2d6a33; }
+.heatmap-cell.level-3 { background: #3fa04a; }
+.heatmap-cell.level-4 { background: #56d364; }
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  justify-content: flex-end;
+}
+
+.heatmap-legend-cell {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.heatmap-legend-cell.level-0 { background: var(--bg-input, #1e1e2e); }
+.heatmap-legend-cell.level-1 { background: #1e4620; }
+.heatmap-legend-cell.level-2 { background: #2d6a33; }
+.heatmap-legend-cell.level-3 { background: #3fa04a; }
+.heatmap-legend-cell.level-4 { background: #56d364; }
+
+@media (max-width: 640px) {
+  .heatmap-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ─── Missões diárias ──────────────────────────────────────────────────── */
+.gami-missions-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.gami-missions-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.gami-missions-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.gami-missions-title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.gami-missions-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.gami-missions-progress {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent, #6366f1);
+}
+
+.gami-missions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.gami-missions-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.gami-mission-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  background: var(--bg-input);
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.gami-mission-item.completed {
+  border-color: #2d6a33;
+  opacity: 0.85;
+}
+
+.gami-mission-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #56d364;
+}
+
+.gami-mission-item.completed .gami-mission-check {
+  background: #2d6a33;
+  border-color: #2d6a33;
+  color: #fff;
+}
+
+.gami-mission-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.gami-mission-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.gami-mission-label {
+  font-size: 0.9rem;
+}
+
+.gami-mission-reward {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent, #6366f1);
+  white-space: nowrap;
+}
+
+.gami-mission-bar {
+  height: 6px;
+  margin-top: 0.35rem;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.gami-mission-fill {
+  height: 100%;
+  background: var(--accent, #6366f1);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.gami-mission-item.completed .gami-mission-fill {
+  background: #56d364;
+}
+
+.gami-mission-progress {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ─── Analytics avançado ───────────────────────────────────────────────── */
+.analytics-section {
+  margin-top: 1.5rem;
+}
+
+.analytics-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.analytics-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 1rem 0.6rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.analytics-metric-num {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--accent, #6366f1);
+}
+
+.analytics-metric-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.analytics-chart-wrap {
+  margin-top: 1.25rem;
+}
+
+.analytics-subtitle {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.analytics-chart-container {
+  position: relative;
+  height: 220px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .analytics-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
