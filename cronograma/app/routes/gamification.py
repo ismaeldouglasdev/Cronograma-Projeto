@@ -41,9 +41,16 @@ def gamification_summary(
         db.query(UserAchievement).filter(UserAchievement.user_id == user_id).all()
     )
     unlocked_ids = [ua.achievement_id for ua in unlocked]
+    unlocked_by_id = {ua.achievement_id: ua.unlocked_at for ua in unlocked}
+
+    all_achievements_rows = db.query(Achievement).all()
+    achievements_by_cat = {}
+    for a in all_achievements_rows:
+        achievements_by_cat.setdefault(a.categoria, []).append(a)
+
     all_achievements = {}
     for cat in ["xp", "streak", "pomodoro", "tasks", "level", "coins"]:
-        achievements = db.query(Achievement).filter(Achievement.categoria == cat).all()
+        achievements = achievements_by_cat.get(cat, [])
         all_achievements[cat] = [
             {
                 "id": a.id,
@@ -52,10 +59,7 @@ def gamification_summary(
                 "requisito": a.requisito,
                 "icone": a.icone,
                 "desbloqueado": a.id in unlocked_ids,
-                "desbloqueado_em": next(
-                    (ua.unlocked_at for ua in unlocked if ua.achievement_id == a.id),
-                    None,
-                ),
+                "desbloqueado_em": unlocked_by_id.get(a.id),
             }
             for a in achievements
         ]
@@ -75,7 +79,7 @@ def gamification_summary(
         "tarefas_concluidas": tarefas,
         "achievements": all_achievements,
         "conquistas_desbloqueadas": len(unlocked_ids),
-        "total_conquistas": db.query(Achievement).count(),
+        "total_conquistas": len(all_achievements_rows),
     }
 
 

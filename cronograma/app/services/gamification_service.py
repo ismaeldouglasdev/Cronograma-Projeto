@@ -86,8 +86,13 @@ def verificar_conquistas(user_id: int, db: Session) -> list:
     new_unlocks = []
     categories = ["xp", "streak", "pomodoro", "tasks", "level", "coins"]
     values = [xp_total, streak, pomodoros, tarefas, level, coins]
+
+    achievements_by_cat = {}
+    for a in db.query(Achievement).all():
+        achievements_by_cat.setdefault(a.categoria, []).append(a)
+
     for cat, val in zip(categories, values):
-        achievements = db.query(Achievement).filter(Achievement.categoria == cat).all()
+        achievements = achievements_by_cat.get(cat, [])
         for ach in achievements:
             if ach.id not in unlocked_ids and val >= ach.requisito:
                 ua = UserAchievement(
