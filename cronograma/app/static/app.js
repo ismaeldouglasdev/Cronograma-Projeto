@@ -6,6 +6,22 @@ let chartResumo = null;
 let chartAnalyticsTrend = null;
 let chartAnalyticsWeekday = null;
 
+let chartJsPromise = null;
+function ensureChartJs() {
+  if (typeof Chart !== "undefined") return Promise.resolve();
+  if (!chartJsPromise) {
+    chartJsPromise = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/chart.js";
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+    chartJsPromise.catch(() => { chartJsPromise = null; });
+  }
+  return chartJsPromise;
+}
+
 // Auto-detect API URL based on current location
 // location.origin already includes protocol + host + port (no double port)
 API = window.location.origin;
@@ -1064,8 +1080,10 @@ function switchToTab(tabName) {
     loadHorarios();
   }
   if (tabName === 'resumo') {
-    loadResumo();
-    loadAnalytics();
+    ensureChartJs().catch(() => {}).then(() => {
+      loadResumo();
+      loadAnalytics();
+    });
   }
   if (tabName === 'heatmap') {
     loadHeatmap();
