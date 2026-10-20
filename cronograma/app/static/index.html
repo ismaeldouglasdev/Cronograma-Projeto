@@ -84,6 +84,7 @@
           <input type="email" name="email" data-i18n-placeholder="auth.email_placeholder" placeholder="Email" required>
           <input type="password" name="password" data-i18n-placeholder="auth.password_placeholder" placeholder="Senha" required>
           <button type="submit" data-i18n="auth.login_btn">Entrar</button>
+          <p class="auth-switch"><a href="#" id="show-forgot" data-i18n="auth.forgot_link">Esqueci minha senha?</a></p>
           <p class="auth-switch" data-i18n="auth.nao_tem_conta">Não tem conta? <a href="#" id="show-register">Cadastrar</a></p>
         </form>
         <div class="auth-divider"><span data-i18n="auth.ou">ou</span></div>
@@ -119,6 +120,26 @@
           <button type="button" id="verify-btn" data-i18n="auth.verify_btn">Verificar</button>
           <p class="auth-switch" data-i18n="auth.ja_verificado">Já verificado? <a href="#" id="show-login-verify">Entrar</a></p>
         </div>
+      </div>
+
+      <div id="forgot-password-container" style="display: none;">
+        <form id="forgot-password-form" class="auth-form">
+          <h2 data-i18n="auth.forgot_title">Recuperar senha</h2>
+          <p class="verify-info" data-i18n="auth.forgot_info">Digite seu email e enviaremos um link para redefinir sua senha.</p>
+          <input type="email" name="email" data-i18n-placeholder="auth.email_placeholder" placeholder="Email" required>
+          <button type="submit" data-i18n="auth.forgot_btn">Enviar link</button>
+          <p class="auth-switch" data-i18n="auth.forgot_back_login">Lembrou a senha? <a href="#" id="show-login-forgot">Entrar</a></p>
+        </form>
+      </div>
+
+      <div id="reset-password-container" style="display: none;">
+        <form id="reset-password-form" class="auth-form">
+          <h2 data-i18n="auth.reset_title">Nova senha</h2>
+          <input type="password" name="password" data-i18n-placeholder="auth.password_placeholder" placeholder="Senha" required>
+          <input type="password" name="confirm_password" data-i18n-placeholder="auth.confirm_placeholder" placeholder="Confirmar senha" required>
+          <button type="submit" data-i18n="auth.reset_btn">Salvar senha</button>
+          <p class="auth-switch" data-i18n="auth.reset_back_login">Lembrou a senha? <a href="#" id="show-login-reset">Entrar</a></p>
+        </form>
       </div>
     </div>
   </div>

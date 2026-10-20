@@ -4,6 +4,7 @@ from models.task import Tasks
 from models.sessao import Sessoes
 from models.achievement import Achievement, UserAchievement
 from models.mission import DailyMission
+from models.password_reset import PasswordResetToken
 
 __all__ = [
     "User",
@@ -13,4 +14,5 @@ __all__ = [
     "Achievement",
     "UserAchievement",
     "DailyMission",
+    "PasswordResetToken",
 ]

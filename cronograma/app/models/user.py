@@ -12,6 +12,8 @@ class User(Base):
     created_at = Column(String(40), nullable=True)
     is_verified = Column(Boolean, default=False, nullable=True)
     verification_token = Column(String(255), nullable=True)
+    # Expiração do token de verificação (24h). NULL = legado/expirado.
+    verification_sent_at = Column(String(40), nullable=True)
 
     # Guest accounts: /auth/guest creates a row used only by guests; the
     # upgrade keeps the SAME row/user_id so all progress is preserved

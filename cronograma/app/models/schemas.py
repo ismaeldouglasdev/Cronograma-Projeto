@@ -22,6 +22,11 @@ class UserRegister(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    # Register com verificação de e-mail ativa: sem access_token emitido,
+    # usuário precisa confirmar o e-mail antes do login. fallback_token só
+    # vem preenchido quando o envio do e-mail falhou (fluxo manual).
+    verification_required: bool = False
+    fallback_token: Optional[str] = None
 
 
 class VerifyEmailRequest(BaseModel):
@@ -30,6 +35,15 @@ class VerifyEmailRequest(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str
 
 
 # ─── Areas ────────────────────────────────────────────────────────────────────

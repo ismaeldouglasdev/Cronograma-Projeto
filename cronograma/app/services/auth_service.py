@@ -82,18 +82,6 @@ def generate_verification_token() -> str:
     return str(uuid.uuid4())
 
 
-def sendVerificationEmail(user, token: str):
-    auth_log.info(
-        "Verification email",
-        extra={
-            "action": "send_verification_email",
-            "email": user.email,
-            "token_preview": token[:8] + "...",
-        },
-    )
-    return True
-
-
 # ─── JWT ──────────────────────────────────────────────────────────────────────
 
 

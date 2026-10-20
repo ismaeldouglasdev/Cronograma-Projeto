@@ -1,12 +1,15 @@
 """Rotas de autenticação: register, login, logout, guest, refresh, verify-email."""
 
+import hashlib
 import os
 import secrets
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from html import escape
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
+from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -19,22 +22,24 @@ from config import (
 )
 from logger import get_logger
 from middleware import (
-    generate_verification_token,
     get_client_ip,
     hash_password,
     rate_limit,
-    sendVerificationEmail,
     validate_email,
     validate_password,
     verify_password,
 )
 from models.user import User
+from models.password_reset import PasswordResetToken
 from models.schemas import (
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
     TokenResponse,
     UserLogin,
     UserRegister,
     VerifyEmailRequest,
 )
+from services import email_service
 from services.auth_service import (
     create_access_token,
     create_refresh_token,
@@ -68,6 +73,62 @@ def _set_auth_cookies(response: Response, access_token: str, refresh_token: str)
         secure=is_secure,
         samesite="lax",
     )
+
+
+VERIFICATION_TTL_HOURS = 24
+
+
+def _make_verification_token() -> str:
+    expiry = int(
+        (datetime.now(timezone.utc) + timedelta(hours=VERIFICATION_TTL_HOURS)).timestamp()
+    )
+    return f"{uuid.uuid4()}.{expiry}"
+
+
+def _verification_token_expired(token: str) -> bool:
+    # Token legado (pré-Resend) era só uuid4 sem ponto, sem expiração —
+    # continua aceito para não invalidar nada que já exista.
+    if "." not in token:
+        return False
+    try:
+        expiry = int(token.rsplit(".", 1)[1])
+    except ValueError:
+        return True
+    return int(datetime.now(timezone.utc).timestamp()) > expiry
+
+
+def _verify_page(
+    title: str, message: str, ok: bool, resend_token: str = ""
+) -> HTMLResponse:
+    resend_html = ""
+    if resend_token:
+        resend_html = (
+            '<p><a href="/auth/verify-email/resend?token='
+            + escape(resend_token)
+            + '">Enviar novo email de verificação</a></p>'
+        )
+    color = "#22c55e" if ok else "#f87171"
+    body = (
+        "<!DOCTYPE html><html lang=\"pt-BR\"><head><meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+        "<title>"
+        + escape(title)
+        + " — Cronograma</title><style>"
+        "body{font-family:system-ui,sans-serif;background:#0f172a;color:#e2e8f0;"
+        "display:flex;justify-content:center;align-items:center;min-height:100vh;"
+        "margin:0}.card{background:#1e293b;border-radius:12px;padding:2rem;"
+        "max-width:420px;text-align:center}h1{color:"
+        + color
+        + ";font-size:1.25rem}p{line-height:1.5}a{color:#818cf8}"
+        "</style></head><body><div class=\"card\"><h1>"
+        + escape(title)
+        + "</h1><p>"
+        + escape(message)
+        + "</p>"
+        + resend_html
+        + '<p><a href="/app">Ir para o app</a></p></div></body></html>'
+    )
+    return HTMLResponse(content=body, status_code=200 if ok else 400)
 
 
 # ─── Refresh Token Request ────────────────────────────────────────────────────
@@ -112,15 +173,44 @@ def register(
     if existing:
         raise HTTPException(status_code=400, detail="Email já cadastrado — faça login.")
 
+    # Sem RESEND_API_KEY (dev/teste) mantém o auto-verify legado — os testes
+    # existentes e o fluxo local sem Resend configurado dependem dele.
+    verification_required = email_service.is_configured()
+    token = _make_verification_token() if verification_required else None
+
     user = User(
         email=body.email,
         password_hash=hash_password(body.password),
         created_at=datetime.now(timezone.utc).isoformat(),
-        is_verified=True,
+        is_verified=not verification_required,
+        verification_token=token,
+        verification_sent_at=(
+            datetime.now(timezone.utc).isoformat() if verification_required else None
+        ),
     )
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    if verification_required:
+        sent = email_service.send_verification_email(user.email, token)
+        # Fallback manual: o token só aparece na resposta quando o envio
+        # falhou — se o email chegou, quem o recebeu já tem o link com token.
+        fallback_token = token if not sent else None
+        if not sent:
+            auth_log.warning(
+                "Verification email failed; manual token fallback",
+                extra={"user_id": user.id, "action": "register_email_failed"},
+            )
+        auth_log.info(
+            "User registered (verification pending)",
+            extra={"user_id": user.id, "email": user.email, "action": "register"},
+        )
+        return TokenResponse(
+            access_token="",
+            verification_required=True,
+            fallback_token=fallback_token,
+        )
 
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
@@ -157,6 +247,20 @@ def login(
             extra={"email": body.email, "action": "login_failed"},
         )
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
+
+    # Só bloqueia quem tem token pendente: usuário legado sem token (criado
+    # com auto-verify ou via OAuth) entra direto. A mensagem precisa conter
+    # "não verificada" — static/auth.js usa esse substring para redirecionar
+    # para a tela de verificação.
+    if not user.is_verified and user.verification_token:
+        auth_log.warning(
+            "Login blocked: email not verified",
+            extra={"user_id": user.id, "action": "login_unverified"},
+        )
+        raise HTTPException(
+            status_code=403,
+            detail="Conta não verificada — verifique seu email antes de entrar",
+        )
 
     if not user.password_hash.startswith("$2"):
         user.password_hash = hash_password(body.password)
@@ -338,7 +442,19 @@ def verify_email_get(token: str, db: Session = Depends(get_db)):
     try:
         user = db.query(User).filter(User.verification_token == token).first()
         if not user:
-            return {"success": False, "message": "Token inválido ou expirado"}
+            return _verify_page(
+                "Link inválido",
+                "Este link de verificação não é válido. Verifique se você copiou "
+                "o link completo do email.",
+                ok=False,
+            )
+        if _verification_token_expired(token):
+            return _verify_page(
+                "Link expirado",
+                "Este link de verificação expirou. Solicite um novo abaixo.",
+                ok=False,
+                resend_token=token,
+            )
 
         user.is_verified = True
         user.verification_token = None
@@ -346,23 +462,64 @@ def verify_email_get(token: str, db: Session = Depends(get_db)):
 
         auth_log.info(
             "User verified via link",
-            extra={"email": user.email, "action": "verify_email_link"},
+            extra={"user_id": user.id, "action": "verify_email_link"},
         )
-        return {"success": True, "message": "Email verificado com sucesso!"}
+        return _verify_page(
+            "Email verificado!",
+            "Sua conta foi ativada. Já pode fazer login.",
+            ok=True,
+        )
 
     except Exception as e:
         auth_log.error(
             "Verify email error",
             extra={"error": str(e), "action": "verify_email"},
         )
-        return {"success": False, "message": "Erro ao verificar email"}
+        return _verify_page(
+            "Erro",
+            "Não foi possível verificar o email. Tente novamente.",
+            ok=False,
+        )
+
+
+@router.get("/verify-email/resend")
+def verify_email_resend(token: str, request: Request, db: Session = Depends(get_db)):
+    # Token-gated: só quem tem o token atual pode pedir reenvio, então a
+    # resposta não revela se um email existe (anti-enumeração).
+    rate_limit(f"verify-resend:{get_client_ip(request)}", max_req=5, window=60)
+    user = db.query(User).filter(User.verification_token == token).first()
+    if not user:
+        return _verify_page(
+            "Link inválido",
+            "Token inválido ou já utilizado.",
+            ok=False,
+        )
+
+    new_token = _make_verification_token()
+    user.verification_token = new_token
+    user.verification_sent_at = datetime.now(timezone.utc).isoformat()
+    db.commit()
+    email_service.send_verification_email(user.email, new_token)
+
+    auth_log.info(
+        "Verification email resent",
+        extra={"user_id": user.id, "action": "verify_email_resend"},
+    )
+    return _verify_page(
+        "Novo email enviado",
+        "Confira sua caixa de entrada (e o spam). O link anterior foi invalidado.",
+        ok=True,
+    )
 
 
 @router.post("/verify-email")
-def verify_email_post(body: VerifyEmailRequest, db: Session = Depends(get_db)):
+def verify_email_post(
+    body: VerifyEmailRequest, request: Request, db: Session = Depends(get_db)
+):
+    rate_limit(f"verify:{get_client_ip(request)}", max_req=10, window=60)
     try:
         user = db.query(User).filter(User.verification_token == body.token).first()
-        if not user:
+        if not user or _verification_token_expired(body.token):
             return {"success": False, "message": "Token inválido ou expirado"}
 
         user.is_verified = True  # type: ignore[assignment]
@@ -371,7 +528,7 @@ def verify_email_post(body: VerifyEmailRequest, db: Session = Depends(get_db)):
 
         auth_log.info(
             "User verified via manual token",
-            extra={"email": user.email, "action": "verify_email_manual"},
+            extra={"user_id": user.id, "action": "verify_email_manual"},
         )
         return {"success": True, "message": "Email verificado com sucesso!"}
 
@@ -381,6 +538,109 @@ def verify_email_post(body: VerifyEmailRequest, db: Session = Depends(get_db)):
             extra={"error": str(e), "action": "verify_email_manual"},
         )
         return {"success": False, "message": "Erro ao verificar email"}
+
+
+# ─── Password Reset ───────────────────────────────────────────────────────────
+
+RESET_TTL_MINUTES = 30
+
+# Mensagem idêntica com email cadastrado ou não — evita enumeração de contas.
+FORGOT_GENERIC_MESSAGE = (
+    "Se este email estiver cadastrado, você receberá um link de redefinição."
+)
+
+
+def _hash_reset_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+@router.post("/forgot-password")
+def forgot_password(
+    body: ForgotPasswordRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    client_ip = get_client_ip(request)
+    rate_limit(f"forgot:{client_ip}", max_req=5, window=60)
+
+    user = db.query(User).filter(User.email == body.email).first()
+
+    # Token só é criado se o envio de email está configurado; sem envio o
+    # link seria inútil e só desperdiçaria linhas no banco.
+    if user and email_service.is_configured():
+        raw_token = secrets.token_urlsafe(32)
+        now = datetime.now(timezone.utc)
+        # Um token ativo por usuário: o mais recente invalida os anteriores.
+        db.query(PasswordResetToken).filter(
+            PasswordResetToken.user_id == user.id,
+            PasswordResetToken.used_at.is_(None),
+        ).update(
+            {PasswordResetToken.used_at: now.isoformat()},
+            synchronize_session=False,
+        )
+        reset = PasswordResetToken(
+            user_id=user.id,
+            token_hash=_hash_reset_token(raw_token),
+            created_at=now.isoformat(),
+            expires_at=(now + timedelta(minutes=RESET_TTL_MINUTES)).isoformat(),
+        )
+        db.add(reset)
+        db.commit()
+        background_tasks.add_task(
+            email_service.send_password_reset_email, user.email, raw_token
+        )
+        auth_log.info(
+            "Password reset requested",
+            extra={"user_id": user.id, "action": "forgot_password"},
+        )
+
+    return {"message": FORGOT_GENERIC_MESSAGE}
+
+
+@router.post("/reset-password")
+def reset_password(
+    body: ResetPasswordRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    client_ip = get_client_ip(request)
+    rate_limit(f"reset:{client_ip}", max_req=10, window=60)
+
+    senha_valida, msg_erro = validate_password(body.password)
+    if not senha_valida:
+        raise HTTPException(status_code=400, detail=msg_erro)
+
+    token_hash = _hash_reset_token(body.token)
+    reset = (
+        db.query(PasswordResetToken)
+        .filter(PasswordResetToken.token_hash == token_hash)
+        .first()
+    )
+    if not reset or reset.used_at is not None:
+        raise HTTPException(status_code=400, detail="Token inválido ou expirado")
+    if datetime.fromisoformat(reset.expires_at) < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Token inválido ou expirado")
+
+    user = db.query(User).filter(User.id == reset.user_id).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Token inválido ou expirado")
+
+    user.password_hash = hash_password(body.password)
+    # Possuir o token prova que o dono controla o email — desbloqueia contas
+    # ainda pendentes de verificação.
+    user.is_verified = True
+    user.verification_token = None
+    reset.used_at = datetime.now(timezone.utc).isoformat()
+    db.add(user)
+    db.add(reset)
+    db.commit()
+
+    auth_log.info(
+        "Password reset completed",
+        extra={"user_id": user.id, "action": "reset_password"},
+    )
+    return {"message": "Senha redefinida com sucesso. Faça login."}
 
 
 # ─── Google OAuth ─────────────────────────────────────────────────────────────

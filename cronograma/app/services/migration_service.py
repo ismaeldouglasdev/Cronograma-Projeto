@@ -99,6 +99,7 @@ def run_sqlite_migrations(engine) -> None:
         add_column_if_not_exists(conn, "users", "auth_provider", "TEXT DEFAULT 'password'")
         add_column_if_not_exists(conn, "users", "google_provider_id", "TEXT")
         add_column_if_not_exists(conn, "users", "email_verified_at", "TEXT")
+        add_column_if_not_exists(conn, "users", "verification_sent_at", "TEXT")
         add_column_if_not_exists(conn, "users", "display_name", "TEXT")
         add_column_if_not_exists(conn, "users", "name", "TEXT")
         add_column_if_not_exists(conn, "users", "avatar_url", "TEXT")
@@ -115,6 +116,20 @@ def run_sqlite_migrations(engine) -> None:
             pass
         try:
             conn.execute(text("ALTER TABLE sessoes ADD COLUMN task_id INTEGER"))
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS password_reset_tokens (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, token_hash VARCHAR(64) NOT NULL UNIQUE, created_at VARCHAR(40), expires_at VARCHAR(40), used_at VARCHAR(40))"
+                )
+            )
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_user_id ON password_reset_tokens (user_id)"
+                )
+            )
             conn.commit()
         except Exception:
             pass
@@ -305,6 +320,10 @@ def run_postgres_migrations(engine) -> None:
         except Exception as e:
             log.warning("Migration add column failed", extra={"column": "email_verified_at", "table": "users", "error": str(e)})
         try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_sent_at VARCHAR(40)"))
+        except Exception as e:
+            log.warning("Migration add column failed", extra={"column": "verification_sent_at", "table": "users", "error": str(e)})
+        try:
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name VARCHAR(255)"))
         except Exception as e:
             log.warning("Migration add column failed", extra={"column": "display_name", "table": "users", "error": str(e)})
@@ -349,6 +368,22 @@ def run_postgres_migrations(engine) -> None:
             )
         except Exception as e:
             log.warning("Migration create daily_missions failed", extra={"error": str(e)})
+        try:
+            conn.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS password_reset_tokens (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL, token_hash VARCHAR(64) NOT NULL UNIQUE, created_at VARCHAR(40), expires_at VARCHAR(40), used_at VARCHAR(40))"
+                )
+            )
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_user_id ON password_reset_tokens (user_id)"
+                )
+            )
+        except Exception as e:
+            log.warning(
+                "Migration create password_reset_tokens failed",
+                extra={"error": str(e)},
+            )
 
 
 def run_migrations(engine) -> None:

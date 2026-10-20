@@ -31,6 +31,7 @@ const Auth = (function() {
   }
 
   let refreshPromise = null;
+  let resetTokenFromUrl = null;
 
   function refreshSession() {
     if (!refreshPromise) {
@@ -118,6 +119,8 @@ const Auth = (function() {
     document.getElementById("login-form-container").style.display = "block";
     document.getElementById("register-form-container").style.display = "none";
     document.getElementById("verify-email-container").style.display = "none";
+    document.getElementById("forgot-password-container").style.display = "none";
+    document.getElementById("reset-password-container").style.display = "none";
     document.getElementById("main-app").style.display = "none";
   }
   
@@ -126,6 +129,8 @@ const Auth = (function() {
     document.getElementById("login-form-container").style.display = "none";
     document.getElementById("register-form-container").style.display = "block";
     document.getElementById("verify-email-container").style.display = "none";
+    document.getElementById("forgot-password-container").style.display = "none";
+    document.getElementById("reset-password-container").style.display = "none";
     document.getElementById("main-app").style.display = "none";
   }
 
@@ -134,6 +139,28 @@ const Auth = (function() {
     document.getElementById("login-form-container").style.display = "none";
     document.getElementById("register-form-container").style.display = "none";
     document.getElementById("verify-email-container").style.display = "block";
+    document.getElementById("forgot-password-container").style.display = "none";
+    document.getElementById("reset-password-container").style.display = "none";
+    document.getElementById("main-app").style.display = "none";
+  }
+
+  function showForgotPasswordScreen() {
+    document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("login-form-container").style.display = "none";
+    document.getElementById("register-form-container").style.display = "none";
+    document.getElementById("verify-email-container").style.display = "none";
+    document.getElementById("forgot-password-container").style.display = "block";
+    document.getElementById("reset-password-container").style.display = "none";
+    document.getElementById("main-app").style.display = "none";
+  }
+
+  function showResetPasswordScreen() {
+    document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("login-form-container").style.display = "none";
+    document.getElementById("register-form-container").style.display = "none";
+    document.getElementById("verify-email-container").style.display = "none";
+    document.getElementById("forgot-password-container").style.display = "none";
+    document.getElementById("reset-password-container").style.display = "block";
     document.getElementById("main-app").style.display = "none";
   }
   
@@ -276,6 +303,12 @@ const Auth = (function() {
     }
 
     const data = await parseJsonSafe(response, (typeof t === 'function' ? t('auth.register_error') : 'Erro ao criar conta'));
+    if (data.verification_required) {
+      const tokenInput = document.getElementById("verification-token");
+      if (tokenInput && data.fallback_token) tokenInput.value = data.fallback_token;
+      showVerifyScreen();
+      return data;
+    }
     if (!data.access_token) throw new Error(data.detail || 'Resposta inválida do servidor');
     setToken(data.access_token);
     showMainApp();
@@ -358,6 +391,11 @@ const Auth = (function() {
     const showRegister = document.getElementById("show-register");
     const showLogin = document.getElementById("show-login");
     const showLoginVerify = document.getElementById("show-login-verify");
+    const showForgot = document.getElementById("show-forgot");
+    const showLoginForgot = document.getElementById("show-login-forgot");
+    const showLoginReset = document.getElementById("show-login-reset");
+    const forgotForm = document.getElementById("forgot-password-form");
+    const resetForm = document.getElementById("reset-password-form");
     const logoutBtn = document.getElementById("logout-btn");
     const logoutBtnSidebar = document.getElementById("logout-btn-sidebar");
     const verifyBtn = document.getElementById("verify-btn");
@@ -441,7 +479,78 @@ const Auth = (function() {
         showLoginScreen();
       });
     }
+
+    if (showForgot) {
+      showForgot.addEventListener("click", (e) => {
+        e.preventDefault();
+        showForgotPasswordScreen();
+      });
+    }
+
+    if (showLoginForgot) {
+      showLoginForgot.addEventListener("click", (e) => {
+        e.preventDefault();
+        showLoginScreen();
+      });
+    }
+
+    if (showLoginReset) {
+      showLoginReset.addEventListener("click", (e) => {
+        e.preventDefault();
+        showLoginScreen();
+      });
+    }
     
+    if (forgotForm) {
+      forgotForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = forgotForm.querySelector('input[name="email"]').value.trim();
+        try {
+          const response = await fetch("/auth/forgot-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+          const data = await parseJsonSafe(response, (typeof t === 'function' ? t('auth.forgot_error') : 'Erro ao solicitar redefinição de senha'));
+          if (!response.ok) throw new Error(data.detail || (typeof t === 'function' ? t('auth.forgot_error') : 'Erro ao solicitar redefinição de senha'));
+          alert(typeof t === 'function' ? t('auth.forgot_success') : 'Se este email estiver cadastrado, você receberá um link de redefinição. Verifique sua caixa de entrada.');
+          forgotForm.reset();
+          showLoginScreen();
+        } catch (err) {
+          alert(typeof translateBackendError === 'function' ? translateBackendError(err.message) : err.message);
+        }
+      });
+    }
+
+    if (resetForm) {
+      mountPasswordChecklist(resetForm);
+      resetForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const password = resetForm.querySelector('input[name="password"]').value;
+        const confirmPassword = resetForm.querySelector('input[name="confirm_password"]').value;
+        if (!guardPassword(resetForm, password, confirmPassword)) return;
+        if (!resetTokenFromUrl) {
+          alert(typeof t === 'function' ? t('auth.reset_error') : 'Erro ao redefinir senha');
+          return;
+        }
+        try {
+          const response = await fetch("/auth/reset-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: resetTokenFromUrl, password }),
+          });
+          const data = await parseJsonSafe(response, (typeof t === 'function' ? t('auth.reset_error') : 'Erro ao redefinir senha'));
+          if (!response.ok) throw new Error(data.detail || (typeof t === 'function' ? t('auth.reset_error') : 'Erro ao redefinir senha'));
+          resetTokenFromUrl = null;
+          resetForm.reset();
+          alert(typeof t === 'function' ? t('auth.reset_success') : 'Senha redefinida com sucesso! Agora você pode fazer login.');
+          showLoginScreen();
+        } catch (err) {
+          alert(typeof translateBackendError === 'function' ? translateBackendError(err.message) : err.message);
+        }
+      });
+    }
+
     if (logoutBtn) {
       logoutBtn.addEventListener("click", logout);
     }
@@ -487,8 +596,15 @@ const Auth = (function() {
         }
       });
     }
-    
-    checkAuth();
+
+    const resetToken = new URLSearchParams(window.location.search).get("reset_token");
+    if (resetToken) {
+      resetTokenFromUrl = resetToken;
+      window.history.replaceState({}, "", window.location.pathname);
+      showResetPasswordScreen();
+    } else {
+      checkAuth();
+    }
   }
 
   return {

@@ -1,8 +1,11 @@
 """Middleware: rate limiter, security headers, request logging."""
 
+import atexit
+import json
 import os
 import re
 import secrets
+import sys
 import threading
 import time
 from html import escape
@@ -20,17 +23,134 @@ from logger import get_logger, log_request
 log = get_logger("cronograma.main")
 
 
-# ─── Rate Limiter (in-memory) ─────────────────────────────────────────────────
+# ─── Rate Limiter (memória + persistência) ────────────────────────────────────
 
 
 class RateLimiter:
-    """Simple in-memory sliding-window rate limiter. Thread-safe."""
+    """Sliding-window rate limiter thread-safe, com persistência opcional.
 
-    def __init__(self):
+    Camada L1 (memória) é a fonte de verdade durante a vida do processo; um
+    write-through descarrega as janelas ativas no banco a cada ~5s, e o
+    primeiro check() carrega o que existir no banco — assim um restart do
+    uvicorn (deploy, crash, dormência do Render free) não zera a cota.
+
+    Persistência desligada sob pytest (não polui o cronograma.db de dev e
+    mantém os testes existentes determinísticos); os testes de persistência
+    constroem um RateLimiter explícito com session_factory temporário.
+    """
+
+    def __init__(self, persist=None, session_factory=None):
         self._store: dict[str, list[float]] = {}
         self._lock = threading.Lock()
         self._cleanup_interval = 60.0
         self._last_cleanup = time.time()
+        if persist is None:
+            persist = "pytest" not in sys.modules
+        self._persist = persist
+        self._session_factory = session_factory
+        self._loaded = not persist
+        self._dirty: set[str] = set()
+        self._last_flush = time.time()
+        self._flush_interval = 5.0
+        if persist:
+            atexit.register(self.flush)
+
+    def _get_session_factory(self):
+        if self._session_factory is not None:
+            return self._session_factory
+        from config import SessionLocal
+
+        return SessionLocal
+
+    def _ensure_loaded(self):
+        """Carrega buckets do banco uma única vez (lazy, no primeiro check)."""
+        if self._loaded:
+            return
+        self._loaded = True
+        try:
+            factory = self._get_session_factory()
+            db = factory()
+            try:
+                db.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS rate_limit_buckets ("
+                        "key TEXT PRIMARY KEY, hits TEXT NOT NULL, "
+                        "updated_at FLOAT NOT NULL)"
+                    )
+                )
+                db.commit()
+                rows = db.execute(
+                    text("SELECT key, hits FROM rate_limit_buckets")
+                ).fetchall()
+                cutoff = time.time() - 3600.0
+                for key, hits_json in rows:
+                    try:
+                        hits = [float(h) for h in json.loads(hits_json)]
+                    except (TypeError, ValueError):
+                        continue
+                    hits = [h for h in hits if h > cutoff]
+                    if hits:
+                        self._store[key] = hits
+            finally:
+                db.close()
+        except Exception as e:
+            # DB fora do ar: rate limit segue em memória (defesa em profundidade,
+            # não vale derrubar request por causa dele).
+            log.warning("Rate limiter: load from DB failed", extra={"error": str(e)})
+
+    def _flush_locked(self):
+        """Descarrega buckets sujos no banco. Chamar COM o lock ou após snapshot."""
+        if not self._persist or not self._dirty:
+            return
+        with self._lock:
+            dirty = set(self._dirty)
+            snapshot = {k: list(self._store.get(k, [])) for k in dirty}
+            self._dirty.clear()
+        if not snapshot:
+            return
+        try:
+            factory = self._get_session_factory()
+            db = factory()
+            try:
+                db.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS rate_limit_buckets ("
+                        "key TEXT PRIMARY KEY, hits TEXT NOT NULL, "
+                        "updated_at FLOAT NOT NULL)"
+                    )
+                )
+                now = time.time()
+                cutoff = now - 3600.0
+                for key, hits in snapshot.items():
+                    hits = [h for h in hits if h > cutoff]
+                    db.execute(
+                        text("DELETE FROM rate_limit_buckets WHERE key = :k"),
+                        {"k": key},
+                    )
+                    if hits:
+                        db.execute(
+                            text(
+                                "INSERT INTO rate_limit_buckets "
+                                "(key, hits, updated_at) VALUES (:k, :h, :t)"
+                            ),
+                            {"k": key, "h": json.dumps(hits), "t": now},
+                        )
+                # prune global barato: remove linhas velhas de outras chaves
+                db.execute(
+                    text("DELETE FROM rate_limit_buckets WHERE updated_at < :c"),
+                    {"c": cutoff},
+                )
+                db.commit()
+            finally:
+                db.close()
+        except Exception as e:
+            log.warning("Rate limiter: flush to DB failed", extra={"error": str(e)})
+
+    def flush(self):
+        """Ponto público para flush forçado (atexit + testes)."""
+        if not self._persist:
+            return
+        self._flush_locked()
 
     def _cleanup(self):
         now = time.time()
@@ -44,6 +164,7 @@ class RateLimiter:
 
     def check(self, key: str, max_requests: int, window_seconds: int = 60) -> bool:
         with self._lock:
+            self._ensure_loaded()
             self._cleanup()
             now = time.time()
             window_start = now - window_seconds
@@ -51,9 +172,20 @@ class RateLimiter:
                 self._store[key] = []
             self._store[key] = [t for t in self._store[key] if t > window_start]
             if len(self._store[key]) >= max_requests:
-                return False
-            self._store[key].append(now)
-            return True
+                self._dirty.add(key)
+                allowed = False
+            else:
+                self._store[key].append(now)
+                self._dirty.add(key)
+                allowed = True
+            should_flush = (
+                self._persist and now - self._last_flush >= self._flush_interval
+            )
+            if should_flush:
+                self._last_flush = now
+        if should_flush:
+            self._flush_locked()
+        return allowed
 
     def retry_after(self, key: str, window_seconds: int = 60) -> int:
         """Segundos ate a janela liberar uma vaga (minimo 1, nunca 0)."""
@@ -203,20 +335,10 @@ def get_client_ip(request) -> str:
 
 
 def verify_token(token: str):
-    """Helper: verifica token JWT (usado no middleware de logging)."""
-    # Esta é uma versão simplificada para o middleware.
-    # Em produção, usaria auth_service.verify_token()
-    try:
-        from jose import JWTError, jwt
-        from config import SECRET_KEY, ALGORITHM
+    """Verifica token JWT — delega à fonte única (services.auth_service)."""
+    from services.auth_service import verify_token as _verify_token
 
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-        if user_id:
-            return True, int(user_id)
-        return False, 0
-    except Exception:
-        return False, 0
+    return _verify_token(token)
 
 
 def validate_email(email: str) -> bool:
@@ -268,19 +390,6 @@ def generate_verification_token() -> str:
     return str(uuid.uuid4())
 
 
-def sendVerificationEmail(user, token: str):
-    log = get_logger("cronograma.auth")
-    log.info(
-        "Verification email",
-        extra={
-            "action": "send_verification_email",
-            "email": user.email,
-            "token_preview": token[:8] + "...",
-        },
-    )
-    return True
-
-
 # ─── CORS Setup ────────────────────────────────────────────────────────────────
 
 
@@ -291,5 +400,5 @@ def setup_cors(app):
         allow_origins=CORS_ORIGINS,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH", "DELETE", "PUT", "HEAD", "OPTIONS"],
-        allow_headers=["*"],
+        allow_headers=["Content-Type", "Authorization"],
     )
