@@ -1458,7 +1458,7 @@ async function handleProfileSubmit(e) {
     const first = document.querySelector('.sidebar-link');
     if (first) first.click();
   } catch (err) {
-    alert(err.message || 'Erro ao salvar perfil');
+    alert(err.message || (typeof window.t === 'function' ? window.t('perfil.save_error') : 'Erro ao salvar perfil'));
   }
 }
 

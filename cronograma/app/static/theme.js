@@ -41,27 +41,22 @@ const ThemeManager = (function() {
     dispatchEvent(theme);
   }
 
+  function themeDisplayName(key) {
+    if (typeof t === 'function') {
+      const label = t('temas.' + key);
+      if (label && label !== 'temas.' + key) return label;
+    }
+    return key;
+  }
+
   function updateUISelector(theme) {
     const select = document.getElementById('theme-select');
     const selectSidebar = document.getElementById('theme-select-sidebar');
     
-    // Theme names mapping
-    const themeNames = {
-      'dark': 'Escuro',
-      'light': 'Claro',
-      'ocean': 'Ocean',
-      'purple': 'Purple',
-      'forest': 'Forest',
-      'midnight': 'Midnight',
-      'pastel': 'Pastel',
-      'contrast': 'High Contrast'
-    };
-    
-    // Update main selector if exists
     if (select) {
       if (select.options.length < THEMES.length) {
-        select.innerHTML = THEMES.map(t => 
-          `<option value="${t}">${themeNames[t] || t}</option>`
+        select.innerHTML = THEMES.map(th => 
+          `<option value="${th}">${themeDisplayName(th)}</option>`
         ).join('');
       }
       if (select.value !== theme) {
@@ -69,11 +64,10 @@ const ThemeManager = (function() {
       }
     }
     
-    // Update sidebar selector if exists
     if (selectSidebar) {
       if (selectSidebar.options.length < THEMES.length) {
-        selectSidebar.innerHTML = THEMES.map(t => 
-          `<option value="${t}">${themeNames[t] || t}</option>`
+        selectSidebar.innerHTML = THEMES.map(th => 
+          `<option value="${th}">${themeDisplayName(th)}</option>`
         ).join('');
       }
       if (selectSidebar.value !== theme) {
@@ -122,45 +116,32 @@ const ThemeManager = (function() {
       return;
     }
     
-    // Theme names mapping
-    const themeNames = {
-      'dark': 'Escuro',
-      'light': 'Claro',
-      'ocean': 'Ocean',
-      'purple': 'Purple',
-      'forest': 'Forest',
-      'midnight': 'Midnight',
-      'pastel': 'Pastel',
-      'contrast': 'High Contrast'
-    };
-    
-    // Setup main selector
     if (select && select.dataset.listener !== 'true') {
       select.dataset.listener = 'true';
-      select.innerHTML = THEMES.map(t => 
-        `<option value="${t}">${themeNames[t] || t}</option>`
-      ).join('');
+      if (select.options.length < THEMES.length) {
+        select.innerHTML = THEMES.map(th => 
+          `<option value="${th}">${themeDisplayName(th)}</option>`
+        ).join('');
+      }
       select.addEventListener('change', function() {
         setTheme(this.value);
-        // Sync sidebar selector
         if (selectSidebar) selectSidebar.value = this.value;
       });
     }
     
-    // Setup sidebar selector
     if (selectSidebar && selectSidebar.dataset.listener !== 'true') {
       selectSidebar.dataset.listener = 'true';
-      selectSidebar.innerHTML = THEMES.map(t => 
-        `<option value="${t}">${themeNames[t] || t}</option>`
-      ).join('');
+      if (selectSidebar.options.length < THEMES.length) {
+        selectSidebar.innerHTML = THEMES.map(th => 
+          `<option value="${th}">${themeDisplayName(th)}</option>`
+        ).join('');
+      }
       selectSidebar.addEventListener('change', function() {
         setTheme(this.value);
-        // Sync main selector
         if (select) select.value = this.value;
       });
     }
     
-    // Sync initial values
     if (select && selectSidebar) {
       const currentTheme = getTheme();
       select.value = currentTheme;

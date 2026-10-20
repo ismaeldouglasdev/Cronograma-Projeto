@@ -210,9 +210,9 @@
             <span class="guest-banner-text" data-i18n="sidebar.guest_mode">Modo convidado</span>
             <button id="save-progress-btn" class="guest-save-btn" data-i18n="sidebar.save_progress">Salvar progresso</button>
           </div>
-          <select id="theme-select-sidebar" class="theme-select" aria-label="Selecionar tema">
-            <option value="dark">Escuro</option>
-            <option value="light">Claro</option>
+<select id="theme-select-sidebar" class="theme-select" data-i18n-aria="temas.select" aria-label="Selecionar tema">
+                            <option value="dark" data-i18n="temas.dark">Escuro</option>
+                            <option value="light" data-i18n="temas.light">Claro</option>
             <option value="ocean">Ocean</option>
             <option value="purple">Purple</option>
             <option value="forest">Forest</option>
@@ -309,7 +309,7 @@
         <div class="foco-config-section">
           <div class="foco-config">
             <label for="foco-area" data-i18n="foco.label_area">Área</label>
-            <input id="foco-area" list="foco-area-list" placeholder="Digite o nome da área..." autocomplete="off">
+            <input id="foco-area" list="foco-area-list" data-i18n-placeholder="foco.area_placeholder" placeholder="Digite o nome da área..." autocomplete="off">
             <datalist id="foco-area-list"></datalist>
             
             <label for="foco-task" data-i18n="foco.label_tarefa">Tarefa (opcional)</label>
@@ -607,7 +607,7 @@
           <option value="" data-i18n="sessoes.select_area">Selecione a área</option>
         </select>
         <input type="number" name="duracao_minutos" data-i18n-placeholder="sessoes.minutos_placeholder" placeholder="Minutos (ex: 30)" min="1" max="480" required data-i18n-aria="sessoes.minutos_placeholder" aria-label="Duração em minutos">
-        <input type="date" name="data" title="Deixe em branco para hoje" data-i18n-aria="sessoes.data_placeholder" aria-label="Data">
+        <input type="date" name="data" data-i18n-title="sessoes.data_title" title="Deixe em branco para hoje" data-i18n-aria="sessoes.data_placeholder" aria-label="Data">
         <button type="submit" data-i18n="sessoes.btn_registrar">Registrar</button>
       </form>
       <ul id="lista-sessoes" class="list"></ul>
@@ -903,13 +903,13 @@
     </div>
   </div>
 
-  <script src="/static/i18n.js?v=20261020a"></script>
+  <script src="/static/i18n.js?v=20261020b"></script>
   <script src="/static/svg.js?v=20260910b"></script>
-  <script src="/static/theme.js?v=20260910b"></script>
+  <script src="/static/theme.js?v=20261020b"></script>
   <script src="/static/boot.js?v=20261020a"></script>
   <script src="/static/auth.js?v=20261020a"></script>
   <script src="/static/store.js?v=20260910b"></script>
-  <script src="/static/app.js?v=20261020a"></script>
+  <script src="/static/app.js?v=20261020b"></script>
   <script src="/static/foco.js?v=20260910b"></script>
 </body>
 </html>
