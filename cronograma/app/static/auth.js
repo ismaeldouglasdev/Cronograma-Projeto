@@ -597,6 +597,14 @@ const Auth = (function() {
       });
     }
 
+    document.querySelectorAll("[data-upgrade-dismiss]").forEach((el) => {
+      el.addEventListener("click", () => {
+        if (typeof window.showUpgradeForm === "function") {
+          window.showUpgradeForm(false);
+        }
+      });
+    });
+
     const resetToken = new URLSearchParams(window.location.search).get("reset_token");
     if (resetToken) {
       resetTokenFromUrl = resetToken;

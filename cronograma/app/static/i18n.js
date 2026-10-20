@@ -1098,4 +1098,7 @@ if (typeof window !== 'undefined') {
   window.toggleLang = toggleLang;
   window.getCurrentLang = getCurrentLang;
   window.applyTranslations = applyTranslations;
+  document.querySelectorAll("[data-lang-toggle]").forEach(function(el) {
+    el.addEventListener("click", toggleLang);
+  });
 }

@@ -230,10 +230,9 @@ async def security_headers_middleware(request, call_next):
     # Estáticos: sempre revalidar via ETag (evita cache stale após deploys)
     if request.url.path.startswith("/static") or request.url.path.startswith("/icon_images"):
         response.headers["Cache-Control"] = "no-cache, must-revalidate"
-    # CSP permissivo para app com CDN/Chart.js inline
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "script-src 'self' https://cdn.jsdelivr.net; "
         "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
         "img-src 'self' data: blob: https:; "
         "connect-src 'self'; "

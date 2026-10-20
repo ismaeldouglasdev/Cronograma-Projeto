@@ -73,6 +73,10 @@ const FocoTimer = (function() {
     if (backdrop) {
       backdrop.addEventListener("click", closePomoModal);
     }
+    var continueBtn = modal.querySelector(".pomo-modal-btn");
+    if (continueBtn) {
+      continueBtn.addEventListener("click", closePomoModal);
+    }
     document.addEventListener("keydown", function(e) {
       if (e.key === "Escape" && modal.classList.contains("open")) {
         closePomoModal();

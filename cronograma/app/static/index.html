@@ -8,7 +8,7 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="/static/style.css?v=20261013a">
   <style>
@@ -53,25 +53,14 @@
       background: rgba(245, 158, 11, 0.1);
     }
   </style>
-  <script>
-    (function() {
-      var themes = ['dark', 'light', 'ocean'];
-      var theme = 'dark';
-      try {
-        theme = localStorage.getItem('app_theme') || 'dark';
-      } catch(e) {}
-      if (themes.indexOf(theme) === -1) theme = 'dark';
-      document.documentElement.setAttribute('data-theme', theme);
-      window.__initialTheme = theme;
-    })();
-  </script>
+  <script src="/static/theme-init.js?v=20261020a"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <!-- Login Screen -->
   <div id="login-screen" class="login-screen">
     <div class="login-container">
-      <button class="lang-switch-auth" onclick="toggleLang()" title="Switch language">PT</button>
+      <button class="lang-switch-auth" data-lang-toggle title="Switch language">PT</button>
       <div class="login-header">
         <span class="login-icon" data-svg-icon="graduation" data-svg-size="48"></span>
         <h1>Cronograma</h1>
@@ -233,7 +222,7 @@
             <option value="contrast">High Contrast</option>
           </select>
           <div style="display:flex;align-items:center;gap:0.35rem;">
-            <button class="lang-switch" onclick="toggleLang()" title="Switch language">PT</button>
+            <button class="lang-switch" data-lang-toggle title="Switch language">PT</button>
             <button id="logout-btn-sidebar" class="logout-btn" data-i18n="sidebar.sair">Sair</button>
           </div>
         </div>
@@ -893,7 +882,7 @@
         </div>
       </div>
       <div class="pomo-modal-footer">
-        <button class="pomo-modal-btn" onclick="FocoTimer.closePomoModal()" data-i18n="pomo_modal.continuar">
+        <button class="pomo-modal-btn" data-i18n="pomo_modal.continuar">
           Continuar
         </button>
       </div>
@@ -901,9 +890,9 @@
   </div>
 
   <div id="upgrade-modal" class="modal" style="display:none;">
-    <div class="modal-backdrop" onclick="showUpgradeForm(false)"></div>
+    <div class="modal-backdrop" data-upgrade-dismiss></div>
     <div class="modal-content">
-      <button class="modal-close" onclick="showUpgradeForm(false)">&times;</button>
+      <button class="modal-close" data-upgrade-dismiss>&times;</button>
       <h3 class="modal-title" data-i18n="upgrade.title">Salvar progresso</h3>
       <p class="upgrade-info" data-i18n="upgrade.info">Crie uma conta permanente para salvar seu progresso e continuar de onde parou.</p>
       <form id="upgrade-form" class="auth-form">
@@ -915,12 +904,11 @@
     </div>
   </div>
 
-  <script src="/static/i18n.js?v=20260927a"></script>
+  <script src="/static/i18n.js?v=20261020a"></script>
   <script src="/static/svg.js?v=20260910b"></script>
-  <script>SVGI.hydrate(document);</script>
   <script src="/static/theme.js?v=20260910b"></script>
-  <script>ThemeManager.init();</script>
-  <script src="/static/auth.js?v=20261012a"></script>
+  <script src="/static/boot.js?v=20261020a"></script>
+  <script src="/static/auth.js?v=20261020a"></script>
   <script src="/static/store.js?v=20260910b"></script>
   <script src="/static/app.js?v=20260910b"></script>
   <script src="/static/foco.js?v=20260910b"></script>

@@ -8,7 +8,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f59e0b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 10 12 5 2 10l10 5 10-5z'/%3E%3Cpath d='M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"></noscript>
 
   <style>
@@ -504,20 +504,7 @@
       flex-shrink: 0;
     }
   </style>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const cards = document.querySelectorAll('.feature-card');
-      cards.forEach(card => {
-        card.addEventListener('mousemove', e => {
-          const rect = card.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          card.style.setProperty('--x', `${x}px`);
-          card.style.setProperty('--y', `${y}px`);
-        });
-      });
-    });
-  </script>
+  <script src="/static/landing-tilt.js?v=20261020a"></script>
 </head>
 <body>
   <div class="glow-top"></div>
@@ -529,7 +516,7 @@
       <a href="#recursos" class="nav-link" data-i18n="landing.nav_recursos">Recursos</a>
       <a href="#como-funciona" class="nav-link" data-i18n="landing.nav_como">Como funciona</a>
       <a href="#faq" class="nav-link" data-i18n="landing.nav_faq">FAQ</a>
-      <button class="lang-switch" onclick="toggleLang()" title="Switch language">PT</button>
+      <button class="lang-switch" data-lang-toggle title="Switch language">PT</button>
       <a href="/app" class="btn-primary" data-i18n="landing.nav_acessar">Acessar Cronograma</a>
     </div>
   </nav>
@@ -645,8 +632,8 @@
     Cronograma de Estudos &mdash; Projeto Open Source
   </footer>
 
-  <script src="/static/i18n.js"></script>
-  <script src="/static/svg.js"></script>
-  <script>SVGI.hydrate(document);</script>
+  <script src="/static/i18n.js?v=20261020a"></script>
+  <script src="/static/svg.js?v=20260910b"></script>
+  <script src="/static/boot.js?v=20261020a"></script>
 </body>
 </html>
