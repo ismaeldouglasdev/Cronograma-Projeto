@@ -2936,6 +2936,8 @@ main {
 
   .menu-toggle {
     display: inline-flex;
+    width: 44px;
+    height: 44px;
   }
 
   .sidebar-header {
@@ -3039,6 +3041,7 @@ main {
     padding: 0.5rem;
     gap: 0.25rem;
     font-size: 0.65rem;
+    min-height: var(--touch, 44px);
   }
 
   .sidebar-text {
