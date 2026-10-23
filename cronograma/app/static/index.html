@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print">
   <noscript><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="/static/style.css?v=20261020a">
+  <link rel="stylesheet" href="/static/style.css?v=20261023a">
   <style>
     .lang-switch {
       font-size: 0.7rem;
@@ -198,10 +198,6 @@
           <button class="sidebar-link" data-tab="resumo">
             <span class="sidebar-icon" data-svg-icon="chart" data-svg-size="17"></span>
             <span class="sidebar-text" data-i18n="sidebar.resumo">Resumo</span>
-          </button>
-          <button class="sidebar-link" data-tab="heatmap">
-            <span class="sidebar-icon" data-svg-icon="calendar" data-svg-size="17"></span>
-            <span class="sidebar-text" data-i18n="sidebar.heatmap">Atividade</span>
           </button>
         </nav>
         
@@ -680,6 +676,45 @@
           </div>
         </div>
 
+        <!-- Heatmap de Atividade -->
+        <div class="heatmap-section">
+          <h3 class="resumo-section-title" data-i18n="sidebar.heatmap">Atividade</h3>
+          <p class="section-desc" data-i18n="heatmap.section_desc">Sua atividade de estudo ao longo do tempo</p>
+
+          <div class="heatmap-stats">
+            <div class="heatmap-stat-card">
+              <span class="heatmap-stat-num" id="heatmap-current-streak">0</span>
+              <span class="heatmap-stat-label" data-i18n="heatmap.streak_atual">streak atual</span>
+            </div>
+            <div class="heatmap-stat-card">
+              <span class="heatmap-stat-num" id="heatmap-longest-streak">0</span>
+              <span class="heatmap-stat-label" data-i18n="heatmap.maior_streak">maior streak</span>
+            </div>
+            <div class="heatmap-stat-card">
+              <span class="heatmap-stat-num" id="heatmap-active-days">0</span>
+              <span class="heatmap-stat-label" data-i18n="heatmap.dias_ativos">dias ativos</span>
+            </div>
+            <div class="heatmap-stat-card">
+              <span class="heatmap-stat-num" id="heatmap-total-min">0</span>
+              <span class="heatmap-stat-label" data-i18n="heatmap.minutos_totais">minutos totais</span>
+            </div>
+          </div>
+
+          <div class="heatmap-grid-wrap">
+            <div class="heatmap-grid" id="heatmap-grid"></div>
+          </div>
+
+          <div class="heatmap-legend">
+            <span data-i18n="heatmap.menos">Menos</span>
+            <span class="heatmap-legend-cell level-0"></span>
+            <span class="heatmap-legend-cell level-1"></span>
+            <span class="heatmap-legend-cell level-2"></span>
+            <span class="heatmap-legend-cell level-3"></span>
+            <span class="heatmap-legend-cell level-4"></span>
+            <span data-i18n="heatmap.mais">Mais</span>
+          </div>
+        </div>
+
         <!-- Lista de Áreas com Barras -->
         <div class="resumo-list-section">
           <h3 class="resumo-section-title" data-i18n="resumo.detalhamento">Detalhamento</h3>
@@ -688,45 +723,6 @@
       </div>
     </section>
 
-    <!-- Heatmap de Atividade -->
-    <section id="heatmap" class="panel">
-      <div class="heatmap-page">
-        <p class="section-desc" data-i18n="heatmap.section_desc">Sua atividade de estudo ao longo do tempo</p>
-
-        <div class="heatmap-stats">
-          <div class="heatmap-stat-card">
-            <span class="heatmap-stat-num" id="heatmap-current-streak">0</span>
-            <span class="heatmap-stat-label" data-i18n="heatmap.streak_atual">streak atual</span>
-          </div>
-          <div class="heatmap-stat-card">
-            <span class="heatmap-stat-num" id="heatmap-longest-streak">0</span>
-            <span class="heatmap-stat-label" data-i18n="heatmap.maior_streak">maior streak</span>
-          </div>
-          <div class="heatmap-stat-card">
-            <span class="heatmap-stat-num" id="heatmap-active-days">0</span>
-            <span class="heatmap-stat-label" data-i18n="heatmap.dias_ativos">dias ativos</span>
-          </div>
-          <div class="heatmap-stat-card">
-            <span class="heatmap-stat-num" id="heatmap-total-min">0</span>
-            <span class="heatmap-stat-label" data-i18n="heatmap.minutos_totais">minutos totais</span>
-          </div>
-        </div>
-
-        <div class="heatmap-grid-wrap">
-          <div class="heatmap-grid" id="heatmap-grid"></div>
-        </div>
-
-        <div class="heatmap-legend">
-          <span data-i18n="heatmap.menos">Menos</span>
-          <span class="heatmap-legend-cell level-0"></span>
-          <span class="heatmap-legend-cell level-1"></span>
-          <span class="heatmap-legend-cell level-2"></span>
-          <span class="heatmap-legend-cell level-3"></span>
-          <span class="heatmap-legend-cell level-4"></span>
-          <span data-i18n="heatmap.mais">Mais</span>
-        </div>
-      </div>
-    </section>
   </main>
   </div><!-- End dashboard-layout -->
   </div><!-- End main-app -->
@@ -903,13 +899,13 @@
     </div>
   </div>
 
-  <script src="/static/i18n.js?v=20261020b"></script>
-  <script src="/static/svg.js?v=20260910b"></script>
+  <script src="/static/i18n.js?v=20261023a"></script>
+  <script src="/static/svg.js?v=20261023a"></script>
   <script src="/static/theme.js?v=20261020b"></script>
   <script src="/static/boot.js?v=20261020a"></script>
   <script src="/static/auth.js?v=20261020a"></script>
   <script src="/static/store.js?v=20260910b"></script>
-  <script src="/static/app.js?v=20261020b"></script>
+  <script src="/static/app.js?v=20261023a"></script>
   <script src="/static/foco.js?v=20260910b"></script>
 </body>
 </html>

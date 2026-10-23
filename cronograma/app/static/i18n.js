@@ -962,15 +962,13 @@ btn_iniciar: 'Start',
 
 /**
  * Get the current language code
- * Priority: localStorage > browser detection > default (pt-BR)
+ * Priority: localStorage > default (pt-BR)
  */
 function getCurrentLang() {
   const stored = localStorage.getItem('app_lang');
   if (stored) return stored;
-  const browserLang = navigator.language || navigator.userLanguage || '';
-  const detected = browserLang.startsWith('pt') ? 'pt-BR' : 'en';
-  localStorage.setItem('app_lang', detected);
-  return detected;
+  localStorage.setItem('app_lang', 'pt-BR');
+  return 'pt-BR';
 }
 
 /**
@@ -1106,10 +1104,9 @@ function applyTranslations() {
   });
 }
 
-// Auto-detect language on first visit
+// Default language on first visit
 if (!localStorage.getItem('app_lang')) {
-  const browserLang = navigator.language || navigator.userLanguage || '';
-  localStorage.setItem('app_lang', browserLang.startsWith('pt') ? 'pt-BR' : 'en');
+  localStorage.setItem('app_lang', 'pt-BR');
 }
 
 // Apply translations on DOM ready

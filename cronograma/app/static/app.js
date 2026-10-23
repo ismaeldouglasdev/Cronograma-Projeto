@@ -836,13 +836,9 @@ async function loadResumo() {
     document.getElementById("resumo-sessoes-total").textContent = totalSessoes;
     document.getElementById("resumo-areas-total").textContent = uniqueAreaIds;
     
-    // Encontrar o máximo para as barras
-    const maxMinutos = Math.max(...resumo.map(r => r.total_minutos));
-    
-    // Renderizar lista com barras de progresso
     container.innerHTML = resumo
       .map((r) => {
-        const percent = maxMinutos > 0 ? (r.total_minutos / maxMinutos) * 100 : 0;
+        const percent = totalMinutos > 0 ? (r.total_minutos / totalMinutos) * 100 : 0;
         return `
           <div class="resumo-item">
             <span class="resumo-dot" style="background:${r.area_cor || '#6366f1'}"></span>
@@ -879,7 +875,7 @@ async function loadResumo() {
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
           plugins: {
             legend: {
               position: 'bottom',
@@ -992,7 +988,7 @@ async function loadAnalytics() {
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
             x: { ticks: { color: "#9b9a97", maxTicksLimit: 8 }, grid: { display: false } },
@@ -1017,7 +1013,7 @@ async function loadAnalytics() {
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
             x: { ticks: { color: "#9b9a97" }, grid: { display: false } },
@@ -1042,13 +1038,12 @@ function getPageTitle(tabName) {
     'tasks': _t('pages.tarefas'),
     'sessoes': _t('pages.sessoes'),
     'resumo': _t('pages.resumo'),
-    'heatmap': _t('pages.heatmap'),
     'perfil': _t('pages.perfil')
   };
   return titles[tabName] || tabName;
 }
 
-const VALID_TABS = ['areas', 'foco', 'gamificacao', 'perfil', 'horarios', 'tasks', 'sessoes', 'resumo', 'heatmap'];
+const VALID_TABS = ['areas', 'foco', 'gamificacao', 'perfil', 'horarios', 'tasks', 'sessoes', 'resumo'];
 
 function switchToTab(tabName) {
   // Update all tab/sidebar-link elements
@@ -1083,10 +1078,8 @@ function switchToTab(tabName) {
     ensureChartJs().catch(() => {}).then(() => {
       loadResumo();
       loadAnalytics();
+      loadHeatmap();
     });
-  }
-  if (tabName === 'heatmap') {
-    loadHeatmap();
   }
   if (tabName === 'gamificacao') {
     loadMissions();
@@ -1103,7 +1096,7 @@ function switchToTab(tabName) {
 }
 
 function handleHashChange() {
-  const tab = window.location.hash.replace(/^#\//, '');
+  const tab = window.location.hash.replace(/^#\//, '').replace(/^heatmap$/, 'resumo');
   if (!VALID_TABS.includes(tab)) return;
   const activePanel = document.querySelector('.panel.active');
   if (activePanel && activePanel.id === tab) return;
@@ -1181,7 +1174,7 @@ async function init() {
   populateSubcategoriasDatalist();
 
   window.addEventListener('hashchange', handleHashChange);
-  const initialTab = window.location.hash.replace(/^#\//, '');
+  const initialTab = window.location.hash.replace(/^#\//, '').replace(/^heatmap$/, 'resumo');
   if (VALID_TABS.includes(initialTab)) {
     switchToTab(initialTab);
   }
