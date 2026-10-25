@@ -20,6 +20,12 @@ class User(Base):
     # without any data migration. is_guest=True with stale created_at is swept.
     is_guest = Column(Boolean, default=False, nullable=True)
 
+    # Versão dos tokens emitidos. Todo JWT carrega o valor atual no claim
+    # `ver`; trocar a senha (ou pedir logout global) incrementa este número e
+    # invalida imediatamente access/refresh tokens antigos. Tokens sem o claim
+    # (emitidos antes deste campo) são tratados como versão 0.
+    token_version = Column(Integer, default=0, nullable=True)
+
     # OAuth / Profile fields
     auth_provider = Column(String(20), nullable=True, default="password")  # 'password'|'google'|'both'
     google_provider_id = Column(String(255), nullable=True)

@@ -212,8 +212,8 @@ def register(
             fallback_token=fallback_token,
         )
 
-    access_token = create_access_token(user.id)
-    refresh_token = create_refresh_token(user.id)
+    access_token = create_access_token(user.id, token_version=user.token_version)
+    refresh_token = create_refresh_token(user.id, token_version=user.token_version)
     _set_auth_cookies(response, access_token, refresh_token)
 
     auth_log.info(
@@ -276,8 +276,10 @@ def login(
         extra={"user_id": user.id, "email": user.email, "action": "login"},
     )
 
-    access_token = create_access_token(user.id, is_guest=bool(user.is_guest))
-    refresh_token = create_refresh_token(user.id)
+    access_token = create_access_token(
+        user.id, is_guest=bool(user.is_guest), token_version=user.token_version
+    )
+    refresh_token = create_refresh_token(user.id, token_version=user.token_version)
     _set_auth_cookies(response, access_token, refresh_token)
 
     return TokenResponse(access_token=access_token)
@@ -302,7 +304,7 @@ def refresh_access_token(
     if not refresh_token:
         raise HTTPException(status_code=401, detail="Refresh token não fornecido")
 
-    valid, user_id = verify_refresh_token(refresh_token)
+    valid, user_id = verify_refresh_token(refresh_token, db=db)
     if not valid:
         auth_log.warning(
             "Invalid refresh token used",
@@ -310,13 +312,17 @@ def refresh_access_token(
         )
         raise HTTPException(status_code=401, detail="Refresh token inválido ou expirado")
 
-    is_guest = False
     user = db.query(User).filter(User.id == user_id).first()
-    if user:
-        is_guest = bool(user.is_guest)
+    if not user:
+        raise HTTPException(status_code=401, detail="Refresh token inválido ou expirado")
+    is_guest = bool(user.is_guest)
 
-    new_access_token = create_access_token(user_id, is_guest=is_guest)
-    new_refresh_token = create_refresh_token(user_id)
+    new_access_token = create_access_token(
+        user_id, is_guest=is_guest, token_version=user.token_version
+    )
+    new_refresh_token = create_refresh_token(
+        user_id, token_version=user.token_version
+    )
 
     is_secure = os.environ.get("ENVIRONMENT", "development") == "production"
     response.set_cookie(
@@ -383,8 +389,10 @@ def guest_login(
     db.commit()
     db.refresh(user)
 
-    access_token = create_access_token(user.id, is_guest=True)
-    refresh_token = create_refresh_token(user.id)
+    access_token = create_access_token(
+        user.id, is_guest=True, token_version=user.token_version
+    )
+    refresh_token = create_refresh_token(user.id, token_version=user.token_version)
     _set_auth_cookies(response, access_token, refresh_token)
 
     auth_log.info(
@@ -422,12 +430,15 @@ def upgrade_guest(
     user.password_hash = hash_password(body.password)
     user.is_guest = False
     user.is_verified = True
+    user.token_version = (user.token_version or 0) + 1
     db.add(user)
     db.commit()
     db.refresh(user)
 
-    access_token = create_access_token(user.id, is_guest=False)
-    refresh_token = create_refresh_token(user.id)
+    access_token = create_access_token(
+        user.id, is_guest=False, token_version=user.token_version
+    )
+    refresh_token = create_refresh_token(user.id, token_version=user.token_version)
     _set_auth_cookies(response, access_token, refresh_token)
 
     auth_log.info(
@@ -631,6 +642,8 @@ def reset_password(
     # ainda pendentes de verificação.
     user.is_verified = True
     user.verification_token = None
+    # Invalida access/refresh tokens emitidos antes do reset (claim `ver`).
+    user.token_version = (user.token_version or 0) + 1
     reset.used_at = datetime.now(timezone.utc).isoformat()
     db.add(user)
     db.add(reset)
@@ -641,6 +654,35 @@ def reset_password(
         extra={"user_id": user.id, "action": "reset_password"},
     )
     return {"message": "Senha redefinida com sucesso. Faça login."}
+
+
+@router.post("/logout-all")
+def logout_all(
+    response: Response,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Encerra todas as sessões do usuário, inclusive a atual.
+
+    Incrementa token_version: qualquer access/refresh token emitido antes
+    deixa de valer assim que a próxima requisição o apresentar.
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuário não encontrado")
+
+    user.token_version = (user.token_version or 0) + 1
+    db.add(user)
+    db.commit()
+
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
+
+    auth_log.info(
+        "All sessions revoked",
+        extra={"user_id": user.id, "action": "logout_all"},
+    )
+    return {"message": "Todas as sessões foram encerradas."}
 
 
 # ─── Google OAuth ─────────────────────────────────────────────────────────────
@@ -859,8 +901,10 @@ def google_callback(
     # Issue tokens
     from services.auth_service import create_access_token, create_refresh_token
 
-    access_token = create_access_token(user.id, is_guest=bool(user.is_guest))
-    refresh_token = create_refresh_token(user.id)
+    access_token = create_access_token(
+        user.id, is_guest=bool(user.is_guest), token_version=user.token_version
+    )
+    refresh_token = create_refresh_token(user.id, token_version=user.token_version)
 
     # IMPORTANTE: os cookies (tanto o delete dos cookies OAuth temporários quanto
     # o set de access/refresh) precisam ficar no MESMO objeto retornado; setá-los

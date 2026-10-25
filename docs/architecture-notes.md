@@ -1,8 +1,18 @@
 # Notas de Arquitetura
 
-## JWT stateless - dívida técnica
-- Autenticação usa JWT stateless (`python-jose`). Tokens não são revogados server-side.
-- Ao resetar senha via `/auth/reset-password`, **sessões JWT existentes não são invalidadas**.
-- Impacto: tokens antigos permanecem válidos até expiração natural.
-- Mitigação futura: implementar token blocklist (Redis) ou rotação por versão de token por usuário. 
-- Status: aceito para este release (abordagem incremental conforme plano).
+## JWT stateless - revogação por versão de token
+
+Autenticação continua stateless (`python-jose`), mas cada usuário tem
+`users.token_version`. Todo access/refresh token carrega o claim `ver`:
+
+- `get_current_user` consulta o usuário e rejeita o token quando
+  `ver != users.token_version` (ou quando o usuário foi excluído).
+- `POST /auth/reset-password` incrementa `token_version` → access e refresh
+  tokens emitidos antes do reset deixam de valer imediatamente.
+- `POST /auth/logout-all` incrementa `token_version` e limpa os cookies →
+  encerra todas as sessões, inclusive a atual.
+- Tokens emitidos antes deste campo (sem claim `ver`) são tratados como
+  versão 0 e continuam válidos até o primeiro reset/logout global.
+
+O custo é uma consulta ao usuário por requisição autenticada. Não há
+blocklist em Redis: a versão por usuário resolve revogação sem infra nova.

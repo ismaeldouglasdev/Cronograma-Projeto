@@ -78,6 +78,8 @@ Cronograma(Projeto)/
 | POST | `/auth/login` | Login (retorna JWT) |
 | POST | `/auth/guest` | Login como convidado (cria guest no banco, retorna JWT com claim `guest:true`) |
 | POST | `/auth/upgrade` | Upgrade de convidado para conta real (mesma linha/user_id, email + senha reais) |
+| POST | `/auth/refresh` | Rotaciona access/refresh tokens (cookie ou body) |
+| POST | `/auth/logout-all` | Encerra todas as sessões (incrementa `token_version`) |
 | GET | `/auth/check` | Verificar autenticação atual |
 | GET | `/areas` | Listar áreas |
 | POST | `/areas` | Criar área |

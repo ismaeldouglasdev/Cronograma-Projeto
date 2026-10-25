@@ -78,6 +78,8 @@ Cronograma(Projeto)/
 | POST | `/auth/login` | Login (returns JWT) |
 | POST | `/auth/guest` | Login as guest (creates guest in DB, returns JWT with `guest:true` claim) |
 | POST | `/auth/upgrade` | Upgrade guest to real account (same row/user_id, real email + password) |
+| POST | `/auth/refresh` | Rotate access/refresh tokens (cookie or body) |
+| POST | `/auth/logout-all` | Revoke every session (bumps `token_version`) |
 | GET | `/auth/check` | Check current authentication |
 | GET | `/areas` | List areas |
 | POST | `/areas` | Create area |

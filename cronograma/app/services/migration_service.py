@@ -95,6 +95,7 @@ def run_sqlite_migrations(engine) -> None:
         add_column_if_not_exists(conn, "users", "last_freeze_grant_date", "VARCHAR(20)")
         add_column_if_not_exists(conn, "users", "coins", "INTEGER DEFAULT 0")
         add_column_if_not_exists(conn, "users", "is_guest", "BOOLEAN DEFAULT 0")
+        add_column_if_not_exists(conn, "users", "token_version", "INTEGER DEFAULT 0")
         # OAuth / Profile fields (SQLite)
         add_column_if_not_exists(conn, "users", "auth_provider", "TEXT DEFAULT 'password'")
         add_column_if_not_exists(conn, "users", "google_provider_id", "TEXT")
@@ -315,6 +316,10 @@ def run_postgres_migrations(engine) -> None:
                 "Migration password_hash nullable failed",
                 extra={"error": str(e)},
             )
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 0"))
+        except Exception as e:
+            log.warning("Migration add column failed", extra={"column": "token_version", "table": "users", "error": str(e)})
         # OAuth / Profile fields (Postgres)
         try:
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20) DEFAULT 'password'"))
