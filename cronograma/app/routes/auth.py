@@ -709,8 +709,9 @@ def google_callback(
     from fastapi.responses import RedirectResponse
     from datetime import datetime, timezone
 
-    if not code or not state:
-        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_missing_params")
+    try:
+        if not code or not state:
+            return RedirectResponse(url=f"{APP_URL}/app?error=oauth_missing_params")
 
     stored_state = request.cookies.get("google_oauth_state")
     stored_verifier = request.cookies.get("google_oauth_verifier")
@@ -856,6 +857,12 @@ def google_callback(
     resp.delete_cookie("google_oauth_verifier", httponly=True, secure=is_secure, samesite="lax")
     _set_auth_cookies(resp, access_token, refresh_token)
     return resp
+    except Exception as e:
+        auth_log.error(
+            "Google OAuth callback unhandled error",
+            extra={"error": str(e), "error_type": type(e).__name__},
+        )
+        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_internal_error")
 
 
 # ─── Dependências ─────────────────────────────────────────────────────────────
