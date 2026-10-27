@@ -648,52 +648,65 @@ def reset_password(
 @router.get("/google")
 def google_auth(request: Request, response: Response):
     """Initiate Google OAuth (Auth Code + PKCE + state)."""
-    from config import GOOGLE_CLIENT_ID, GOOGLE_REDIRECT_URI, GOOGLE_OAUTH_SCOPES, APP_URL
-    from services.auth_service import generate_pkce_pair, generate_state
+    try:
+        from config import GOOGLE_CLIENT_ID, GOOGLE_REDIRECT_URI, GOOGLE_OAUTH_SCOPES, APP_URL
+        from services.auth_service import generate_pkce_pair, generate_state
 
-    code_verifier, code_challenge = generate_pkce_pair()
-    state = generate_state()
+        if not GOOGLE_CLIENT_ID:
+            auth_log.error("Google OAuth not configured: GOOGLE_CLIENT_ID missing")
+            raise HTTPException(status_code=500, detail="Google OAuth não configurado")
 
-    params = {
-        "client_id": GOOGLE_CLIENT_ID,
-        "redirect_uri": GOOGLE_REDIRECT_URI,
-        "response_type": "code",
-        "scope": " ".join(GOOGLE_OAUTH_SCOPES),
-        "state": state,
-        "code_challenge": code_challenge,
-        "code_challenge_method": "S256",
-        "access_type": "online",
-        "prompt": "select_account",
-    }
-    from urllib.parse import urlencode
+        code_verifier, code_challenge = generate_pkce_pair()
+        state = generate_state()
 
-    auth_url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
+        params = {
+            "client_id": GOOGLE_CLIENT_ID,
+            "redirect_uri": GOOGLE_REDIRECT_URI,
+            "response_type": "code",
+            "scope": " ".join(GOOGLE_OAUTH_SCOPES),
+            "state": state,
+            "code_challenge": code_challenge,
+            "code_challenge_method": "S256",
+            "access_type": "online",
+            "prompt": "select_account",
+        }
+        from urllib.parse import urlencode
 
-    from fastapi.responses import RedirectResponse
+        auth_url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
 
-    # IMPORTANTE: os cookies precisam ser setados no MESMO objeto retornado.
-    # Setá-los no `response` injetado é silenciosamente descartado quando
-    # retornamos um RedirectResponse (comportamento do FastAPI), o que fazia o
-    # callback falhar sempre com `oauth_invalid_state`.
-    is_secure = os.environ.get("ENVIRONMENT", "development") == "production"
-    resp = RedirectResponse(url=auth_url)
-    resp.set_cookie(
-        key="google_oauth_state",
-        value=state,
-        max_age=600,
-        httponly=True,
-        secure=is_secure,
-        samesite="lax",
-    )
-    resp.set_cookie(
-        key="google_oauth_verifier",
-        value=code_verifier,
-        max_age=600,
-        httponly=True,
-        secure=is_secure,
-        samesite="lax",
-    )
-    return resp
+        from fastapi.responses import RedirectResponse
+
+        # IMPORTANTE: os cookies precisam ser setados no MESMO objeto retornado.
+        # Setá-los no `response` injetado é silenciosamente descartado quando
+        # retornamos um RedirectResponse (comportamento do FastAPI), o que fazia o
+        # callback falhar sempre com `oauth_invalid_state`.
+        is_secure = os.environ.get("ENVIRONMENT", "development") == "production"
+        resp = RedirectResponse(url=auth_url)
+        resp.set_cookie(
+            key="google_oauth_state",
+            value=state,
+            max_age=600,
+            httponly=True,
+            secure=is_secure,
+            samesite="lax",
+        )
+        resp.set_cookie(
+            key="google_oauth_verifier",
+            value=code_verifier,
+            max_age=600,
+            httponly=True,
+            secure=is_secure,
+            samesite="lax",
+        )
+        return resp
+    except HTTPException:
+        raise
+    except Exception as e:
+        auth_log.error(
+            "Google OAuth init error",
+            extra={"error": str(e), "error_type": type(e).__name__},
+        )
+        raise HTTPException(status_code=500, detail="Erro ao iniciar Google OAuth")
 
 
 @router.get("/google/callback")
