@@ -760,7 +760,6 @@ def google_callback(
 
     token_data = token_resp.json()
     access_token_google = token_data.get("access_token")
-    auth_log.info("Google OAuth: token exchange successful", extra={"has_access_token": bool(access_token_google)})
 
     # Get userinfo
     try:
@@ -785,55 +784,44 @@ def google_callback(
         auth_log.error("Google OAuth: missing email in userinfo")
         return RedirectResponse(url=f"{APP_URL}/app?error=oauth_missing_email")
 
-    auth_log.info("Google OAuth: userinfo received", extra={"email": email})
-
     google_sub = info.get("sub")
     google_name = info.get("name") or ""
     google_picture = info.get("picture") or ""
     email_verified = bool(info.get("email_verified", False))
 
     # Find or create user
-    auth_log.info("Google OAuth: finding user", extra={"email": email})
     user = db.query(User).filter(User.email == email).first()
 
     if not user:
         # Create new OAuth user
-        auth_log.info("Google OAuth: creating new user", extra={"email": email})
-        try:
-            user = User(
-                email=email,
-                password_hash=None,
-                created_at=datetime.now(timezone.utc).isoformat(),
-                is_verified=email_verified or True,
-                verification_token=None,
-                is_guest=False,
-                auth_provider="google",
-                google_provider_id=google_sub,
-                email_verified_at=datetime.now(timezone.utc).isoformat()
-                if email_verified
-                else None,
-                display_name=google_name or email.split("@")[0],
-                name=google_name or email.split("@")[0],
-                avatar_url=google_picture or None,
-                avatar_type="google" if google_picture else None,
-                avatar_source="google" if google_picture else None,
-                profile_completed=False,
-                has_seen_tutorial=False,
-                onboarded_at=None,
-            )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-            auth_log.info(
-                "User created via Google OAuth",
-                extra={"user_id": user.id, "email": user.email, "action": "google_signup"},
-            )
-        except Exception as e:
-            auth_log.error(
-                "Google OAuth: failed to create user",
-                extra={"error": str(e), "error_type": type(e).__name__, "email": email},
-            )
-            raise
+        user = User(
+            email=email,
+            password_hash=None,
+            created_at=datetime.now(timezone.utc).isoformat(),
+            is_verified=email_verified or True,
+            verification_token=None,
+            is_guest=False,
+            auth_provider="google",
+            google_provider_id=google_sub,
+            email_verified_at=datetime.now(timezone.utc).isoformat()
+            if email_verified
+            else None,
+            display_name=google_name or email.split("@")[0],
+            name=google_name or email.split("@")[0],
+            avatar_url=google_picture or None,
+            avatar_type="google" if google_picture else None,
+            avatar_source="google" if google_picture else None,
+            profile_completed=False,
+            has_seen_tutorial=False,
+            onboarded_at=None,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        auth_log.info(
+            "User created via Google OAuth",
+            extra={"user_id": user.id, "email": user.email, "action": "google_signup"},
+        )
     else:
         # Account linking or login
         updated = False
