@@ -77,7 +77,7 @@ def run_sqlite_migrations(engine) -> None:
         try:
             conn.execute(
                 text(
-                    "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, email VARCHAR(255) UNIQUE NOT NULL, password_hash VARCHAR(255) NOT NULL, created_at VARCHAR(20), is_verified BOOLEAN DEFAULT 0, verification_token VARCHAR(255))"
+                    "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, email VARCHAR(255) UNIQUE NOT NULL, password_hash VARCHAR(255), created_at VARCHAR(20), is_verified BOOLEAN DEFAULT 0, verification_token VARCHAR(255))"
                 )
             )
             conn.commit()
@@ -306,6 +306,15 @@ def run_postgres_migrations(engine) -> None:
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_guest BOOLEAN DEFAULT FALSE"))
         except Exception as e:
             log.warning("Migration add column failed", extra={"column": "is_guest", "table": "users", "error": str(e)})
+        # Allow password_hash to be NULL for OAuth-only users
+        try:
+            conn.execute(text("ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL"))
+            log.info("Migration: password_hash now nullable for OAuth users")
+        except Exception as e:
+            log.warning(
+                "Migration password_hash nullable failed",
+                extra={"error": str(e)},
+            )
         # OAuth / Profile fields (Postgres)
         try:
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20) DEFAULT 'password'"))
