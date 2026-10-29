@@ -17,3 +17,4 @@ class Tasks(Base):
     prioridade = Column(Integer, nullable=True)
     meta_pomodoros = Column(Integer, nullable=True)
     pomodoros_concluidos = Column(Integer, default=0, nullable=True)
+    concluida_em = Column(String(40), nullable=True)

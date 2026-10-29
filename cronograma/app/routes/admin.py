@@ -48,10 +48,12 @@ def app_index():
 
 
 @router.post("/admin/init")
-def init_database(user_id: int = Depends(get_current_user)):
-    """Initialize database tables (requires auth)"""
+def init_database(secret: str = "", user_id: int = Depends(get_current_user)):
+    """Initialize database tables (requires MIGRATION_SECRET)"""
     if not MIGRATION_SECRET:
         raise HTTPException(status_code=500, detail="MIGRATION_SECRET not configured")
+    if secret != MIGRATION_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid secret")
 
     pg_url = os.environ.get("DATABASE_URL", "")
     if not pg_url or "sqlite" in pg_url:

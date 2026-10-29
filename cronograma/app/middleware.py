@@ -105,7 +105,6 @@ class RateLimiter:
         with self._lock:
             dirty = set(self._dirty)
             snapshot = {k: list(self._store.get(k, [])) for k in dirty}
-            self._dirty.clear()
         if not snapshot:
             return
         try:
@@ -143,6 +142,9 @@ class RateLimiter:
                 db.commit()
             finally:
                 db.close()
+            # Only clear dirty set AFTER successful commit
+            with self._lock:
+                self._dirty.difference_update(dirty)
         except Exception as e:
             log.warning("Rate limiter: flush to DB failed", extra={"error": str(e)})
 
@@ -348,6 +350,7 @@ def validate_email(email: str) -> bool:
 # Regras de senha. Mantidas em Python e espelhadas em static/auth.js
 # (PASSWORD_RULES) — as duas listas precisam continuar iguais, senao o
 # frontend aceita o que o backend rejeita (e vice-versa).
+# O teste test_api.py::test_regras_de_senha_js_e_python_batem_valida a paridade.
 PASSWORD_MIN_LENGTH = 8
 PASSWORD_RULES: tuple[tuple[str, str], ...] = (
     (r".{%d,}" % PASSWORD_MIN_LENGTH, f"Senha deve ter pelo menos {PASSWORD_MIN_LENGTH} caracteres"),

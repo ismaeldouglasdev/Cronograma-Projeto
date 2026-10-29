@@ -7,9 +7,8 @@ const AppStore = (function() {
   // ============================================
   // CONSTANTES DE GAMIFICAÇÃO
   // ============================================
-  const XP_POR_MINUTO = 1/3; // 30 min = 10 XP (match backend: minutos * 10 // 30)
-  const XP_POR_TAREFA = 5;
-  const XP_POR_AREA = 25;
+  // XP é calculado exclusivamente pelo backend (SSOT).
+  // Mantemos apenas constantes de Coins/Freezes para lógica local.
   
   // Coins
   const COINS_POR_TAREFA = 3;
@@ -158,7 +157,7 @@ const AppStore = (function() {
       const diff = getDaysDifference(lastDate, today);
       
       if (diff === 1) {
-        // Dia consecutivo - mantém streak
+        // Dia consecutivo - incrementa streak
         state.stats.currentStreak++;
       } else if (diff > 1) {
         // Pulou dias - usar freeze se disponível
@@ -179,20 +178,8 @@ const AppStore = (function() {
     // Atualizar última data de atividade
     state.stats.lastActivityDate = today;
     
-    // Verificar ganha de freeze semanal
-    checkWeeklyFreeze();
-  }
-
-  function checkWeeklyFreeze() {
-    const today = getDateString();
-    const lastGain = state.stats.lastFreezeGain;
-    
-    if (!lastGain || getDaysDifference(lastGain, today) >= FREEZE_GAIN_INTERVAL) {
-      if (state.stats.freezes < MAX_FREEZES) {
-        state.stats.freezes++;
-        state.stats.lastFreezeGain = today;
-      }
-    }
+    // NOTA: Freeze semanal agora é concedido pelo backend (atualizar_streak).
+    // O frontend apenas sincroniza via syncFromBackend().
   }
 
   // ============================================
@@ -319,13 +306,7 @@ const AppStore = (function() {
   // ============================================
   
   function setAreas(areas) {
-    const wasEmpty = state.areas.length === 0;
     state.areas = areas;
-    
-    if (wasEmpty && areas.length > 0) {
-      addXP('area');
-    }
-    
     _notify();
   }
 
@@ -349,48 +330,14 @@ const AppStore = (function() {
     _notify();
   }
 
-  // Adicionar XP (gamificação)
+  // Adicionar XP (gamificação) — NO-OP: backend é fonte de verdade (SSOT).
+  // Mantido para compatibilidade de API; syncFromBackend() sobrescreve.
   function addXP(source, minutes = 0) {
-    let xpGained = 0;
-    
-    switch (source) {
-      case 'pomodoro':
-        // XP baseado no tempo real
-        xpGained = Math.round(minutes * XP_POR_MINUTO) || XP_POR_MINUTO * 25;
-        state.stats.totalPomodoros++;
-        addCoins(COINS_POR_POMODORO);
-        break;
-      case 'task':
-        xpGained = XP_POR_TAREFA;
-        state.stats.completedTasks++;
-        addCoins(COINS_POR_TAREFA);
-        break;
-      case 'area':
-        xpGained = XP_POR_AREA;
-        break;
-      case 'session':
-        // Para sessões manuais
-        xpGained = Math.round(minutes * XP_POR_MINUTO);
-        break;
-    }
-    
-    const oldLevel = state.stats.level;
-    state.stats.totalXP += xpGained;
-    state.stats.level = calculateLevel(state.stats.totalXP);
-    
-    // Atualizar streak
-    updateStreak();
-    
-    // Verificar conquistas
-    checkAchievements();
-    
-    _save();
-    _notify();
-    
+    console.debug('addXP called (no-op, using backend SSOT):', source, minutes);
     return {
-      xpGained,
+      xpGained: 0,
       newLevel: state.stats.level,
-      leveledUp: state.stats.level > oldLevel,
+      leveledUp: false,
     };
   }
 

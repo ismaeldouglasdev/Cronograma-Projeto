@@ -52,7 +52,11 @@ def _today_str() -> str:
 
 
 def get_or_create_daily_missions(user_id: int, db: Session) -> list[DailyMission]:
-    """Garante que o usuário tem as 3 missões de hoje; cria se faltarem."""
+    """Garante que o usuário tem as 3 missões de hoje; cria se faltarem.
+
+    Não faz commit — o caller é responsável (evita race condition com
+    compute_and_update_progress que também precisa commitar coins).
+    """
     today = _today_str()
     existing = (
         db.query(DailyMission)
@@ -99,22 +103,19 @@ def get_or_create_daily_missions(user_id: int, db: Session) -> list[DailyMission
         )
         db.add(mission)
         created.append(mission)
-    db.commit()
-    for m in created:
-        db.refresh(m)
+    # NOTA: sem commit aqui — caller faz flush/commit único
     return created
 
 
 def _compute_progress(user_id: int, db: Session) -> dict[str, int]:
     """Progresso do dia, por tipo: pomodoros, minutos, tarefas.
 
-    NOTA sobre `task`: a tabela `tasks` NÃO guarda data de conclusão
-    (não há coluna concluida_em). Sem isso, o único proxy honesto para
-    "tarefas concluídas HOJE" é a contagem total de concluídas — que
-    superconta em relação a "hoje". Usamos a contagem total como
-    aproximação conservadora (nunca subconta) e documentamos aqui.
+    Para `task`: usa a coluna `concluida_em` (se disponível) para contar
+    apenas tarefas concluídas HOJE. Se a coluna não existir (banco antigo),
+    cai para contagem total como fallback conservador (nunca subconta).
     """
     today = date.today()
+    today_str = today.isoformat()
 
     pomodoros = (
         db.query(func.count(Sessoes.id))
@@ -128,18 +129,39 @@ def _compute_progress(user_id: int, db: Session) -> dict[str, int]:
         .scalar()
         or 0
     )
-    tarefas = (
-        db.query(func.count(Tasks.id))
-        .filter(Tasks.user_id == user_id, Tasks.concluida == True)  # noqa: E712
-        .scalar()
-        or 0
-    )
+    # Tentar usar concluida_em se a coluna existir
+    try:
+        tarefas = (
+            db.query(func.count(Tasks.id))
+            .filter(
+                Tasks.user_id == user_id,
+                Tasks.concluida == True,  # noqa: E712
+                Tasks.concluida_em != None,  # noqa: E711
+                func.date(Tasks.concluida_em) == today_str,
+            )
+            .scalar()
+            or 0
+        )
+    except Exception:
+        # Fallback: contagem total (aprox. conservadora)
+        tarefas = (
+            db.query(func.count(Tasks.id))
+            .filter(Tasks.user_id == user_id, Tasks.concluida == True)  # noqa: E712
+            .scalar()
+            or 0
+        )
     return {"pomodoro": int(pomodoros), "minutes": int(minutos), "task": int(tarefas)}
 
 
 def compute_and_update_progress(user_id: int, db: Session) -> list[DailyMission]:
-    """Atualiza progresso das missões de hoje e concede coins na conclusão."""
+    """Atualiza progresso das missões de hoje e concede coins na conclusão.
+
+    Transação única: cria missões se necessário, atualiza progresso,
+    concede coins — tudo em um commit para evitar race conditions.
+    """
     missions = get_or_create_daily_missions(user_id, db)
+    # Flush para persistir missões criadas antes de ler progresso
+    db.flush()
     progress = _compute_progress(user_id, db)
 
     newly_completed: list[DailyMission] = []

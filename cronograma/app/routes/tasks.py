@@ -1,5 +1,7 @@
 """Rotas CRUD de tarefas: GET, POST, PATCH, DELETE."""
 
+from datetime import datetime
+
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -92,6 +94,12 @@ def atualizar_task(
     if body.data_entrega is not None:
         setattr(task, "data_entrega", body.data_entrega)
     if body.concluida is not None:
+        # Se a tarefa está sendo marcada como concluída agora, registrar data/hora
+        if body.concluida and not task.concluida:
+            setattr(task, "concluida_em", datetime.now().isoformat())
+        elif not body.concluida:
+            # Se desmarcou, limpar a data
+            setattr(task, "concluida_em", None)
         setattr(task, "concluida", body.concluida)
     if body.duracao_minutos is not None:
         setattr(task, "duracao_minutos", body.duracao_minutos)

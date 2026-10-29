@@ -188,6 +188,12 @@ def run_sqlite_migrations(engine) -> None:
             conn.commit()
         except Exception:
             pass
+        # concluida_em - data/hora que a tarefa foi marcada como concluída
+        try:
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN concluida_em VARCHAR(40)"))
+            conn.commit()
+        except Exception:
+            pass
         # Achievements table
         try:
             conn.execute(
