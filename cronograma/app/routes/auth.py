@@ -696,7 +696,9 @@ def google_auth(request: Request, response: Response):
 
         if not GOOGLE_CLIENT_ID:
             auth_log.error("Google OAuth not configured: GOOGLE_CLIENT_ID missing")
-            raise HTTPException(status_code=500, detail="Google OAuth não configurado")
+            from fastapi.responses import RedirectResponse
+
+            return RedirectResponse(url=f"{APP_URL}/app?error=oauth_not_configured")
 
         code_verifier, code_challenge = generate_pkce_pair()
         state = generate_state()
@@ -768,154 +770,154 @@ def google_callback(
         if not code or not state:
             return RedirectResponse(url=f"{APP_URL}/app?error=oauth_missing_params")
 
-    stored_state = request.cookies.get("google_oauth_state")
-    stored_verifier = request.cookies.get("google_oauth_verifier")
+        stored_state = request.cookies.get("google_oauth_state")
+        stored_verifier = request.cookies.get("google_oauth_verifier")
 
-    if not stored_state or not stored_verifier or stored_state != state:
-        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_invalid_state")
+        if not stored_state or not stored_verifier or stored_state != state:
+            return RedirectResponse(url=f"{APP_URL}/app?error=oauth_invalid_state")
 
-    # Exchange code
-    try:
-        import httpx
+        # Exchange code
+        try:
+            import httpx
 
-        token_resp = httpx.post(
-            "https://oauth2.googleapis.com/token",
-            data={
-                "client_id": GOOGLE_CLIENT_ID,
-                "client_secret": GOOGLE_CLIENT_SECRET,
-                "code": code,
-                "grant_type": "authorization_code",
-                "redirect_uri": GOOGLE_REDIRECT_URI,
-                "code_verifier": stored_verifier,
-            },
-            timeout=10.0,
-        )
-    except Exception as e:
-        auth_log.error("Google token exchange error", extra={"error": str(e)})
-        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_token_exchange_failed")
+            token_resp = httpx.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "client_id": GOOGLE_CLIENT_ID,
+                    "client_secret": GOOGLE_CLIENT_SECRET,
+                    "code": code,
+                    "grant_type": "authorization_code",
+                    "redirect_uri": GOOGLE_REDIRECT_URI,
+                    "code_verifier": stored_verifier,
+                },
+                timeout=10.0,
+            )
+        except Exception as e:
+            auth_log.error("Google token exchange error", extra={"error": str(e)})
+            return RedirectResponse(url=f"{APP_URL}/app?error=oauth_token_exchange_failed")
 
-    if token_resp.status_code != 200:
-        auth_log.error(
-            "Google token exchange failed", extra={"status": token_resp.status_code}
-        )
-        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_token_exchange_failed")
+        if token_resp.status_code != 200:
+            auth_log.error(
+                "Google token exchange failed", extra={"status": token_resp.status_code}
+            )
+            return RedirectResponse(url=f"{APP_URL}/app?error=oauth_token_exchange_failed")
 
-    token_data = token_resp.json()
-    access_token_google = token_data.get("access_token")
+        token_data = token_resp.json()
+        access_token_google = token_data.get("access_token")
 
-    # Get userinfo
-    try:
-        import httpx
+        # Get userinfo
+        try:
+            import httpx
 
-        userinfo_resp = httpx.get(
-            "https://www.googleapis.com/oauth2/v3/userinfo",
-            headers={"Authorization": f"Bearer {access_token_google}"},
-            timeout=10.0,
-        )
-    except Exception as e:
-        auth_log.error("Google userinfo error", extra={"error": str(e)})
-        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_userinfo_failed")
+            userinfo_resp = httpx.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {access_token_google}"},
+                timeout=10.0,
+            )
+        except Exception as e:
+            auth_log.error("Google userinfo error", extra={"error": str(e)})
+            return RedirectResponse(url=f"{APP_URL}/app?error=oauth_userinfo_failed")
 
-    if userinfo_resp.status_code != 200:
-        auth_log.error("Google userinfo failed", extra={"status": userinfo_resp.status_code})
-        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_userinfo_failed")
+        if userinfo_resp.status_code != 200:
+            auth_log.error("Google userinfo failed", extra={"status": userinfo_resp.status_code})
+            return RedirectResponse(url=f"{APP_URL}/app?error=oauth_userinfo_failed")
 
-    info = userinfo_resp.json()
-    email = info.get("email")
-    if not email:
-        auth_log.error("Google OAuth: missing email in userinfo")
-        return RedirectResponse(url=f"{APP_URL}/app?error=oauth_missing_email")
+        info = userinfo_resp.json()
+        email = info.get("email")
+        if not email:
+            auth_log.error("Google OAuth: missing email in userinfo")
+            return RedirectResponse(url=f"{APP_URL}/app?error=oauth_missing_email")
 
-    google_sub = info.get("sub")
-    google_name = info.get("name") or ""
-    google_picture = info.get("picture") or ""
-    email_verified = bool(info.get("email_verified", False))
+        google_sub = info.get("sub")
+        google_name = info.get("name") or ""
+        google_picture = info.get("picture") or ""
+        email_verified = bool(info.get("email_verified", False))
 
-    # Find or create user
-    user = db.query(User).filter(User.email == email).first()
+        # Find or create user
+        user = db.query(User).filter(User.email == email).first()
 
-    if not user:
-        # Create new OAuth user
-        user = User(
-            email=email,
-            password_hash=None,
-            created_at=datetime.now(timezone.utc).isoformat(),
-            is_verified=email_verified or True,
-            verification_token=None,
-            is_guest=False,
-            auth_provider="google",
-            google_provider_id=google_sub,
-            email_verified_at=datetime.now(timezone.utc).isoformat()
-            if email_verified
-            else None,
-            display_name=google_name or email.split("@")[0],
-            name=google_name or email.split("@")[0],
-            avatar_url=google_picture or None,
-            avatar_type="google" if google_picture else None,
-            avatar_source="google" if google_picture else None,
-            profile_completed=False,
-            has_seen_tutorial=False,
-            onboarded_at=None,
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        auth_log.info(
-            "User created via Google OAuth",
-            extra={"user_id": user.id, "email": user.email, "action": "google_signup"},
-        )
-    else:
-        # Account linking or login
-        updated = False
-        if not user.auth_provider or user.auth_provider == "password":
-            user.auth_provider = "both"
-            updated = True
-        elif user.auth_provider == "google":
-            user.auth_provider = "google"
-        if not user.google_provider_id:
-            user.google_provider_id = google_sub
-            updated = True
-        if email_verified and not user.email_verified_at:
-            user.email_verified_at = datetime.now(timezone.utc).isoformat()
-            updated = True
-        if not user.avatar_url and google_picture:
-            user.avatar_url = google_picture
-            user.avatar_type = "google"
-            user.avatar_source = "google"
-            updated = True
-        if not user.name and google_name:
-            user.name = google_name
-            user.display_name = google_name
-            updated = True
-        if not user.is_verified and email_verified:
-            user.is_verified = True
-            updated = True
-        if updated:
+        if not user:
+            # Create new OAuth user
+            user = User(
+                email=email,
+                password_hash=None,
+                created_at=datetime.now(timezone.utc).isoformat(),
+                is_verified=email_verified or True,
+                verification_token=None,
+                is_guest=False,
+                auth_provider="google",
+                google_provider_id=google_sub,
+                email_verified_at=datetime.now(timezone.utc).isoformat()
+                if email_verified
+                else None,
+                display_name=google_name or email.split("@")[0],
+                name=google_name or email.split("@")[0],
+                avatar_url=google_picture or None,
+                avatar_type="google" if google_picture else None,
+                avatar_source="google" if google_picture else None,
+                profile_completed=False,
+                has_seen_tutorial=False,
+                onboarded_at=None,
+            )
+            db.add(user)
             db.commit()
             db.refresh(user)
-        auth_log.info(
-            "User logged in via Google OAuth",
-            extra={"user_id": user.id, "email": user.email, "action": "google_login"},
+            auth_log.info(
+                "User created via Google OAuth",
+                extra={"user_id": user.id, "email": user.email, "action": "google_signup"},
+            )
+        else:
+            # Account linking or login
+            updated = False
+            if not user.auth_provider or user.auth_provider == "password":
+                user.auth_provider = "both"
+                updated = True
+            elif user.auth_provider == "google":
+                user.auth_provider = "google"
+            if not user.google_provider_id:
+                user.google_provider_id = google_sub
+                updated = True
+            if email_verified and not user.email_verified_at:
+                user.email_verified_at = datetime.now(timezone.utc).isoformat()
+                updated = True
+            if not user.avatar_url and google_picture:
+                user.avatar_url = google_picture
+                user.avatar_type = "google"
+                user.avatar_source = "google"
+                updated = True
+            if not user.name and google_name:
+                user.name = google_name
+                user.display_name = google_name
+                updated = True
+            if not user.is_verified and email_verified:
+                user.is_verified = True
+                updated = True
+            if updated:
+                db.commit()
+                db.refresh(user)
+            auth_log.info(
+                "User logged in via Google OAuth",
+                extra={"user_id": user.id, "email": user.email, "action": "google_login"},
+            )
+
+        # Issue tokens
+        from services.auth_service import create_access_token, create_refresh_token
+
+        access_token = create_access_token(
+            user.id, is_guest=bool(user.is_guest), token_version=user.token_version
         )
+        refresh_token = create_refresh_token(user.id, token_version=user.token_version)
 
-    # Issue tokens
-    from services.auth_service import create_access_token, create_refresh_token
-
-    access_token = create_access_token(
-        user.id, is_guest=bool(user.is_guest), token_version=user.token_version
-    )
-    refresh_token = create_refresh_token(user.id, token_version=user.token_version)
-
-    # IMPORTANTE: os cookies (tanto o delete dos cookies OAuth temporários quanto
-    # o set de access/refresh) precisam ficar no MESMO objeto retornado; setá-los
-    # no `response` injetado é descartado ao retornar um RedirectResponse.
-    redirect_url = f"{APP_URL}/app"
-    is_secure = os.environ.get("ENVIRONMENT", "development") == "production"
-    resp = RedirectResponse(url=redirect_url)
-    resp.delete_cookie("google_oauth_state", httponly=True, secure=is_secure, samesite="lax")
-    resp.delete_cookie("google_oauth_verifier", httponly=True, secure=is_secure, samesite="lax")
-    _set_auth_cookies(resp, access_token, refresh_token)
-    return resp
+        # IMPORTANTE: os cookies (tanto o delete dos cookies OAuth temporários quanto
+        # o set de access/refresh) precisam ficar no MESMO objeto retornado; setá-los
+        # no `response` injetado é descartado ao retornar um RedirectResponse.
+        redirect_url = f"{APP_URL}/app"
+        is_secure = os.environ.get("ENVIRONMENT", "development") == "production"
+        resp = RedirectResponse(url=redirect_url)
+        resp.delete_cookie("google_oauth_state", httponly=True, secure=is_secure, samesite="lax")
+        resp.delete_cookie("google_oauth_verifier", httponly=True, secure=is_secure, samesite="lax")
+        _set_auth_cookies(resp, access_token, refresh_token)
+        return resp
     except Exception as e:
         auth_log.error(
             "Google OAuth callback unhandled error",

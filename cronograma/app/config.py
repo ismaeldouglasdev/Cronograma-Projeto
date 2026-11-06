@@ -56,10 +56,14 @@ def _resolve_secret_key() -> str:
 
     derived = hashlib.sha256(DATABASE_URL.encode()).hexdigest()
     if os.environ.get("ENVIRONMENT", "").lower() == "production":
-        logger.warning(
-            "JWT_SECRET ausente: chave derivada de DATABASE_URL. Rotacionar a "
-            "senha do banco vai invalidar todos os tokens e deslogar todos os "
-            "usuarios. Defina JWT_SECRET no ambiente antes de rotacionar."
+        logger.error(
+            "JWT_SECRET ausente em produção: chave derivada de DATABASE_URL. "
+            "Rotacionar a senha do banco vai invalidar todos os tokens e deslogar "
+            "todos os usuários. Defina JWT_SECRET no ambiente antes de continuar."
+        )
+        raise ValueError(
+            "JWT_SECRET environment variable is required in production. "
+            "Set it to avoid session invalidation when database credentials rotate."
         )
     return derived
 

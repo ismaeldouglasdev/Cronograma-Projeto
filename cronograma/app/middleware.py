@@ -239,6 +239,7 @@ async def security_headers_middleware(request, call_next):
         "img-src 'self' data: blob: https:; "
         "connect-src 'self'; "
         "font-src 'self' https://fonts.gstatic.com; "
+        "frame-src 'self' https://ismaeldouglasdev.github.io; "
         "frame-ancestors 'none'"
     )
     return response
@@ -356,6 +357,7 @@ PASSWORD_RULES: tuple[tuple[str, str], ...] = (
     (r".{%d,}" % PASSWORD_MIN_LENGTH, f"Senha deve ter pelo menos {PASSWORD_MIN_LENGTH} caracteres"),
     (r"[a-zA-Z]", "Senha deve conter pelo menos uma letra"),
     (r"[0-9]", "Senha deve conter pelo menos um número"),
+    (r'[!@#$%^&*(),.?":{}|<>]', "Senha deve conter pelo menos um caractere especial"),
 )
 
 

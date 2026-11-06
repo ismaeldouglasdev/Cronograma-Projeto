@@ -92,6 +92,7 @@ const i18n = {
       pwd_rule_length: 'Pelo menos 8 caracteres',
       pwd_rule_letter: 'Pelo menos uma letra',
       pwd_rule_number: 'Pelo menos um n\u00famero',
+      pwd_rule_special: 'Pelo menos um caractere especial',
       enter_token: 'Por favor, insira o token de verifica\u00e7\u00e3o',
       email_verified: 'Email verificado com sucesso! Agora voc\u00ea pode fazer login.',
       login_error: 'Erro ao fazer login',
@@ -161,6 +162,7 @@ const i18n = {
       resumo: 'Resumo',
       heatmap: 'Atividade',
       perfil: 'Perfil',
+      roadmap: 'Roadmap',
     },
 
     // Pomodoro / Foco
@@ -577,6 +579,7 @@ btn_iniciar: 'Iniciar',
       pwd_rule_length: 'At least 8 characters',
       pwd_rule_letter: 'At least one letter',
       pwd_rule_number: 'At least one number',
+      pwd_rule_special: 'At least one special character',
       enter_token: 'Please enter the verification token',
       email_verified: 'Email verified successfully! You can now log in.',
       login_error: 'Error logging in',
@@ -644,6 +647,7 @@ btn_iniciar: 'Iniciar',
       resumo: 'Summary',
       heatmap: 'Activity',
       perfil: 'Profile',
+      roadmap: 'Roadmap',
     },
 
     foco: {

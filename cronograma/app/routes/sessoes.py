@@ -8,7 +8,7 @@ from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
 from config import get_db
-from logger import audit
+from logger import audit, get_logger
 from middleware import rate_limit
 from models.area import Areas
 from models.schemas import (
@@ -24,6 +24,8 @@ from models.user import User
 from services.auth_service import get_current_user
 from services.gamification_service import verificar_conquistas
 from services.streak_service import atualizar_streak
+
+log = get_logger("cronograma.sessoes")
 
 router = APIRouter(tags=["sessoes"])
 
@@ -56,6 +58,12 @@ def criar_sessao(
     )
     if not area:
         raise HTTPException(status_code=404, detail="Área não encontrada")
+
+    if body.duracao_minutos < 5:
+        raise HTTPException(
+            status_code=400,
+            detail="Duração mínima de 5 minutos por sessão"
+        )
 
     data_sessao = body.data or date.today()
     sessao = Sessoes(
@@ -109,14 +117,14 @@ def resumo_horas(
             start_date = datetime.strptime(start, "%Y-%m-%d").date()
             query = query.filter(Sessoes.data >= start_date)
         except ValueError:
-            pass  # Invalid date format, ignore
+            log.warning("Invalid start date format", extra={"start": start})
 
     if end:
         try:
             end_date = datetime.strptime(end, "%Y-%m-%d").date()
             query = query.filter(Sessoes.data <= end_date)
         except ValueError:
-            pass  # Invalid date format, ignore
+            log.warning("Invalid end date format", extra={"end": end})
 
     rows = query.group_by(Sessoes.area_id, Areas.nome, Areas.cor).all()
     return [

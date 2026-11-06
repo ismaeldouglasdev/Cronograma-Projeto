@@ -94,6 +94,7 @@ def run_sqlite_migrations(engine) -> None:
         add_column_if_not_exists(conn, "users", "streak_freezes", "INTEGER DEFAULT 0")
         add_column_if_not_exists(conn, "users", "last_freeze_grant_date", "VARCHAR(20)")
         add_column_if_not_exists(conn, "users", "coins", "INTEGER DEFAULT 0")
+        add_column_if_not_exists(conn, "users", "roadmap_xp", "INTEGER DEFAULT 0")
         add_column_if_not_exists(conn, "users", "is_guest", "BOOLEAN DEFAULT 0")
         add_column_if_not_exists(conn, "users", "token_version", "INTEGER DEFAULT 0")
         # OAuth / Profile fields (SQLite)
@@ -375,6 +376,10 @@ def run_postgres_migrations(engine) -> None:
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarded_at VARCHAR(40)"))
         except Exception as e:
             log.warning("Migration add column failed", extra={"column": "onboarded_at", "table": "users", "error": str(e)})
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS roadmap_xp INTEGER DEFAULT 0"))
+        except Exception as e:
+            log.warning("Migration add column failed", extra={"column": "roadmap_xp", "table": "users", "error": str(e)})
         try:
             conn.execute(
                 text(

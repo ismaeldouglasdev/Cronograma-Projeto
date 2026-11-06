@@ -46,3 +46,4 @@ class User(Base):
     streak_freezes = Column(Integer, default=0, nullable=True)
     last_freeze_grant_date = Column(String(40), nullable=True)
     coins = Column(Integer, default=0, nullable=True)
+    roadmap_xp = Column(Integer, default=0, nullable=True)

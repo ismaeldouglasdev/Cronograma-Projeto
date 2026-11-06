@@ -21,6 +21,7 @@ const Auth = (function() {
       const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
       return JSON.parse(atob(padded));
     } catch (e) {
+      console.error('Failed to parse JWT token:', e);
       return null;
     }
   }
@@ -180,6 +181,7 @@ const Auth = (function() {
     { key: "auth.pwd_rule_length", test: (v) => v.length >= 8 },
     { key: "auth.pwd_rule_letter", test: (v) => /[a-zA-Z]/.test(v) },
     { key: "auth.pwd_rule_number", test: (v) => /[0-9]/.test(v) },
+    { key: "auth.pwd_rule_special", test: (v) => /[!@#$%^&*(),.?":{}|<>]/.test(v) },
   ];
 
   function passwordIssues(password) {

@@ -389,22 +389,32 @@ async def test_resumo_horas_por_area(client, auth_headers):
 # a seguir; (3) o limiter usava a entrada mais à esquerda do X-Forwarded-For,
 # que é controlada pelo cliente e permitia burlar o limite por completo.
 
-VALID_SENHA_SEM_ESPECIAL = "ismael2006"
+# Senha válida pela política vigente: 8+ chars, letra, número e caractere
+# especial (especial passou a ser obrigatório em 2026-10-30, espelhado em
+# static/auth.js::PASSWORD_RULES).
+VALID_SENHA = "Ismael@2006"
 
 
 @pytest.mark.asyncio
-async def test_register_aceita_senha_sem_caractere_especial(client):
-    """Regra (b): 8+ chars, uma letra e um número chegam. Especial é opcional."""
+async def test_register_exige_caractere_especial(client):
+    """Política vigente: senha sem caractere especial é rejeitada com 400."""
     r = await client.post(
         "/auth/register",
-        json={"email": "sem-especial@example.com", "password": VALID_SENHA_SEM_ESPECIAL},
+        json={"email": "sem-especial@example.com", "password": "ismael2006"},
     )
-    assert r.status_code == 200, r.text
-    assert "access_token" in r.json()
+    assert r.status_code == 400, r.text
+    assert "especial" in r.json()["detail"].lower()
+
+    ok = await client.post(
+        "/auth/register",
+        json={"email": "com-especial@example.com", "password": VALID_SENHA},
+    )
+    assert ok.status_code == 200, ok.text
+    assert "access_token" in ok.json()
 
     login = await client.post(
         "/auth/login",
-        json={"email": "sem-especial@example.com", "password": VALID_SENHA_SEM_ESPECIAL},
+        json={"email": "com-especial@example.com", "password": VALID_SENHA},
     )
     assert login.status_code == 200, "a senha aceita no registro tem que entrar no login"
 
@@ -412,8 +422,8 @@ async def test_register_aceita_senha_sem_caractere_especial(client):
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "senha",
-    ["curta1a", "senhasemnumero", "1234567890"],
-    ids=["curta", "sem_numero", "sem_letra"],
+    ["curta1a", "senhasemnumero", "1234567890", "SenhaValida123"],
+    ids=["curta", "sem_numero", "sem_letra", "sem_especial"],
 )
 async def test_register_ainda_rejeita_senha_fraca(client, senha):
     """As três regras que sobraram continuam valendo."""
@@ -442,7 +452,7 @@ async def test_erro_de_validacao_nao_queima_a_cota_do_rate_limit(client):
     # ...e logo depois um cadastro válido tem que passar.
     ok = await client.post(
         "/auth/register",
-        json={"email": "depois-dos-400@example.com", "password": VALID_SENHA_SEM_ESPECIAL},
+        json={"email": "depois-dos-400@example.com", "password": VALID_SENHA},
     )
     assert ok.status_code == 200, ok.text
 
@@ -454,7 +464,7 @@ async def test_429_traz_retry_after_e_tempo_acionavel(client):
     for i in range(25):
         r = await client.post(
             "/auth/register",
-            json={"email": f"enum-{i}@example.com", "password": VALID_SENHA_SEM_ESPECIAL},
+            json={"email": f"enum-{i}@example.com", "password": VALID_SENHA},
         )
         respostas.append(r)
         if r.status_code == 429:
@@ -482,7 +492,7 @@ async def test_rate_limit_nao_pode_ser_burlado_com_x_forwarded_for(client):
         r = await client.post(
             "/auth/register",
             headers={"X-Forwarded-For": f"10.0.0.{i}"},
-            json={"email": f"spoof-{i}@example.com", "password": VALID_SENHA_SEM_ESPECIAL},
+            json={"email": f"spoof-{i}@example.com", "password": VALID_SENHA},
         )
         status_codes.append(r.status_code)
         if r.status_code == 429:
@@ -500,7 +510,7 @@ async def test_cf_connecting_ip_tem_precedencia(client):
         r = await client.post(
             "/auth/register",
             headers={"CF-Connecting-IP": "203.0.113.7"},
-            json={"email": f"cf-{i}@example.com", "password": VALID_SENHA_SEM_ESPECIAL},
+            json={"email": f"cf-{i}@example.com", "password": VALID_SENHA},
         )
         status_codes.append(r.status_code)
         if r.status_code == 429:
@@ -514,11 +524,11 @@ async def test_email_ja_cadastrado_diz_para_entrar(client):
     """O 400 de duplicado precisa orientar o usuário, não só poupar."""
     await client.post(
         "/auth/register",
-        json={"email": "dup@example.com", "password": VALID_SENHA_SEM_ESPECIAL},
+        json={"email": "dup@example.com", "password": VALID_SENHA},
     )
     r = await client.post(
         "/auth/register",
-        json={"email": "dup@example.com", "password": VALID_SENHA_SEM_ESPECIAL},
+        json={"email": "dup@example.com", "password": VALID_SENHA},
     )
     assert r.status_code == 400
     assert "login" in r.json()["detail"].lower()
@@ -577,7 +587,7 @@ async def test_xff_nao_burla_o_limite_de_registro(client):
         r = await client.post(
             "/auth/register",
             headers={"X-Forwarded-For": f"189.40.30.{i}"},
-            json={"email": f"uvicorn-spoof-{i}@example.com", "password": VALID_SENHA_SEM_ESPECIAL},
+            json={"email": f"uvicorn-spoof-{i}@example.com", "password": VALID_SENHA},
         )
         status_codes.append(r.status_code)
         if r.status_code == 429:
@@ -644,9 +654,10 @@ def test_regras_de_senha_js_e_python_batem():
         f"regras divergiram.\n  JS:     {js_sem_tamanho}\n  Python: {py_sem_tamanho}"
     )
 
-    # A regra de caractere especial não pode voltar só de um lado.
-    assert "caractere especial" not in js
-    assert not any("special" in m for _, m in PASSWORD_RULES)
+    # A regra de caractere especial existe nos dois lados: o frontend lista
+    # pwd_rule_special e o backend exige a regex correspondente em PASSWORD_RULES.
+    assert "pwd_rule_special" in js
+    assert any("especial" in m for _, m in PASSWORD_RULES)
 
 
 @pytest.mark.asyncio
@@ -655,7 +666,7 @@ async def test_429_no_front_usa_retry_after(client):
     for i in range(25):
         r = await client.post(
             "/auth/register",
-            json={"email": f"front-{i}@example.com", "password": VALID_SENHA_SEM_ESPECIAL},
+            json={"email": f"front-{i}@example.com", "password": VALID_SENHA},
         )
         if r.status_code == 429:
             break

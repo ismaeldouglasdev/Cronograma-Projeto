@@ -5,68 +5,11 @@
 
 const AppStore = (function() {
   // ============================================
-  // CONSTANTES DE GAMIFICAÇÃO
+  // GAMIFICAÇÃO SSOT (BACKEND)
   // ============================================
-  // XP é calculado exclusivamente pelo backend (SSOT).
-  // Mantemos apenas constantes de Coins/Freezes para lógica local.
-  
-  // Coins
-  const COINS_POR_TAREFA = 3;
-  const COINS_POR_POMODORO = 3;
-  const COINS_POR_STREAK_DIA = 1;
-  const FREEZE_COST = 10; // Custo para comprar freeze
-  
-  // Freezes
-  const MAX_FREEZES = 4;
-  const FREEZE_GAIN_INTERVAL = 7; // Ganha 1 freeze por semana
-  
-  // ============================================
-  // DEFINIÇÃO DE CONQUISTAS (sem emojis)
-  // ============================================
-  const ACHIEVEMENTS = {
-    xp: [
-      { id: 'xp_100', title: 'Primeiros Passos', description: 'Ganhe 100 XP', requirement: 100, icon: 'seedling' },
-      { id: 'xp_500', title: 'Dedicado', description: 'Ganhe 500 XP', requirement: 500, icon: 'flame' },
-      { id: 'xp_1000', title: 'Estudioso', description: 'Ganhe 1000 XP', requirement: 1000, icon: 'light-bulb' },
-      { id: 'xp_5000', title: 'Mestre', description: 'Ganhe 5000 XP', requirement: 5000, icon: 'brain' },
-      { id: 'xp_10000', title: 'Lenda', description: 'Ganhe 10000 XP', requirement: 10000, icon: 'crown' },
-    ],
-    streak: [
-      { id: 'streak_3', title: 'Início', description: '3 dias consecutivos', requirement: 3, icon: 'flame' },
-      { id: 'streak_7', title: 'Consistente', description: '7 dias consecutivos', requirement: 7, icon: 'rocket' },
-      { id: 'streak_14', title: 'Focado', description: '14 dias consecutivos', requirement: 14, icon: 'target-with-arrow-on' },
-      { id: 'streak_30', title: 'Dedicado', description: '30 dias consecutivos', requirement: 30, icon: 'medal' },
-      { id: 'streak_100', title: 'Lenda', description: '100 dias consecutivos', requirement: 100, icon: 'crown' },
-    ],
-    pomodoro: [
-      { id: 'pomo_1', title: 'Primeiro', description: 'Complete 1 pomodoro', requirement: 1, icon: 'clock' },
-      { id: 'pomo_10', title: 'Aquecido', description: 'Complete 10 pomodoros', requirement: 10, icon: 'flame' },
-      { id: 'pomo_50', title: 'Fogo', description: 'Complete 50 pomodoros', requirement: 50, icon: 'rocket' },
-      { id: 'pomo_100', title: 'Mestre', description: 'Complete 100 pomodoros', requirement: 100, icon: 'medal' },
-      { id: 'pomo_500', title: 'Lendário', description: 'Complete 500 pomodoros', requirement: 500, icon: 'crown' },
-    ],
-    tasks: [
-      { id: 'task_1', title: 'Início', description: 'Complete 1 tarefa', requirement: 1, icon: 'done-checkmark' },
-      { id: 'task_10', title: 'Motivado', description: 'Complete 10 tarefas', requirement: 10, icon: 'flame' },
-      { id: 'task_50', title: 'Produtivo', description: 'Complete 50 tarefas', requirement: 50, icon: 'rocket' },
-      { id: 'task_100', title: 'Expert', description: 'Complete 100 tarefas', requirement: 100, icon: 'medal' },
-      { id: 'task_500', title: 'Lenda', description: 'Complete 500 tarefas', requirement: 500, icon: 'crown' },
-    ],
-    level: [
-      { id: 'level_2', title: 'Level 2', description: 'Atinga level 2', requirement: 2, icon: 'up-arrow' },
-      { id: 'level_5', title: 'Level 5', description: 'Atinga level 5', requirement: 5, icon: 'growing-arrow' },
-      { id: 'level_10', title: 'Level 10', description: 'Atinga level 10', requirement: 10, icon: 'rocket' },
-      { id: 'level_25', title: 'Level 25', description: 'Atinga level 25', requirement: 25, icon: 'medal' },
-      { id: 'level_50', title: 'Level 50', description: 'Atinga level 50', requirement: 50, icon: 'crown' },
-    ],
-    coins: [
-      { id: 'coin_10', title: 'Primeiras Moedas', description: 'Acumule 10 coins', requirement: 10, icon: 'gift' },
-      { id: 'coin_50', title: 'Economizador', description: 'Acumule 50 coins', requirement: 50, icon: 'blue-diamond' },
-      { id: 'coin_100', title: 'Poupador', description: 'Acumule 100 coins', requirement: 100, icon: 'purple-gem' },
-      { id: 'coin_500', title: 'Investidor', description: 'Acumule 500 coins', requirement: 500, icon: 'bank' },
-      { id: 'coin_1000', title: 'Milionário', description: 'Acumule 1000 coins', requirement: 1000, icon: 'crown' },
-    ]
-  };
+  // XP, streak, coins, freezes e conquistas são calculados exclusivamente
+  // pelo backend. O frontend apenas exibe os valores via syncFromBackend().
+  // Nenhuma constante local de gamificação é mantida para evitar inconsistências.
 
   // ============================================
   // ESTADO PRIVADO
@@ -141,115 +84,41 @@ const AppStore = (function() {
   }
 
   // ============================================
-  // SISTEMA DE STREAK COM FREEZES
+  // SISTEMA DE STREAK COM FREEZES (REMOVIDO - USAR BACKEND SSOT)
   // ============================================
-  function updateStreak() {
-    const today = getDateString();
-    const lastDate = state.stats.lastActivityDate;
-    
-    if (!lastDate) {
-      // Primeiro dia de atividade
-      state.stats.currentStreak = 1;
-    } else if (lastDate === today) {
-      // Mesmo dia, não altera streak
-      return;
-    } else {
-      const diff = getDaysDifference(lastDate, today);
-      
-      if (diff === 1) {
-        // Dia consecutivo - incrementa streak
-        state.stats.currentStreak++;
-      } else if (diff > 1) {
-        // Pulou dias - usar freeze se disponível
-        if (state.stats.freezes > 0) {
-          state.stats.freezes--;
-        } else {
-          // Perdeu streak
-          state.stats.currentStreak = 1;
-        }
+  // Streak é calculado exclusivamente pelo backend (streak_service.py).
+  // O frontend não deve calcular streak localmente para evitar inconsistências.
+  // Use syncFromBackend() para obter valores atualizados.
+
+  // ============================================
+  // SISTEMA DE MOEDAS (REMOVIDO - USAR BACKEND)
+  // ============================================
+  // Coins e freezes são gerenciados pelo backend.
+  // buyFreeze() chama API /coins/buy-freeze.
+  
+  async function buyFreeze() {
+    try {
+      const token = localStorage.getItem('cronograma_token');
+      const response = await fetch('/coins/buy-freeze', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (response.ok) {
+        await syncFromBackend();
+        return true;
       }
+      return false;
+    } catch (error) {
+      console.error('Erro ao comprar freeze:', error);
+      return false;
     }
-    
-    // Atualizar longest streak
-    if (state.stats.currentStreak > state.stats.longestStreak) {
-      state.stats.longestStreak = state.stats.currentStreak;
-    }
-    
-    // Atualizar última data de atividade
-    state.stats.lastActivityDate = today;
-    
-    // NOTA: Freeze semanal agora é concedido pelo backend (atualizar_streak).
-    // O frontend apenas sincroniza via syncFromBackend().
   }
 
   // ============================================
-  // SISTEMA DE MOEDAS
+  // SISTEMA DE CONQUISTAS (REMOVIDO - USAR BACKEND)
   // ============================================
-  function addCoins(amount) {
-    state.stats.coins += amount;
-    checkAchievements();
-  }
-
-  function buyFreeze() {
-    if (state.stats.coins >= FREEZE_COST && state.stats.freezes < MAX_FREEZES) {
-      state.stats.coins -= FREEZE_COST;
-      state.stats.freezes++;
-      _save();
-      _notify();
-      return true;
-    }
-    return false;
-  }
-
-  // ============================================
-  // SISTEMA DE CONQUISTAS
-  // ============================================
-  function checkAchievements() {
-    const newUnlocks = [];
-    const stats = state.stats;
-    const currentUnlocked = state.unlockedAchievements;
-
-    for (const [category, achievements] of Object.entries(ACHIEVEMENTS)) {
-      for (const achievement of achievements) {
-        if (currentUnlocked.includes(achievement.id)) continue;
-
-        let currentValue = 0;
-        
-        switch (category) {
-          case 'xp': currentValue = stats.totalXP; break;
-          case 'streak': currentValue = stats.currentStreak; break;
-          case 'pomodoro': currentValue = stats.totalPomodoros; break;
-          case 'tasks': currentValue = stats.completedTasks; break;
-          case 'level': currentValue = stats.level; break;
-          case 'coins': currentValue = stats.coins; break;
-        }
-
-        if (currentValue >= achievement.requirement) {
-          currentUnlocked.push(achievement.id);
-          newUnlocks.push({ ...achievement, category });
-        }
-      }
-    }
-
-    if (newUnlocks.length > 0) {
-      _save();
-      _notify();
-    }
-
-    return newUnlocks;
-  }
-
-  function getAchievementsWithStatus() {
-    const result = {};
-    for (const [category, achievements] of Object.entries(ACHIEVEMENTS)) {
-      result[category] = achievements.map(a => ({
-        ...a,
-        category,
-        unlocked: state.unlockedAchievements.includes(a.id)
-      }));
-    }
-    return result;
-  }
+  // Conquistas são buscadas do backend via syncFromBackend().
+  // checkAchievements() local removido para evitar inconsistências.
 
   // ============================================
   // PERSISTÊNCIA
@@ -312,23 +181,21 @@ const AppStore = (function() {
 
   function setTasks(tasks) {
     state.tasks = tasks;
-    // XP é calculado exclusivamente pelo backend (calcular_xp_total)
-    // para evitar duplicação. Use syncFromBackend() para obter valores reais.
+    // XP é calculado exclusivamente pelo backend (SSOT).
+    // O frontend não calcula XP localmente para evitar inconsistências.
+    // Use syncFromBackend() para obter valores atualizados do backend.
     _notify();
   }
 
   function setSessions(sessions) {
     state.sessions = sessions;
-    updateStreak();
+    // Streak é calculado exclusivamente pelo backend (SSOT).
+    // Removido updateStreak() local para evitar inconsistências.
+    // Use syncFromBackend() para obter valores atualizados.
     _notify();
   }
 
-  function syncStatsFromData() {
-    console.warn('syncStatsFromData is deprecated, use syncFromBackend()');
-    checkAchievements();
-    _save();
-    _notify();
-  }
+  // syncStatsFromData removido - usar syncFromBackend() para sincronizar com backend
 
   // Adicionar XP (gamificação) — NO-OP: backend é fonte de verdade (SSOT).
   // Mantido para compatibilidade de API; syncFromBackend() sobrescreve.
@@ -351,7 +218,7 @@ const AppStore = (function() {
         xpForCurrentLevel: getXPForCurrentLevel(state.stats.totalXP),
         xpForNextLevel: getXPForNextLevel(state.stats.level),
       },
-      achievements: getAchievementsWithStatus(),
+      achievements: state.achievements || {}, // Buscado do backend via syncFromBackend()
       unlockedAchievements: state.unlockedAchievements,
     };
   }
@@ -359,7 +226,7 @@ const AppStore = (function() {
   function init() {
     _load();
     state.stats.level = calculateLevel(state.stats.totalXP);
-    updateStreak(); // Verificar streak ao iniciar
+    // updateStreak() removido - usar syncFromBackend() para obter streak do backend
     return getState();
   }
 
@@ -457,13 +324,10 @@ const AppStore = (function() {
     setAreas,
     setTasks,
     setSessions,
-    syncStatsFromData,
-    syncFromBackend,  // Nova função para sincronizar com backend
-    addXP,
-    addCoins,
-    buyFreeze,
+    syncFromBackend,  // Sincroniza todos os dados do backend (SSOT)
+    addXP,  // NO-OP - usar syncFromBackend()
+    buyFreeze,  // Chama API /coins/buy-freeze
     resetProgress,
-    ACHIEVEMENTS,
   };
 })();
 

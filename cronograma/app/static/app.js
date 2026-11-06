@@ -60,6 +60,20 @@ function showToast(message, type) {
   setTimeout(() => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 300); }, 4000);
 }
 
+function setLoading(elementId, isLoading) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  if (isLoading) {
+    el.classList.add("loading");
+    el.style.opacity = "0.5";
+    el.style.pointerEvents = "none";
+  } else {
+    el.classList.remove("loading");
+    el.style.opacity = "";
+    el.style.pointerEvents = "";
+  }
+}
+
 function getSubcategorias() {
   try {
     return JSON.parse(localStorage.getItem("subcategorias") || "[]");
@@ -184,30 +198,35 @@ function areaCor(areas, id) {
 }
 
 async function loadAreas() {
-  const areas = await get("/areas");
-  
-  const existingSubs = areas.filter((a) => a.subcategoria).map((a) => a.subcategoria);
-  existingSubs.forEach((s) => saveSubcategoria(s));
-  populateSubcategoriasDatalist();
-  
-  const categoryFilter = document.getElementById("filter-categoria");
-  if (categoryFilter) {
-    const subsFromAreas = areas.filter((a) => a.subcategoria).map((a) => a.subcategoria);
-    const subsFromStorage = getSubcategorias();
-    const allSubs = [...new Set([...subsFromAreas, ...subsFromStorage])];
-    categoryFilter.innerHTML = '<option value="">' + (typeof t === 'function' ? t('areas.todas_categorias') : 'Todas as categorias') + '</option>' + allSubs.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+  setLoading("lista-areas", true);
+  try {
+    const areas = await get("/areas");
+
+    const existingSubs = areas.filter((a) => a.subcategoria).map((a) => a.subcategoria);
+    existingSubs.forEach((s) => saveSubcategoria(s));
+    populateSubcategoriasDatalist();
+
+    const categoryFilter = document.getElementById("filter-categoria");
+    if (categoryFilter) {
+      const subsFromAreas = areas.filter((a) => a.subcategoria).map((a) => a.subcategoria);
+      const subsFromStorage = getSubcategorias();
+      const allSubs = [...new Set([...subsFromAreas, ...subsFromStorage])];
+      categoryFilter.innerHTML = '<option value="">' + (typeof t === 'function' ? t('areas.todas_categorias') : 'Todas as categorias') + '</option>' + allSubs.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+    }
+
+    const opts = areas
+      .map((a) => `<option value="${a.id}" data-color="${a.cor || "#6366f1"}">${escapeHtml(a.nome)}</option>`)
+      .join("");
+    const selectHtml = '<option value="">' + (typeof t === 'function' ? t('geral.select_area') : 'Selecione a área') + '</option>' + opts;
+    document.querySelectorAll('select[name="area_id"]').forEach((sel) => (sel.innerHTML = selectHtml));
+    updateAreaSelected();
+
+    renderAreasGrid(areas);
+
+    return areas;
+  } finally {
+    setLoading("lista-areas", false);
   }
-  
-  const opts = areas
-    .map((a) => `<option value="${a.id}" data-color="${a.cor || "#6366f1"}">${escapeHtml(a.nome)}</option>`)
-    .join("");
-  const selectHtml = '<option value="">' + (typeof t === 'function' ? t('geral.select_area') : 'Selecione a área') + '</option>' + opts;
-  document.querySelectorAll('select[name="area_id"]').forEach((sel) => (sel.innerHTML = selectHtml));
-  updateAreaSelected();
-  
-  renderAreasGrid(areas);
-  
-  return areas;
 }
 
 function renderAreasGrid(areas) {
@@ -298,31 +317,33 @@ function renderAreasGrid(areas) {
 }
 
 async function loadTasks(areas) {
-  const tasks = await get("/tasks");
-  const ul = document.getElementById("lista-tasks");
-  const sortBy = document.getElementById("sort-tasks")?.value || "prioridade";
-  
-  let sortedTasks = [...tasks];
-  if (sortBy === "prioridade") {
-    sortedTasks.sort((a, b) => {
-      if (a.concluida !== b.concluida) return a.concluida ? 1 : -1;
-      const pa = a.prioridade || 0;
-      const pb = b.prioridade || 0;
-      if (pa !== pb) return pb - pa;
-      return new Date(a.data_entrega) - new Date(b.data_entrega);
-    });
-  } else {
-    sortedTasks.sort((a, b) => {
-      if (a.concluida !== b.concluida) return a.concluida ? 1 : -1;
-      return new Date(a.data_entrega) - new Date(b.data_entrega);
-    });
-  }
-  
-  if (!sortedTasks.length) {
-    ul.innerHTML = '<li class="resumo-empty">' + (typeof t === 'function' ? t('tasks.empty') : 'Nenhuma tarefa. Adicione uma acima.') + '</li>';
-    return;
-  }
-  ul.innerHTML = sortedTasks
+  setLoading("lista-tasks", true);
+  try {
+    const tasks = await get("/tasks");
+    const ul = document.getElementById("lista-tasks");
+    const sortBy = document.getElementById("sort-tasks")?.value || "prioridade";
+
+    let sortedTasks = [...tasks];
+    if (sortBy === "prioridade") {
+      sortedTasks.sort((a, b) => {
+        if (a.concluida !== b.concluida) return a.concluida ? 1 : -1;
+        const pa = a.prioridade || 0;
+        const pb = b.prioridade || 0;
+        if (pa !== pb) return pb - pa;
+        return new Date(a.data_entrega) - new Date(b.data_entrega);
+      });
+    } else {
+      sortedTasks.sort((a, b) => {
+        if (a.concluida !== b.concluida) return a.concluida ? 1 : -1;
+        return new Date(a.data_entrega) - new Date(b.data_entrega);
+      });
+    }
+
+    if (!sortedTasks.length) {
+      ul.innerHTML = '<li class="resumo-empty">' + (typeof t === 'function' ? t('tasks.empty') : 'Nenhuma tarefa. Adicione uma acima.') + '</li>';
+      return;
+    }
+    ul.innerHTML = sortedTasks
     .map(
       (t) => {
         const meta = [
@@ -429,16 +450,21 @@ async function loadTasks(areas) {
       }
     });
   });
+} finally {
+    setLoading("lista-tasks", false);
+  }
 }
 
 async function loadSessoes(areas) {
-  const sessoes = await get("/sessoes");
-  const ul = document.getElementById("lista-sessoes");
-  if (!sessoes || !sessoes.length) {
-    ul.innerHTML = '<li class="resumo-empty">' + (typeof t === 'function' ? t('sessoes.empty') : 'Nenhuma sess\u00e3o registrada.') + '</li>';
-    return;
-  }
-  ul.innerHTML = sessoes
+  setLoading("lista-sessoes", true);
+  try {
+    const sessoes = await get("/sessoes");
+    const ul = document.getElementById("lista-sessoes");
+    if (!sessoes || !sessoes.length) {
+      ul.innerHTML = '<li class="resumo-empty">' + (typeof t === 'function' ? t('sessoes.empty') : 'Nenhuma sess\u00e3o registrada.') + '</li>';
+      return;
+    }
+    ul.innerHTML = sessoes
     .map(
       (s) => `
     <li>
@@ -477,6 +503,9 @@ async function loadSessoes(areas) {
       }
     });
   });
+} finally {
+    setLoading("lista-sessoes", false);
+  }
 }
 
 async function openTaskModal(task, areas) {
@@ -1038,12 +1067,13 @@ function getPageTitle(tabName) {
     'tasks': _t('pages.tarefas'),
     'sessoes': _t('pages.sessoes'),
     'resumo': _t('pages.resumo'),
-    'perfil': _t('pages.perfil')
+    'perfil': _t('pages.perfil'),
+    'roadmap': _t('pages.roadmap')
   };
   return titles[tabName] || tabName;
 }
 
-const VALID_TABS = ['areas', 'foco', 'gamificacao', 'perfil', 'horarios', 'tasks', 'sessoes', 'resumo'];
+const VALID_TABS = ['areas', 'foco', 'gamificacao', 'perfil', 'horarios', 'tasks', 'sessoes', 'resumo', 'roadmap'];
 
 function switchToTab(tabName) {
   // Update all tab/sidebar-link elements
@@ -1154,6 +1184,8 @@ function initTabs() {
   // Handle sidebar links
   document.querySelectorAll(".sidebar-link").forEach((link) => {
     link.addEventListener("click", () => {
+      const tab = link.dataset.tab;
+      if (!tab) return; // links externos (ex.: RoadmapMaster) não são abas
       if (typeof FocoTimer !== "undefined" && FocoTimer.isActive()) {
         if (!alertShownThisSession && !confirm(typeof t === 'function' ? t('geral.trocar_aba') : 'Trocar de aba?')) {
           return;
@@ -1161,7 +1193,7 @@ function initTabs() {
         alertShownThisSession = true;
       }
       
-      switchToTab(link.dataset.tab);
+      switchToTab(tab);
     });
   });
 }

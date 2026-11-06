@@ -120,15 +120,16 @@ def verificar_conquistas(user_id: int, db: Session) -> list:
 def cleanup_stale_guests(db: Session, max_age_days: int = 30) -> int:
     """Remove contas guest antigas."""
     from datetime import date, timedelta, timezone as tz
+    from models.area import Areas
 
     cutoff = (datetime.now(tz.utc) - timedelta(days=max_age_days)).isoformat()
     guests = db.query(User).filter(User.is_guest == True, User.created_at < cutoff).all()
     removed = 0
     for g in guests:
-        db.query(UserAchievement).filter(UserAchievement.user_id == g.id).delete()
-        db.query(Sessoes).filter(Sessoes.user_id == g.id).delete()
-        db.query(Tasks).filter(Tasks.user_id == g.id).delete()
-        db.query(Areas).filter(Areas.user_id == g.id).delete()
+        db.query(UserAchievement).filter(UserAchievement.user_id == g.id).delete(synchronize_session="fetch")
+        db.query(Sessoes).filter(Sessoes.user_id == g.id).delete(synchronize_session="fetch")
+        db.query(Tasks).filter(Tasks.user_id == g.id).delete(synchronize_session="fetch")
+        db.query(Areas).filter(Areas.user_id == g.id).delete(synchronize_session="fetch")
         db.delete(g)
         removed += 1
     if removed:

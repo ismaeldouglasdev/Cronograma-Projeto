@@ -444,15 +444,12 @@ function handleSkip() {
       showPomoCompleteModal();
     } catch (err) {
       console.error("Erro ao salvar pomodoro:", err);
-      lastPomoData = {
-        duracao: duracao,
-        coins: 0,
-        coinsGanhos: 0,
-        xpGanho: 0,
-        novasConquistas: [],
-        erro: "Falha ao salvar pomodoro",
-      };
-      showPomoCompleteModal();
+      const errorMsg = (typeof t === 'function') ? t('foco.erro_salvar') : 'Erro ao salvar pomodoro. Tente novamente.';
+      if (typeof showToast === 'function') {
+        showToast(errorMsg, "error");
+      }
+      // Não mostrar modal de erro, permitir tentar novamente sem interromper o fluxo
+      resetTimer();
     }
   }
 
