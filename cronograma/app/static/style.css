@@ -642,7 +642,49 @@ main {
 
 @media (max-width: 600px) {
   .areas-filters,
-  .tasks-filters {
+.areas-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 1rem 0 0.25rem;
+  flex-wrap: wrap;
+}
+
+.areas-pagination:empty {
+  display: none;
+}
+
+.areas-page-btn {
+  min-width: 2.2rem;
+  height: 2.2rem;
+  padding: 0 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.areas-page-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.areas-page-btn.is-current {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #111827;
+  font-weight: 600;
+}
+
+.areas-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tasks-filters {
     flex-wrap: wrap;
   }
 

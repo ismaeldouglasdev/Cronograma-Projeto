@@ -28,6 +28,8 @@ API = window.location.origin;
 
 let cachedAreas = null;
 let allAreas = [];
+let areasPage = 1;
+const AREAS_PAGE_SIZE = 10;
 
 function parseIntSafe(value) {
   const result = parseInt(value, 10);
@@ -246,11 +248,19 @@ function renderAreasGrid(areas) {
   }
 
   if (!filtered.length) {
+    areasPage = 1;
     container.innerHTML = '<p class="resumo-empty">' + (typeof t === 'function' ? t('areas.empty') : 'Nenhuma \u00e1rea encontrada.') + '</p>';
+    renderAreasPagination(0);
     return;
   }
 
-  container.innerHTML = filtered
+  const totalPages = Math.max(1, Math.ceil(filtered.length / AREAS_PAGE_SIZE));
+  if (areasPage > totalPages) areasPage = totalPages;
+  if (areasPage < 1) areasPage = 1;
+  const start = (areasPage - 1) * AREAS_PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + AREAS_PAGE_SIZE);
+
+  container.innerHTML = pageItems
     .map((a) => {
       const meta = [];
       if (a.subcategoria) meta.push(a.subcategoria);
@@ -280,15 +290,15 @@ function renderAreasGrid(areas) {
       `;
     })
     .join("");
-  
+
   container.querySelectorAll(".area-card").forEach((card) => {
     card.addEventListener("click", (e) => {
       if (e.target.closest(".btn-del")) return;
-  const editArea = allAreas.find((a) => a.id === parseInt(card.dataset.id, 10));
+      const editArea = allAreas.find((a) => a.id === parseInt(card.dataset.id, 10));
       if (editArea) openAreaModal(editArea);
     });
   });
-  
+
   container.querySelectorAll(".btn-del[data-type='area']").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
@@ -310,6 +320,32 @@ function renderAreasGrid(areas) {
       } finally {
         btn.disabled = false;
       }
+    });
+  });
+
+  renderAreasPagination(totalPages);
+}
+
+function renderAreasPagination(totalPages) {
+  const nav = document.getElementById("areas-pagination");
+  if (!nav) return;
+  if (!totalPages || totalPages <= 1) {
+    nav.innerHTML = "";
+    return;
+  }
+  let html = `<button type="button" class="areas-page-btn" data-page="${areasPage - 1}" ${areasPage <= 1 ? "disabled" : ""} aria-label="Página anterior">‹</button>`;
+  for (let p = 1; p <= totalPages; p++) {
+    html += `<button type="button" class="areas-page-btn${p === areasPage ? " is-current" : ""}" data-page="${p}" ${p === areasPage ? 'aria-current="page"' : ""}>${p}</button>`;
+  }
+  html += `<button type="button" class="areas-page-btn" data-page="${areasPage + 1}" ${areasPage >= totalPages ? "disabled" : ""} aria-label="Próxima página">›</button>`;
+  nav.innerHTML = html;
+  nav.querySelectorAll(".areas-page-btn[data-page]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const p = parseInt(btn.dataset.page, 10);
+      if (!Number.isFinite(p) || p < 1 || p > totalPages || p === areasPage) return;
+      areasPage = p;
+      renderAreasGrid(allAreas);
+      document.getElementById("areas")?.scrollIntoView({ block: "start", behavior: "smooth" });
     });
   });
 }
@@ -1218,8 +1254,14 @@ async function init() {
   const filterCategoria = document.getElementById("filter-categoria");
   const sortTasks = document.getElementById("sort-tasks");
   
-  searchAreas?.addEventListener("input", () => renderAreasGrid(allAreas));
-  filterCategoria?.addEventListener("change", () => renderAreasGrid(allAreas));
+  searchAreas?.addEventListener("input", () => {
+    areasPage = 1;
+    renderAreasGrid(allAreas);
+  });
+  filterCategoria?.addEventListener("change", () => {
+    areasPage = 1;
+    renderAreasGrid(allAreas);
+  });
   
   sortTasks?.addEventListener("change", async () => {
     if (!cachedAreas) cachedAreas = await loadAreas();
