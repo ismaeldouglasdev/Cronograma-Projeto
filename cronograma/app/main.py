@@ -1,11 +1,14 @@
 """
 Cronograma App — Entry Point.
 
-FastAPI setup, startup event, middleware, routers.
+FastAPI setup, startup, middleware, routers.
 A lógica de negócio ficou em services/, models/, routes/.
 """
 
+from contextlib import asynccontextmanager
+
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from fastapi import FastAPI
@@ -37,13 +40,11 @@ from routes.admin import router as admin_router
 
 log = get_logger("cronograma.main")
 
-app = FastAPI()
 
-
-@app.on_event("startup")
-def _startup():
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
     """Cria tabelas, roda migrações e limpa guests antigos."""
-    from config import engine, SessionLocal, Base
+    from config import Base, SessionLocal, engine
 
     Base.metadata.create_all(engine)
     run_migrations(engine)
@@ -58,6 +59,11 @@ def _startup():
             db.close()
     except Exception as e:
         log.warning("Guest cleanup failed", extra={"error": str(e)})
+
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 # ─── CORS ─────────────────────────────────────────────────────────────────────

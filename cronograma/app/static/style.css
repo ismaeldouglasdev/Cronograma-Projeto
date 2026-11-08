@@ -785,6 +785,24 @@ main {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
+  opacity: 1;
+}
+
+#lista-areas .area-card .btn-del:hover {
+  background: var(--danger);
+  color: #fff;
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #lista-areas .area-card .btn-del {
+    opacity: 0;
+  }
+
+  #lista-areas .area-card:hover .btn-del,
+  #lista-areas .area-card .btn-del:focus-visible {
+    opacity: 1;
+  }
 }
 
 #lista-areas .resumo-empty {

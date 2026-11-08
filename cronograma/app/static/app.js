@@ -230,28 +230,26 @@ async function loadAreas() {
 }
 
 function renderAreasGrid(areas) {
-  if (!areas || !areas.length) return;
-  
-  allAreas = areas;
+  const container = document.getElementById("lista-areas");
+  if (!container) return;
+
+  allAreas = Array.isArray(areas) ? areas : [];
   const searchTerm = document.getElementById("search-areas")?.value.toLowerCase() || "";
   const categoryFilter = document.getElementById("filter-categoria")?.value || "";
-  
-  let filtered = areas;
+
+  let filtered = allAreas;
   if (searchTerm) {
     filtered = filtered.filter((a) => a.nome.toLowerCase().includes(searchTerm));
   }
   if (categoryFilter) {
     filtered = filtered.filter((a) => a.subcategoria === categoryFilter);
   }
-  
-  const container = document.getElementById("lista-areas");
-  if (!container) return;
-  
+
   if (!filtered.length) {
     container.innerHTML = '<p class="resumo-empty">' + (typeof t === 'function' ? t('areas.empty') : 'Nenhuma \u00e1rea encontrada.') + '</p>';
     return;
   }
-  
+
   container.innerHTML = filtered
     .map((a) => {
       const meta = [];
@@ -286,8 +284,8 @@ function renderAreasGrid(areas) {
   container.querySelectorAll(".area-card").forEach((card) => {
     card.addEventListener("click", (e) => {
       if (e.target.closest(".btn-del")) return;
-      const area = areas.find((a) => a.id === parseInt(card.dataset.id, 10));
-      if (area) openAreaModal(area);
+  const editArea = allAreas.find((a) => a.id === parseInt(card.dataset.id, 10));
+      if (editArea) openAreaModal(editArea);
     });
   });
   

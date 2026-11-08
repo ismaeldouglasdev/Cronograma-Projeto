@@ -10,6 +10,10 @@ OpenCode.html
 *.sqlite3
 .vercel
 
+# logs
+cronograma/app/logs/
+*.log
+
 # Backup do main.py monolítico (pré-modularização)
 main.py.bak
 
