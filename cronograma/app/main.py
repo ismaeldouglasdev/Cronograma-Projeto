@@ -37,6 +37,7 @@ from routes.gamification import router as gamification_router
 from routes.stats import router as stats_router
 from routes.missions import router as missions_router
 from routes.admin import router as admin_router
+from routes.social import router as social_router
 
 log = get_logger("cronograma.main")
 
@@ -93,3 +94,4 @@ app.include_router(gamification_router)
 app.include_router(stats_router)
 app.include_router(missions_router)
 app.include_router(admin_router)
+app.include_router(social_router)

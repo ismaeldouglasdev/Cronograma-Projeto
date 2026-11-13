@@ -5,6 +5,17 @@ from models.sessao import Sessoes
 from models.achievement import Achievement, UserAchievement
 from models.mission import DailyMission
 from models.password_reset import PasswordResetToken
+from models.social import (
+    Friendship,
+    FriendRequest,
+    LeaderboardEntry,
+    League,
+    UserLeague,
+    Club,
+    ClubMember,
+    ClubWeeklyStats,
+    ActivityFeed,
+)
 
 __all__ = [
     "User",
@@ -15,4 +26,13 @@ __all__ = [
     "UserAchievement",
     "DailyMission",
     "PasswordResetToken",
+    "Friendship",
+    "FriendRequest",
+    "LeaderboardEntry",
+    "League",
+    "UserLeague",
+    "Club",
+    "ClubMember",
+    "ClubWeeklyStats",
+    "ActivityFeed",
 ]

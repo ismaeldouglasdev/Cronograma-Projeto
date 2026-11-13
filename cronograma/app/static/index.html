@@ -5,6 +5,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="auth.page_title">Cronograma - Meus Estudos</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f59e0b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 10 12 5 2 10l10 5 10-5z'/%3E%3Cpath d='M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5'/%3E%3C/svg%3E">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Cronograma">
+  <link rel="apple-touch-icon" href="/icon_images/icon-192.png">
+  <!-- Analytics & Error Tracking (configured via env vars in production) -->
+  <script>
+    // Plausible Analytics
+    if (window.PLAUSIBLE_DOMAIN || '%PLAUSIBLE_DOMAIN%') {
+      const domain = window.PLAUSIBLE_DOMAIN || '%PLAUSIBLE_DOMAIN%'.replace('%', '');
+      if (domain && domain !== 'PLAUSIBLE_DOMAIN') {
+        const script = document.createElement('script');
+        script.defer = true;
+        script.dataset.domain = domain;
+        script.src = 'https://plausible.io/js/script.js';
+        document.head.appendChild(script);
+      }
+    }
+    // Google Analytics (GA4)
+    if (window.GA_MEASUREMENT_ID || '%GA_MEASUREMENT_ID%') {
+      const id = window.GA_MEASUREMENT_ID || '%GA_MEASUREMENT_ID%'.replace('%', '');
+      if (id && id !== 'GA_MEASUREMENT_ID') {
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        window.gtag = gtag;
+        gtag('js', new Date());
+        gtag('config', id);
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = `https://www.googletagmanager.com/gtag/js?id=${id}`;
+        document.head.appendChild(script);
+      }
+    }
+    // Sentry Error Tracking
+    if (window.SENTRY_DSN || '%SENTRY_DSN%') {
+      const dsn = window.SENTRY_DSN || '%SENTRY_DSN%'.replace('%', '');
+      if (dsn && dsn !== 'SENTRY_DSN') {
+        const script = document.createElement('script');
+        script.src = 'https://browser.sentry-cdn.com/8.0.0/bundle.min.js';
+        script.integrity = 'sha384-dPnL9Y5u3Tq5qZx5y5z5Y5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y';
+        script.crossorigin = 'anonymous';
+        script.onload = () => {
+          if (window.Sentry) {
+            Sentry.init({
+              dsn: dsn,
+              environment: window.SENTRY_ENVIRONMENT || '%SENTRY_ENVIRONMENT%'.replace('%', '') || 'production',
+              release: window.SENTRY_RELEASE || '%SENTRY_RELEASE%'.replace('%', '') || 'unknown',
+              integrations: [Sentry.browserTracingIntegration()],
+              tracesSampleRate: 0.1,
+              replaysOnErrorSampleRate: 1.0,
+              replaysSessionSampleRate: 0.1,
+              beforeSend(event) {
+                if (event.request?.cookies) delete event.request.cookies;
+                if (event.request?.headers?.authorization) delete event.request.headers.authorization;
+                return event;
+              }
+            });
+          }
+        };
+        document.head.appendChild(script);
+      }
+    }
+  </script>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -180,6 +244,10 @@
             <span class="sidebar-icon" data-svg-icon="trophy" data-svg-size="17"></span>
             <span class="sidebar-text" data-i18n="sidebar.gamificacao">Gamificação</span>
           </button>
+          <button class="sidebar-link" data-tab="social">
+            <span class="sidebar-icon" data-svg-icon="users" data-svg-size="17"></span>
+            <span class="sidebar-text" data-i18n="sidebar.social">Social</span>
+          </button>
           <button class="sidebar-link" data-tab="perfil">
             <span class="sidebar-icon" data-svg-icon="user" data-svg-size="17"></span>
             <span class="sidebar-text" data-i18n="sidebar.perfil">Perfil</span>
@@ -199,14 +267,6 @@
             <button class="sidebar-link" data-tab="resumo">
               <span class="sidebar-icon" data-svg-icon="chart" data-svg-size="17"></span>
               <span class="sidebar-text" data-i18n="sidebar.resumo">Resumo</span>
-            </button>
-            <a class="sidebar-link" href="https://ismaeldouglasdev.github.io/roadmap-learning-ui/" target="_blank" rel="noopener noreferrer">
-              <span class="sidebar-icon" data-svg-icon="lightning" data-svg-size="17"></span>
-              <span class="sidebar-text">RoadmapMaster</span>
-            </a>
-            <button class="sidebar-link" data-tab="roadmap">
-              <span class="sidebar-icon" data-svg-icon="lightning" data-svg-size="17"></span>
-              <span class="sidebar-text">Roadmap (embed)</span>
             </button>
           </nav>
         
@@ -542,6 +602,124 @@
       </div>
     </section>
 
+    <!-- Social -->
+    <section id="social" class="panel">
+      <div class="social-page">
+        <!-- Sub-tabs -->
+        <div class="social-tabs">
+          <button class="social-tab active" data-social-tab="friends" data-i18n="social.tab_friends">Amigos</button>
+          <button class="social-tab" data-social-tab="leaderboard" data-i18n="social.tab_leaderboard">Ranking</button>
+          <button class="social-tab" data-social-tab="league" data-i18n="social.tab_league">Liga</button>
+          <button class="social-tab" data-social-tab="clubs" data-i18n="social.tab_clubs">Clubes</button>
+          <button class="social-tab" data-social-tab="activity" data-i18n="social.tab_activity">Feed</button>
+        </div>
+
+        <!-- Friends Tab -->
+        <div id="social-friends" class="social-panel active">
+          <div class="social-section">
+            <div class="social-section-header">
+              <h3 data-i18n="social.your_friends">Seus Amigos</h3>
+              <button id="btn-add-friend" class="btn-primary" data-i18n="social.add_friend">+ Adicionar Amigo</button>
+            </div>
+            <div id="friends-list" class="friends-list"></div>
+          </div>
+
+          <div class="social-section">
+            <h3 data-i18n="social.pending_requests">Solicitações Pendentes</h3>
+            <div id="pending-requests" class="requests-list"></div>
+          </div>
+
+          <div class="social-section">
+            <h3 data-i18n="social.sent_requests">Solicitações Enviadas</h3>
+            <div id="sent-requests" class="requests-list"></div>
+          </div>
+        </div>
+
+        <!-- Leaderboard Tab -->
+        <div id="social-leaderboard" class="social-panel">
+          <div class="social-section">
+            <div class="social-section-header">
+              <h3 data-i18n="social.leaderboard_title">Ranking</h3>
+              <select id="leaderboard-period" class="form-select">
+                <option value="weekly" data-i18n="social.period_weekly">Semanal</option>
+                <option value="monthly" data-i18n="social.period_monthly">Mensal</option>
+                <option value="alltime" data-i18n="social.period_alltime">Todos os Tempos</option>
+              </select>
+            </div>
+            <div id="leaderboard-list" class="leaderboard-list"></div>
+            <div id="leaderboard-user-rank" class="user-rank-card" style="display:none;"></div>
+          </div>
+        </div>
+
+        <!-- League Tab -->
+        <div id="social-league" class="social-panel">
+          <div class="social-section">
+            <div id="league-header" class="league-header">
+              <div class="league-tier-badge" id="league-tier-badge">
+                <span class="league-tier-name" id="league-tier-name">Bronze</span>
+                <span class="league-tier-icon" data-svg-icon="trophy" data-svg-size="24"></span>
+              </div>
+              <div class="league-info">
+                <div class="league-stat">
+                  <span class="league-stat-label" data-i18n="social.your_rank">Sua Posição</span>
+                  <span class="league-stat-value" id="league-rank">—</span>
+                </div>
+                <div class="league-stat">
+                  <span class="league-stat-label" data-i18n="social.xp_this_week">XP Esta Semana</span>
+                  <span class="league-stat-value" id="league-xp-week">0</span>
+                </div>
+              </div>
+            </div>
+            <div class="league-progress">
+              <div class="league-progress-bar">
+                <div class="league-progress-fill" id="league-progress-fill"></div>
+              </div>
+              <div class="league-progress-labels">
+                <span data-i18n="social.promotion_zone">Zona de Promoção</span>
+                <span data-i18n="social.demotion_zone">Zona de Rebaixamento</span>
+              </div>
+            </div>
+            <h3 data-i18n="social.standings">Classificação</h3>
+            <div id="league-standings" class="standings-list"></div>
+          </div>
+        </div>
+
+        <!-- Clubs Tab -->
+        <div id="social-clubs" class="social-panel">
+          <div class="social-section">
+            <div class="social-section-header">
+              <h3 data-i18n="social.my_clubs">Meus Clubes</h3>
+              <button id="btn-create-club" class="btn-primary" data-i18n="social.create_club">+ Criar Clube</button>
+            </div>
+            <div id="my-clubs-list" class="clubs-list"></div>
+          </div>
+
+          <div class="social-section">
+            <h3 data-i18n="social.discover_clubs">Descobrir Clubes</h3>
+            <div class="club-search">
+              <input type="text" id="club-search-input" placeholder="Buscar clubes..." data-i18n-placeholder="social.search_clubs">
+              <button id="btn-search-clubs" class="btn-secondary" data-i18n="social.search">Buscar</button>
+            </div>
+            <div id="discover-clubs-list" class="clubs-list"></div>
+          </div>
+        </div>
+
+        <!-- Activity Feed Tab -->
+        <div id="social-activity" class="social-panel">
+          <div class="social-section">
+            <div class="social-section-header">
+              <h3 data-i18n="social.friends_activity">Atividade dos Amigos</h3>
+              <select id="activity-filter" class="form-select">
+                <option value="friends" data-i18n="social.filter_friends">Amigos + Eu</option>
+                <option value="me" data-i18n="social.filter_me">Só Minhas</option>
+              </select>
+            </div>
+            <div id="activity-feed" class="activity-feed"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Perfil -->
     <section id="perfil" class="panel">
       <p class="section-desc" data-i18n="perfil.subtitle">Configure seu perfil básico</p>
@@ -733,11 +911,6 @@
       </div>
     </section>
 
-    <!-- Roadmap embed -->
-    <section id="roadmap" class="panel">
-      <iframe src="https://ismaeldouglasdev.github.io/roadmap-learning-ui/" style="width:100%;height:80vh;border:0;border-radius:12px;" loading="lazy" title="RoadmapMaster"></iframe>
-    </section>
-
   </main>
   </div><!-- End dashboard-layout -->
   </div><!-- End main-app -->
@@ -922,5 +1095,14 @@
   <script src="/static/store.js?v=20260910b"></script>
   <script src="/static/app.js?v=20261108a"></script>
   <script src="/static/foco.js?v=20260910b"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/sw.js')
+          .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+          .catch(err => console.warn('[PWA] Service Worker registration failed:', err));
+      });
+    }
+  </script>
 </body>
 </html>

@@ -118,23 +118,6 @@ def buy_freeze(user_id: int = Depends(get_current_user), db: Session = Depends(g
     }
 
 
-@router.post("/roadmap/xp")
-def add_roadmap_xp(
-    amount: int = 5,
-    user_id: int = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Adiciona XP do RoadmapMaster ao usuário (integração)."""
-    if amount < 0 or amount > 1000:
-        raise HTTPException(status_code=400, detail="Valor inválido")
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    user.roadmap_xp = (user.roadmap_xp or 0) + amount
-    db.commit()
-    return {"roadmap_xp": user.roadmap_xp}
-
-
 @router.post("/coins/add")
 def add_coins(
     amount: int = 1,

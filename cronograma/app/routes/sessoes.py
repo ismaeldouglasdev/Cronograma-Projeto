@@ -154,21 +154,28 @@ def atualizar_sessao(
     )
     if not sessao:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
-    if body.area_id is not None:
-        area = (
-            db.query(Areas)
-            .filter(Areas.id == body.area_id, Areas.user_id == user_id)
-            .first()
-        )
-        if not area:
-            raise HTTPException(
-                status_code=404, detail="Área não encontrada ou não pertence ao usuário"
+
+    fields_set = body.model_fields_set
+
+    if "area_id" in fields_set:
+        if body.area_id is not None:
+            area = (
+                db.query(Areas)
+                .filter(Areas.id == body.area_id, Areas.user_id == user_id)
+                .first()
             )
+            if not area:
+                raise HTTPException(
+                    status_code=404, detail="Área não encontrada ou não pertence ao usuário"
+                )
         setattr(sessao, "area_id", body.area_id)
-    if body.duracao_minutos is not None:
+    if "duracao_minutos" in fields_set:
         setattr(sessao, "duracao_minutos", body.duracao_minutos)
-    if body.data is not None:
+    if "data" in fields_set:
         setattr(sessao, "data", body.data)
+    if "task_id" in fields_set:
+        setattr(sessao, "task_id", body.task_id)
+
     db.commit()
     db.refresh(sessao)
     return sessao

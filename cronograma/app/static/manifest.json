@@ -1,0 +1,88 @@
+{
+  "name": "Cronograma - Gerenciador de Estudos",
+  "short_name": "Cronograma",
+  "description": "Sistema completo de gerenciamento de estudos com timer Pomodoro, tracking de horas, quadro de horários e gamificação.",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "scope": "/app",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/icon_images/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon_images/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon_images/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon_images/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon_images/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon_images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon_images/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon_images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Timer Pomodoro",
+      "short_name": "Foco",
+      "description": "Iniciar sessão de foco",
+      "url": "/app#/foco",
+      "icons": [{ "src": "/icon_images/target.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Minhas Tarefas",
+      "short_name": "Tarefas",
+      "description": "Ver tarefas pendentes",
+      "url": "/app#/tasks",
+      "icons": [{ "src": "/icon_images/check.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Resumo de Estudos",
+      "short_name": "Resumo",
+      "description": "Ver estatísticas de estudo",
+      "url": "/app#/resumo",
+      "icons": [{ "src": "/icon_images/chart.png", "sizes": "96x96" }]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": []
+}

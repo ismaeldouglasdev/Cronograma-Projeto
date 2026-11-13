@@ -76,39 +76,41 @@ def atualizar_task(
     if not task:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
 
-    if body.area_id is not None:
-        area = (
-            db.query(Areas)
-            .filter(Areas.id == body.area_id, Areas.user_id == user_id)
-            .first()
-        )
-        if not area:
-            raise HTTPException(
-                status_code=404, detail="Área não encontrada ou não pertence ao usuário"
+    fields_set = body.model_fields_set
+
+    if "area_id" in fields_set:
+        if body.area_id is not None:
+            area = (
+                db.query(Areas)
+                .filter(Areas.id == body.area_id, Areas.user_id == user_id)
+                .first()
             )
+            if not area:
+                raise HTTPException(
+                    status_code=404, detail="Área não encontrada ou não pertence ao usuário"
+                )
         setattr(task, "area_id", body.area_id)
-    if body.titulo is not None:
+    if "titulo" in fields_set:
         setattr(task, "titulo", body.titulo)
-    if body.descricao is not None:
+    if "descricao" in fields_set:
         setattr(task, "descricao", body.descricao)
-    if body.data_entrega is not None:
+    if "data_entrega" in fields_set:
         setattr(task, "data_entrega", body.data_entrega)
-    if body.concluida is not None:
-        # Se a tarefa está sendo marcada como concluída agora, registrar data/hora
+    if "concluida" in fields_set:
         if body.concluida and not task.concluida:
             setattr(task, "concluida_em", datetime.now().isoformat())
         elif not body.concluida:
-            # Se desmarcou, limpar a data
             setattr(task, "concluida_em", None)
         setattr(task, "concluida", body.concluida)
-    if body.duracao_minutos is not None:
+    if "duracao_minutos" in fields_set:
         setattr(task, "duracao_minutos", body.duracao_minutos)
-    if body.prioridade is not None:
+    if "prioridade" in fields_set:
         setattr(task, "prioridade", body.prioridade)
-    if body.meta_pomodoros is not None:
+    if "meta_pomodoros" in fields_set:
         setattr(task, "meta_pomodoros", body.meta_pomodoros)
-    if body.pomodoros_concluidos is not None:
+    if "pomodoros_concluidos" in fields_set:
         setattr(task, "pomodoros_concluidos", body.pomodoros_concluidos)
+
     db.commit()
     db.refresh(task)
     audit("task.update", user_id=user_id, task_id=task_id)

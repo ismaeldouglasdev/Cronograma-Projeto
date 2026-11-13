@@ -26,6 +26,63 @@ function ensureChartJs() {
 // location.origin already includes protocol + host + port (no double port)
 API = window.location.origin;
 
+// ─── Analytics & Error Tracking (Plausible/GA + Sentry) ───────────────────────
+function initAnalytics() {
+  // Plausible Analytics (privacy-friendly)
+  if (window.PLAUSIBLE_DOMAIN) {
+    const script = document.createElement('script');
+    script.defer = true;
+    script.dataset.domain = window.PLAUSIBLE_DOMAIN;
+    script.src = 'https://plausible.io/js/script.js';
+    document.head.appendChild(script);
+  }
+
+  // Google Analytics (GA4)
+  if (window.GA_MEASUREMENT_ID) {
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', window.GA_MEASUREMENT_ID);
+
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${window.GA_MEASUREMENT_ID}`;
+    document.head.appendChild(script);
+  }
+
+  // Sentry Error Tracking
+  if (window.SENTRY_DSN) {
+    const script = document.createElement('script');
+    script.src = 'https://browser.sentry-cdn.com/8.0.0/bundle.min.js';
+    script.integrity = 'sha384-dPnL9Y5u3Tq5qZx5y5z5Y5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y5Z5Y';
+    script.crossorigin = 'anonymous';
+    script.onload = () => {
+      if (window.Sentry) {
+        Sentry.init({
+          dsn: window.SENTRY_DSN,
+          environment: window.SENTRY_ENVIRONMENT || 'production',
+          release: window.SENTRY_RELEASE || 'unknown',
+          integrations: [Sentry.browserTracingIntegration()],
+          tracesSampleRate: 0.1,
+          replaysOnErrorSampleRate: 1.0,
+          replaysSessionSampleRate: 0.1,
+          beforeSend(event) {
+            // Don't send auth tokens or sensitive data
+            if (event.request?.cookies) delete event.request.cookies;
+            if (event.request?.headers?.authorization) delete event.request.headers.authorization;
+            return event;
+          }
+        });
+      }
+    };
+    document.head.appendChild(script);
+  }
+}
+
+// Initialize analytics early
+initAnalytics();
+
 let cachedAreas = null;
 let allAreas = [];
 let areasPage = 1;
@@ -73,6 +130,22 @@ function setLoading(elementId, isLoading) {
     el.classList.remove("loading");
     el.style.opacity = "";
     el.style.pointerEvents = "";
+  }
+}
+
+function withButtonLoading(btn, asyncFn) {
+  if (btn.disabled) return Promise.reject(new Error('Button is loading'));
+  btn.disabled = true;
+  btn.classList.add('loading');
+  try {
+    return asyncFn().finally(() => {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    });
+  } catch (e) {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    throw e;
   }
 }
 
@@ -281,10 +354,14 @@ function renderAreasGrid(areas) {
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
             </svg>
           </div>
-          <div class="area-title">${escapeHtml(a.nome)}</div>
-          ${a.subcategoria ? `<div class="area-category">${escapeHtml(a.subcategoria)}</div>` : ""}
-          <div class="area-type">${tipoLabel}</div>
-          ${tipoInfo ? `<div class="area-info">${tipoInfo}</div>` : ""}
+          <div class="area-content">
+            <div class="area-title">${escapeHtml(a.nome)}</div>
+            ${a.subcategoria ? `<div class="area-category">${escapeHtml(a.subcategoria)}</div>` : ""}
+            <div class="area-meta">
+              <span class="area-type">${tipoLabel}</span>
+              ${tipoInfo ? `<span class="area-info">${tipoInfo}</span>` : ""}
+            </div>
+          </div>
           <button class="btn-del" data-id="${a.id}" data-type="area" title="Excluir">×</button>
         </div>
       `;
@@ -1097,6 +1174,7 @@ function getPageTitle(tabName) {
     'areas': _t('pages.areas'),
     'foco': _t('pages.foco'),
     'gamificacao': _t('pages.gamificacao'),
+    'social': _t('pages.social'),
     'horarios': _t('pages.horarios'),
     'tasks': _t('pages.tarefas'),
     'sessoes': _t('pages.sessoes'),
@@ -1107,7 +1185,7 @@ function getPageTitle(tabName) {
   return titles[tabName] || tabName;
 }
 
-const VALID_TABS = ['areas', 'foco', 'gamificacao', 'perfil', 'horarios', 'tasks', 'sessoes', 'resumo', 'roadmap'];
+const VALID_TABS = ['areas', 'foco', 'gamificacao', 'social', 'perfil', 'horarios', 'tasks', 'sessoes', 'resumo', 'roadmap'];
 
 function switchToTab(tabName) {
   // Update all tab/sidebar-link elements
@@ -1147,6 +1225,9 @@ function switchToTab(tabName) {
   }
   if (tabName === 'gamificacao') {
     loadMissions();
+  }
+  if (tabName === 'social') {
+    loadSocialTab();
   }
   if (tabName === 'perfil') {
     initProfileTab();
@@ -1219,7 +1300,7 @@ function initTabs() {
   document.querySelectorAll(".sidebar-link").forEach((link) => {
     link.addEventListener("click", () => {
       const tab = link.dataset.tab;
-      if (!tab) return; // links externos (ex.: RoadmapMaster) não são abas
+      if (!tab) return;
       if (typeof FocoTimer !== "undefined" && FocoTimer.isActive()) {
         if (!alertShownThisSession && !confirm(typeof t === 'function' ? t('geral.trocar_aba') : 'Trocar de aba?')) {
           return;
@@ -1741,6 +1822,659 @@ function renderGamification() {
     });
     
     return;
+  }
+}
+
+// ─── Social Tab ────────────────────────────────────────────────────────────────
+
+let currentSocialTab = 'friends';
+
+function loadSocialTab() {
+  // Initialize social sub-tabs
+  initSocialTabs();
+  // Load default tab
+  switchSocialTab('friends');
+}
+
+function initSocialTabs() {
+  document.querySelectorAll('.social-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      switchSocialTab(tab.dataset.socialTab);
+    });
+  });
+
+  // Leaderboard period change
+  const periodSelect = document.getElementById('leaderboard-period');
+  if (periodSelect && !periodSelect.dataset.bound) {
+    periodSelect.dataset.bound = '1';
+    periodSelect.addEventListener('change', () => loadLeaderboard());
+  }
+
+  // Add friend button
+  const addFriendBtn = document.getElementById('btn-add-friend');
+  if (addFriendBtn && !addFriendBtn.dataset.bound) {
+    addFriendBtn.dataset.bound = '1';
+    addFriendBtn.addEventListener('click', () => showAddFriendModal());
+  }
+
+  // Create club button
+  const createClubBtn = document.getElementById('btn-create-club');
+  if (createClubBtn && !createClubBtn.dataset.bound) {
+    createClubBtn.dataset.bound = '1';
+    createClubBtn.addEventListener('click', () => showCreateClubModal());
+  }
+
+  // Club search
+  const searchClubsBtn = document.getElementById('btn-search-clubs');
+  const searchClubsInput = document.getElementById('club-search-input');
+  if (searchClubsBtn && !searchClubsBtn.dataset.bound) {
+    searchClubsBtn.dataset.bound = '1';
+    searchClubsBtn.addEventListener('click', () => searchClubs());
+  }
+  if (searchClubsInput && !searchClubsInput.dataset.bound) {
+    searchClubsInput.dataset.bound = '1';
+    searchClubsInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') searchClubs();
+    });
+  }
+
+  // Activity filter
+  const activityFilter = document.getElementById('activity-filter');
+  if (activityFilter && !activityFilter.dataset.bound) {
+    activityFilter.dataset.bound = '1';
+    activityFilter.addEventListener('change', () => loadActivityFeed());
+  }
+}
+
+function switchSocialTab(tabName) {
+  currentSocialTab = tabName;
+
+  document.querySelectorAll('.social-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.social-panel').forEach(p => p.classList.remove('active'));
+
+  const tabBtn = document.querySelector(`.social-tab[data-social-tab="${tabName}"]`);
+  if (tabBtn) tabBtn.classList.add('active');
+
+  const panel = document.getElementById(`social-${tabName}`);
+  if (panel) panel.classList.add('active');
+
+  // Load data for the tab
+  switch (tabName) {
+    case 'friends':
+      loadFriends();
+      break;
+    case 'leaderboard':
+      loadLeaderboard();
+      break;
+    case 'league':
+      loadLeague();
+      break;
+    case 'clubs':
+      loadMyClubs();
+      loadDiscoverClubs();
+      break;
+    case 'activity':
+      loadActivityFeed();
+      break;
+  }
+}
+
+// ─── Friends ──────────────────────────────────────────────────────────────────
+
+async function loadFriends() {
+  const list = document.getElementById('friends-list');
+  const pending = document.getElementById('pending-requests');
+  const sent = document.getElementById('sent-requests');
+  if (!list || !pending || !sent) return;
+
+  try {
+    // Friends
+    const friends = await get('/friends');
+    if (friends.length === 0) {
+      list.innerHTML = '<p class="social-empty">' + escapeHtml(t('social.no_friends')) + '</p>';
+    } else {
+      list.innerHTML = friends.map(f => `
+        <div class="friend-card">
+          <img src="${f.avatar_url || '/static/avatars/avatar1.png'}" alt="" class="friend-avatar">
+          <div class="friend-info">
+            <div class="friend-name">${escapeHtml(f.name)}</div>
+            <div class="friend-meta">
+              <span data-svg-icon="star" data-svg-size="12"></span> ${f.level || 0} · 
+              <span data-svg-icon="flame" data-svg-size="12"></span> ${f.current_streak || 0} · 
+              <span data-svg-icon="coin" data-svg-size="12"></span> ${f.coins || 0}
+            </div>
+          </div>
+          <button class="btn-remove-friend" data-id="${f.id}" data-i18n="social.remove" title="Remover amigo">✕</button>
+        </div>
+      `).join('');
+
+      list.querySelectorAll('.btn-remove-friend').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const friendId = parseInt(btn.dataset.id, 10);
+          if (confirm(t('social.confirm_remove_friend'))) {
+            try {
+              await withButtonLoading(btn, () => delReq(`/friends/${friendId}`));
+              loadFriends();
+              showToast(t('social.friend_removed'), 'success');
+            } catch (err) {
+              showToast(err.message, 'error');
+            }
+          }
+        });
+      });
+    }
+
+    // Pending requests
+    const pendingReqs = await get('/friends/requests/received');
+    if (pendingReqs.length === 0) {
+      pending.innerHTML = '<p class="social-empty">' + escapeHtml(t('social.no_pending')) + '</p>';
+    } else {
+      pending.innerHTML = pendingReqs.map(r => `
+        <div class="request-card">
+          <img src="${r.from_avatar || '/static/avatars/avatar1.png'}" alt="" class="friend-avatar">
+          <div class="request-info">
+            <div class="request-name">${escapeHtml(r.from_name)}</div>
+            <div class="request-meta">${formatDate(r.created_at)}</div>
+          </div>
+          <div class="request-actions">
+            <button class="btn-accept" data-id="${r.id}" data-i18n="social.accept">✓</button>
+            <button class="btn-reject" data-id="${r.id}" data-i18n="social.reject">✕</button>
+          </div>
+        </div>
+      `).join('');
+
+      pending.querySelectorAll('.btn-accept').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try {
+            await withButtonLoading(btn, () => post('/friends/request/respond', { request_id: parseInt(btn.dataset.id, 10), accept: true }));
+            loadFriends();
+            showToast(t('social.request_accepted'), 'success');
+          } catch (err) { showToast(err.message, 'error'); }
+        });
+      });
+      pending.querySelectorAll('.btn-reject').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try {
+            await withButtonLoading(btn, () => post('/friends/request/respond', { request_id: parseInt(btn.dataset.id, 10), accept: false }));
+            loadFriends();
+            showToast(t('social.request_rejected'), 'success');
+          } catch (err) { showToast(err.message, 'error'); }
+        });
+      });
+    }
+
+    // Sent requests
+    const sentReqs = await get('/friends/requests/sent');
+    if (sentReqs.length === 0) {
+      sent.innerHTML = '<p class="social-empty">' + escapeHtml(t('social.no_sent')) + '</p>';
+    } else {
+      sent.innerHTML = sentReqs.map(r => `
+        <div class="request-card">
+          <img src="${r.to_avatar || '/static/avatars/avatar1.png'}" alt="" class="friend-avatar">
+          <div class="request-info">
+            <div class="request-name">${escapeHtml(r.to_name)}</div>
+            <div class="request-meta">${t('social.sent')} ${formatDate(r.created_at)}</div>
+          </div>
+          <button class="btn-cancel-request" data-id="${r.id}" data-i18n="social.cancel">Cancelar</button>
+        </div>
+      `).join('');
+
+      sent.querySelectorAll('.btn-cancel-request').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try {
+            await withButtonLoading(btn, () => delReq('/friends/requests/sent/' + btn.dataset.id));
+            loadFriends();
+            showToast(t('social.request_cancelled'), 'success');
+          } catch (err) { showToast(err.message, 'error'); }
+        });
+      });
+    }
+
+  } catch (e) {
+    console.error('Erro ao carregar amigos:', e);
+    showToast(t('social.load_error'), 'error');
+  }
+}
+
+function showAddFriendModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-backdrop"></div>
+    <div class="modal-content" style="max-width:500px;">
+      <button class="modal-close">×</button>
+      <h3 class="modal-title">${t('social.add_friend')}</h3>
+      <div class="search-friend">
+        <input type="text" id="friend-search-input" placeholder="${t('social.search_placeholder')}" autocomplete="off">
+        <div id="friend-search-results" class="search-results"></div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const closeModal = () => {
+    modal.classList.add('closing');
+    setTimeout(() => modal.remove(), 200);
+  };
+  modal.querySelector('.modal-close').addEventListener('click', closeModal);
+  modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
+  document.addEventListener('keydown', function esc(e) {
+    if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', esc); }
+  });
+
+  const input = modal.querySelector('#friend-search-input');
+  const results = modal.querySelector('#friend-search-results');
+  let debounceTimer = null;
+
+  input.addEventListener('input', async () => {
+    clearTimeout(debounceTimer);
+    const q = input.value.trim();
+    if (q.length < 2) { results.innerHTML = ''; return; }
+    debounceTimer = setTimeout(async () => {
+      try {
+        const users = await get('/friends/search?q=' + encodeURIComponent(q));
+        if (users.length === 0) {
+          results.innerHTML = '<p class="search-empty">' + t('social.no_users_found') + '</p>';
+          return;
+        }
+        results.innerHTML = users.map(u => `
+          <div class="search-result-item" data-id="${u.id}">
+            <img src="${u.avatar_url || '/static/avatars/avatar1.png'}" alt="">
+            <div>
+              <div class="search-result-name">${escapeHtml(u.name)}</div>
+              <div class="search-result-email">${escapeHtml(u.email)}</div>
+            </div>
+            <button class="btn-add-friend-result" data-i18n="social.add">${t('social.add')}</button>
+          </div>
+        `).join('');
+
+        results.querySelectorAll('.btn-add-friend-result').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const item = e.target.closest('.search-result-item');
+            const userId = parseInt(item.dataset.id, 10);
+            try {
+              await withButtonLoading(btn, () => post('/friends/request', { to_user_id: userId }));
+              showToast(t('social.request_sent'), 'success');
+              closeModal();
+              loadFriends();
+            } catch (err) { showToast(err.message, 'error'); }
+          });
+        });
+      } catch (err) {
+        results.innerHTML = '<p class="search-error">' + err.message + '</p>';
+      }
+    }, 300);
+  });
+
+  input.focus();
+}
+
+// ─── Leaderboard ──────────────────────────────────────────────────────────────
+
+async function loadLeaderboard() {
+  const list = document.getElementById('leaderboard-list');
+  const userRank = document.getElementById('leaderboard-user-rank');
+  const periodSelect = document.getElementById('leaderboard-period');
+  if (!list) return;
+
+  const period = periodSelect?.value || 'weekly';
+
+  try {
+    const data = await get('/leaderboard?period=' + period + '&limit=100');
+    const entries = data.entries || [];
+
+    if (entries.length === 0) {
+      list.innerHTML = '<p class="social-empty">' + t('social.no_rankings') + '</p>';
+    } else {
+      const currentUserId = await getCurrentUserId();
+      list.innerHTML = entries.map((e, i) => {
+        const isMe = e.user_id === currentUserId;
+        return `
+          <div class="leaderboard-item ${isMe ? 'me' : ''}" data-rank="${e.rank}">
+            <span class="leaderboard-rank">${e.rank}</span>
+            <img src="${e.avatar_url || '/static/avatars/avatar1.png'}" alt="" class="leaderboard-avatar">
+            <span class="leaderboard-name">${escapeHtml(e.name)}</span>
+            <span class="leaderboard-xp">${e.xp_earned} XP</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // User rank
+    if (data.user_rank) {
+      userRank.style.display = 'block';
+      userRank.innerHTML = `
+        <span class="user-rank-label">${t('social.your_position')}</span>
+        <span class="user-rank-value">#${data.user_rank.rank}</span>
+        <span class="user-rank-xp">${data.user_rank.xp_earned} XP</span>
+      `;
+    } else {
+      userRank.style.display = 'none';
+    }
+
+  } catch (e) {
+    console.error('Erro ao carregar ranking:', e);
+    showToast(t('social.load_error'), 'error');
+  }
+}
+
+async function getCurrentUserId() {
+  if (window._cachedUserId) return window._cachedUserId;
+  try {
+    const prof = await get('/auth/me');
+    window._cachedUserId = prof?.id;
+    return prof?.id;
+  } catch { return null; }
+}
+
+function clearUserIdCache() {
+  window._cachedUserId = null;
+}
+
+// ─── League ───────────────────────────────────────────────────────────────────
+
+async function loadLeague() {
+  try {
+    const data = await get('/league/me');
+    const league = data.league;
+    const user = data.user;
+    const standings = data.standings;
+
+    // Tier badge
+    const tierNames = { 1: 'Bronze', 2: 'Prata', 3: 'Ouro', 4: 'Platina', 5: 'Diamante', 6: 'Obsidiana' };
+    const tierIcons = { 1: '🥉', 2: '🥈', 3: '🥇', 4: '💎', 5: '💠', 6: '⚫' };
+    document.getElementById('league-tier-name').textContent = tierNames[league.tier] || league.name;
+    document.getElementById('league-tier-badge').className = 'league-tier-badge tier-' + league.tier;
+
+    // User stats
+    document.getElementById('league-rank').textContent = user.rank ? '#' + user.rank : '—';
+    document.getElementById('league-xp-week').textContent = user.xp_this_week || 0;
+
+    // Progress bar (promotion/demotion zones)
+    const total = standings.length;
+    const promoSpots = league.promotion_spots;
+    const demoSpots = league.demotion_spots;
+    const userRank = user.rank || total;
+
+    const promoPct = total > 0 ? (promoSpots / total) * 100 : 0;
+    const demoStartPct = total > 0 ? ((total - demoSpots) / total) * 100 : 100;
+    const userPct = total > 0 ? ((userRank - 1) / total) * 100 : 0;
+
+    const fill = document.getElementById('league-progress-fill');
+    fill.style.width = userPct + '%';
+    fill.className = 'league-progress-fill';
+    if (userRank <= promoSpots) fill.classList.add('promotion');
+    else if (userRank > total - demoSpots) fill.classList.add('demotion');
+    else fill.classList.add('safe');
+
+    // Standings
+    const list = document.getElementById('league-standings');
+    const currentUserId = await getCurrentUserId();
+    list.innerHTML = standings.map((s, i) => {
+      const isMe = s.user_id === currentUserId;
+      let zoneClass = '';
+      if (i < promoSpots) zoneClass = 'promotion';
+      else if (i >= total - demoSpots) zoneClass = 'demotion';
+      return `
+        <div class="standing-item ${zoneClass} ${isMe ? 'me' : ''}">
+          <span class="standing-rank">${i + 1}</span>
+          <img src="${s.avatar_url || '/static/avatars/avatar1.png'}" alt="" class="standing-avatar">
+          <span class="standing-name">${escapeHtml(s.name)}</span>
+          <span class="standing-xp">${s.xp_this_week} XP</span>
+        </div>
+      `;
+    }).join('');
+
+  } catch (e) {
+    console.error('Erro ao carregar liga:', e);
+    showToast(t('social.load_error'), 'error');
+  }
+}
+
+// ─── Clubs ────────────────────────────────────────────────────────────────────
+
+async function loadMyClubs() {
+  const list = document.getElementById('my-clubs-list');
+  if (!list) return;
+
+  try {
+    const clubs = await get('/clubs/me');
+    const currentUserId = await getCurrentUserId();
+    if (clubs.length === 0) {
+      list.innerHTML = '<p class="social-empty">' + t('social.no_clubs') + '</p>';
+      return;
+    }
+    list.innerHTML = clubs.map(c => `
+      <div class="club-card">
+        <div class="club-info">
+          <div class="club-name">${escapeHtml(c.name)}</div>
+          <div class="club-meta">
+            <span data-svg-icon="users" data-svg-size="12"></span> ${c.member_count}/${c.max_members || 50} membros
+            ${c.is_public ? ' · <span data-i18n="social.public">Público</span>' : ' · <span data-i18n="social.private">Privado</span>'}
+          </div>
+          <div class="club-invite" data-i18n="social.invite_code">Código: <strong>${c.invite_code}</strong></div>
+        </div>
+        <div class="club-actions">
+          <button class="btn-view-club" data-id="${c.id}" data-i18n="social.view">Ver</button>
+          ${c.owner_id === currentUserId ? `<button class="btn-delete-club" data-id="${c.id}" data-i18n="social.delete">Excluir</button>` : `<button class="btn-leave-club" data-id="${c.id}" data-i18n="social.leave">Sair</button>`}
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('.btn-view-club').forEach(btn => {
+      btn.addEventListener('click', () => viewClub(btn.dataset.id));
+    });
+    list.querySelectorAll('.btn-leave-club').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (confirm(t('social.confirm_leave'))) {
+          try {
+            await withButtonLoading(btn, () => delReq('/clubs/' + btn.dataset.id + '/leave'));
+            loadMyClubs();
+            showToast(t('social.left_club'), 'success');
+          } catch (err) { showToast(err.message, 'error'); }
+        }
+      });
+    });
+    list.querySelectorAll('.btn-delete-club').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (confirm(t('social.confirm_delete_club'))) {
+          try {
+            await withButtonLoading(btn, () => delReq('/clubs/' + btn.dataset.id));
+            loadMyClubs();
+            showToast(t('social.club_deleted'), 'success');
+          } catch (err) { showToast(err.message, 'error'); }
+        }
+      });
+    });
+
+  } catch (e) {
+    console.error('Erro ao carregar clubes:', e);
+    showToast(t('social.load_error'), 'error');
+  }
+}
+
+async function loadDiscoverClubs() {
+  const list = document.getElementById('discover-clubs-list');
+  if (!list) return;
+  list.innerHTML = '<p class="social-empty">' + t('social.search_to_discover') + '</p>';
+}
+
+async function searchClubs() {
+  const input = document.getElementById('club-search-input');
+  const list = document.getElementById('discover-clubs-list');
+  if (!input || !list) return;
+
+  const q = input.value.trim();
+  if (q.length < 2) { list.innerHTML = '<p class="social-empty">' + t('social.search_to_discover') + '</p>'; return; }
+
+  try {
+    const clubs = await get('/clubs/search?q=' + encodeURIComponent(q));
+    if (clubs.length === 0) {
+      list.innerHTML = '<p class="social-empty">' + t('social.no_clubs_found') + '</p>';
+      return;
+    }
+    list.innerHTML = clubs.map(c => `
+      <div class="club-card">
+        <div class="club-info">
+          <div class="club-name">${escapeHtml(c.name)}</div>
+          <div class="club-meta">
+            <span data-svg-icon="users" data-svg-size="12"></span> ${c.member_count} membros
+            ${c.is_public ? ' · <span data-i18n="social.public">Público</span>' : ' · <span data-i18n="social.private">Privado</span>'}
+          </div>
+          <div class="club-desc">${escapeHtml(c.description || '')}</div>
+        </div>
+        <button class="btn-join-club" data-code="${c.invite_code}" data-i18n="social.join">Entrar</button>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('.btn-join-club').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try {
+          await withButtonLoading(btn, () => post('/clubs/join', { invite_code: btn.dataset.code }));
+          showToast(t('social.joined_club'), 'success');
+          loadMyClubs();
+        } catch (err) { showToast(err.message, 'error'); }
+      });
+    });
+  } catch (e) {
+    console.error('Erro ao buscar clubes:', e);
+    showToast(t('social.load_error'), 'error');
+  }
+}
+
+function showCreateClubModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-backdrop"></div>
+    <div class="modal-content" style="max-width:500px;">
+      <button class="modal-close">×</button>
+      <h3 class="modal-title">${t('social.create_club')}</h3>
+      <form id="create-club-form">
+        <label class="form-label">${t('social.club_name')}</label>
+        <input type="text" name="name" required placeholder="${t('social.club_name_placeholder')}">
+        <label class="form-label">${t('social.club_description')}</label>
+        <textarea name="description" rows="3" placeholder="${t('social.club_description_placeholder')}"></textarea>
+        <label class="form-label">${t('social.club_public')}</label>
+        <div class="checkbox-wrap">
+          <input type="checkbox" name="is_public" id="club-public" checked>
+          <label for="club-public">${t('social.club_public_label')}</label>
+        </div>
+        <button type="submit" class="btn-primary">${t('social.create')}</button>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const closeModal = () => { modal.classList.add('closing'); setTimeout(() => modal.remove(), 200); };
+  modal.querySelector('.modal-close').addEventListener('click', closeModal);
+  modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
+  document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', esc); } });
+
+  const form = modal.querySelector('#create-club-form');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const fd = new FormData(form);
+    try {
+      await withButtonLoading(submitBtn, () => post('/clubs', {
+        name: fd.get('name'),
+        description: fd.get('description') || '',
+        is_public: fd.get('is_public') === 'on',
+      }));
+      showToast(t('social.club_created'), 'success');
+      closeModal();
+      loadMyClubs();
+    } catch (err) { showToast(err.message, 'error'); }
+  });
+}
+
+async function viewClub(clubId) {
+  try {
+    const data = await get('/clubs/' + clubId + '/members');
+    const currentUserId = await getCurrentUserId();
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+      <div class="modal-backdrop"></div>
+      <div class="modal-content" style="max-width:600px;max-height:80vh;overflow:auto;">
+        <button class="modal-close">×</button>
+        <h3 class="modal-title">${t('social.club_members')}</h3>
+        <div class="club-members-list">
+          ${data.map(m => `
+            <div class="club-member-item ${m.role === 'owner' ? 'owner' : ''} ${m.user_id === currentUserId ? 'me' : ''}">
+              <img src="${m.avatar_url || '/static/avatars/avatar1.png'}" alt="">
+              <div>
+                <div class="member-name">${escapeHtml(m.name)} ${m.role === 'owner' ? '👑' : m.role === 'admin' ? '⭐' : ''}</div>
+                <div class="member-meta">${m.xp_contributed} XP esta semana · entrou em ${formatDate(m.joined_at)}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    const closeModal = () => { modal.classList.add('closing'); setTimeout(() => modal.remove(), 200); };
+    modal.querySelector('.modal-close').addEventListener('click', closeModal);
+    modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
+    document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', esc); } });
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+// ─── Activity Feed ────────────────────────────────────────────────────────────
+
+async function loadActivityFeed() {
+  const list = document.getElementById('activity-feed');
+  const filter = document.getElementById('activity-filter');
+  if (!list) return;
+
+  const type = filter?.value || 'friends';
+
+  try {
+    let activities;
+    if (type === 'me') {
+      activities = await get('/activity/me?limit=50');
+    } else {
+      activities = await get('/activity/friends?limit=50');
+    }
+
+    if (activities.length === 0) {
+      list.innerHTML = '<p class="social-empty">' + t('social.no_activity') + '</p>';
+      return;
+    }
+
+    const icons = {
+      achievement_unlocked: '🏆',
+      level_up: '⬆️',
+      streak_milestone: '🔥',
+      mission_completed: '✅',
+      league_promoted: '📈',
+      league_demoted: '📉',
+      club_joined: '👥',
+      friend_accepted: '🤝',
+    };
+
+    list.innerHTML = activities.map(a => `
+      <div class="activity-item">
+        <div class="activity-icon">${icons[a.activity_type] || '📌'}</div>
+        <div class="activity-content">
+          <div class="activity-header">
+            <img src="${a.user_avatar || '/static/avatars/avatar1.png'}" alt="" class="activity-avatar">
+            <span class="activity-user">${escapeHtml(a.user_name)}</span>
+            <span class="activity-time">${formatDate(a.created_at)}</span>
+          </div>
+          <div class="activity-title">${escapeHtml(a.title)}</div>
+          ${a.description ? '<div class="activity-desc">' + escapeHtml(a.description) + '</div>' : ''}
+        </div>
+      </div>
+    `).join('');
+
+  } catch (e) {
+    console.error('Erro ao carregar feed:', e);
+    showToast(t('social.load_error'), 'error');
   }
 }
 

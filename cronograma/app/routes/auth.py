@@ -685,6 +685,145 @@ def logout_all(
     return {"message": "Todas as sessões foram encerradas."}
 
 
+@router.delete("/account")
+def delete_account(
+    response: Response,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete user account and all associated data (GDPR right to erasure)."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuário não encontrado")
+
+    # Delete all user data (cascades via FK or manual cleanup)
+    from models.area import Areas
+    from models.task import Tasks
+    from models.sessao import Sessoes
+    from models.achievement import UserAchievement
+    from models.password_reset import PasswordResetToken
+
+    db.query(Sessoes).filter(Sessoes.user_id == user_id).delete(synchronize_session=False)
+    db.query(Tasks).filter(Tasks.user_id == user_id).delete(synchronize_session=False)
+    db.query(Areas).filter(Areas.user_id == user_id).delete(synchronize_session=False)
+    db.query(UserAchievement).filter(UserAchievement.user_id == user_id).delete(synchronize_session=False)
+    db.query(PasswordResetToken).filter(PasswordResetToken.user_id == user_id).delete(synchronize_session=False)
+
+    db.delete(user)
+    db.commit()
+
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
+
+    auth_log.info(
+        "Account deleted",
+        extra={"user_id": user_id, "action": "delete_account"},
+    )
+    return {"message": "Conta e todos os dados foram excluídos permanentemente."}
+
+
+@router.get("/account/export")
+def export_account_data(
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Export all user data (GDPR right to data portability)."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuário não encontrado")
+
+    from models.area import Areas
+    from models.task import Tasks
+    from models.sessao import Sessoes
+    from models.achievement import UserAchievement, Achievement
+
+    areas = db.query(Areas).filter(Areas.user_id == user_id).all()
+    tasks = db.query(Tasks).filter(Tasks.user_id == user_id).all()
+    sessoes = db.query(Sessoes).filter(Sessoes.user_id == user_id).all()
+    user_achievements = db.query(UserAchievement).filter(UserAchievement.user_id == user_id).all()
+    achievements = db.query(Achievement).all()
+
+    def serialize_area(a):
+        return {
+            "id": a.id,
+            "nome": a.nome,
+            "cor": a.cor,
+            "ordem": a.ordem,
+            "tipo": a.tipo,
+            "dia_semana": a.dia_semana,
+            "horario": a.horario,
+            "sala": a.sala,
+            "bloco": a.bloco,
+            "professor": a.professor,
+            "subcategoria": a.subcategoria,
+        }
+
+    def serialize_task(t):
+        return {
+            "id": t.id,
+            "area_id": t.area_id,
+            "titulo": t.titulo,
+            "descricao": t.descricao,
+            "data_entrega": t.data_entrega.isoformat() if t.data_entrega else None,
+            "concluida": t.concluida,
+            "duracao_minutos": t.duracao_minutos,
+            "prioridade": t.prioridade,
+            "meta_pomodoros": t.meta_pomodoros,
+            "pomodoros_concluidos": t.pomodoros_concluidos,
+            "concluida_em": t.concluida_em,
+        }
+
+    def serialize_sessao(s):
+        return {
+            "id": s.id,
+            "area_id": s.area_id,
+            "duracao_minutos": s.duracao_minutos,
+            "data": s.data.isoformat() if s.data else None,
+            "task_id": s.task_id,
+        }
+
+    def serialize_achievement(ua):
+        a = next((a for a in achievements if a.id == ua.achievement_id), None)
+        return {
+            "achievement_id": ua.achievement_id,
+            "nome": a.nome if a else "Unknown",
+            "descricao": a.descricao if a else "",
+            "categoria": a.categoria if a else "",
+            "requisito": a.requisito if a else 0,
+            "icone": a.icone if a else "",
+            "desbloqueado_em": ua.unlocked_at,
+        }
+
+    return {
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+            "display_name": user.display_name,
+            "avatar_url": user.avatar_url,
+            "avatar_type": user.avatar_type,
+            "avatar_source": user.avatar_source,
+            "created_at": user.created_at,
+            "is_verified": user.is_verified,
+            "is_guest": user.is_guest,
+            "auth_provider": user.auth_provider,
+            "current_streak": user.current_streak,
+            "longest_streak": user.longest_streak,
+            "streak_freezes": user.streak_freezes,
+            "coins": user.coins,
+            "roadmap_xp": user.roadmap_xp,
+            "profile_completed": user.profile_completed,
+            "has_seen_tutorial": user.has_seen_tutorial,
+            "onboarded_at": user.onboarded_at,
+        },
+        "areas": [serialize_area(a) for a in areas],
+        "tasks": [serialize_task(t) for t in tasks],
+        "sessoes": [serialize_sessao(s) for s in sessoes],
+        "achievements": [serialize_achievement(ua) for ua in user_achievements],
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 # ─── Google OAuth ─────────────────────────────────────────────────────────────
 
 @router.get("/google")
@@ -961,19 +1100,23 @@ def update_profile(
     user = db.query(User).filter(User.id == current_user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    name = data.get("name") or data.get("display_name")
-    if name is not None:
-        user.name = name
-        user.display_name = name
-    if data.get("avatar_url") is not None:
+
+    if "name" in data or "display_name" in data:
+        name = data.get("name") or data.get("display_name")
+        if name is not None:
+            user.name = name
+            user.display_name = name
+        else:
+            user.name = None
+            user.display_name = None
+    if "avatar_url" in data:
         user.avatar_url = data.get("avatar_url")
-    if data.get("avatar_source") is not None:
+    if "avatar_source" in data:
         user.avatar_source = data.get("avatar_source")
-    if data.get("avatar_type") is not None:
+    if "avatar_type" in data:
         user.avatar_type = data.get("avatar_type")
-    if data.get("has_seen_tutorial") is not None:
+    if "has_seen_tutorial" in data:
         user.has_seen_tutorial = bool(data.get("has_seen_tutorial"))
-    # Mark profile completed if not explicitly false? Keep existing behavior: setting profile fields implies completion
     user.profile_completed = True
     from datetime import datetime, timezone
 
