@@ -232,43 +232,58 @@
         </div>
         
         <nav class="sidebar-nav">
-          <button class="sidebar-link active" data-tab="areas">
-            <span class="sidebar-icon" data-svg-icon="folder" data-svg-size="17"></span>
-            <span class="sidebar-text" data-i18n="sidebar.areas">Áreas</span>
-          </button>
-          <button class="sidebar-link" data-tab="foco">
-            <span class="sidebar-icon" data-svg-icon="target" data-svg-size="17"></span>
-            <span class="sidebar-text" data-i18n="sidebar.foco">Foco</span>
-          </button>
-          <button class="sidebar-link" data-tab="gamificacao">
-            <span class="sidebar-icon" data-svg-icon="trophy" data-svg-size="17"></span>
-            <span class="sidebar-text" data-i18n="sidebar.gamificacao">Gamificação</span>
-          </button>
-          <button class="sidebar-link" data-tab="social">
-            <span class="sidebar-icon" data-svg-icon="users" data-svg-size="17"></span>
-            <span class="sidebar-text" data-i18n="sidebar.social">Social</span>
-          </button>
-          <button class="sidebar-link" data-tab="perfil">
-            <span class="sidebar-icon" data-svg-icon="user" data-svg-size="17"></span>
-            <span class="sidebar-text" data-i18n="sidebar.perfil">Perfil</span>
-          </button>
-          <button class="sidebar-link" data-tab="horarios">
-            <span class="sidebar-icon" data-svg-icon="calendar" data-svg-size="17"></span>
-            <span class="sidebar-text" data-i18n="sidebar.horarios">Horários</span>
-          </button>
-          <button class="sidebar-link" data-tab="tasks">
-            <span class="sidebar-icon" data-svg-icon="check" data-svg-size="17"></span>
-            <span class="sidebar-text" data-i18n="sidebar.tarefas">Tarefas</span>
-          </button>
-          <button class="sidebar-link" data-tab="sessoes">
-            <span class="sidebar-icon" data-svg-icon="timer" data-svg-size="17"></span>
-            <span class="sidebar-text" data-i18n="sidebar.sessoes">Sessões</span>
-          </button>
+          <!-- Estudo Section -->
+          <div class="sidebar-section">
+            <span class="sidebar-section-title" data-i18n="sidebar.study">Estudo</span>
+            <button class="sidebar-link active" data-tab="social">
+              <span class="sidebar-icon" data-svg-icon="users" data-svg-size="17"></span>
+              <span class="sidebar-text" data-i18n="sidebar.social">Social</span>
+              <span class="sidebar-badge" data-i18n="sidebar.new">Novo</span>
+            </button>
+            <button class="sidebar-link" data-tab="areas">
+              <span class="sidebar-icon" data-svg-icon="folder" data-svg-size="17"></span>
+              <span class="sidebar-text" data-i18n="sidebar.areas">Áreas</span>
+            </button>
+            <button class="sidebar-link" data-tab="foco">
+              <span class="sidebar-icon" data-svg-icon="target" data-svg-size="17"></span>
+              <span class="sidebar-text" data-i18n="sidebar.foco">Foco</span>
+            </button>
+            <button class="sidebar-link" data-tab="horarios">
+              <span class="sidebar-icon" data-svg-icon="calendar" data-svg-size="17"></span>
+              <span class="sidebar-text" data-i18n="sidebar.horarios">Horários</span>
+            </button>
+            <button class="sidebar-link" data-tab="tasks">
+              <span class="sidebar-icon" data-svg-icon="check" data-svg-size="17"></span>
+              <span class="sidebar-text" data-i18n="sidebar.tarefas">Tarefas</span>
+            </button>
+          </div>
+
+          <!-- Progresso Section -->
+          <div class="sidebar-section">
+            <span class="sidebar-section-title" data-i18n="sidebar.progress">Progresso</span>
+            <button class="sidebar-link" data-tab="gamificacao">
+              <span class="sidebar-icon" data-svg-icon="trophy" data-svg-size="17"></span>
+              <span class="sidebar-text" data-i18n="sidebar.gamificacao">Gamificação</span>
+            </button>
             <button class="sidebar-link" data-tab="resumo">
               <span class="sidebar-icon" data-svg-icon="chart" data-svg-size="17"></span>
               <span class="sidebar-text" data-i18n="sidebar.resumo">Resumo</span>
             </button>
-          </nav>
+            <button class="sidebar-link" data-tab="sessoes">
+              <span class="sidebar-icon" data-svg-icon="timer" data-svg-size="17"></span>
+              <span class="sidebar-text" data-i18n="sidebar.sessoes">Sessões</span>
+            </button>
+          </div>
+
+          <!-- Configurações Section -->
+          <div class="sidebar-section">
+            <span class="sidebar-section-title" data-i18n="sidebar.settings">Configurações</span>
+            <button class="sidebar-link" data-tab="perfil">
+              <span class="sidebar-icon" data-svg-icon="user" data-svg-size="17"></span>
+              <span class="sidebar-text" data-i18n="sidebar.perfil">Perfil</span>
+            </button>
+          </div>
+        </nav>
         
         <div class="sidebar-footer">
           <div id="guest-banner" class="guest-banner" style="display:none;">
@@ -299,11 +314,11 @@
             <button id="menu-toggle" class="menu-toggle" aria-label="Menu" aria-expanded="false" aria-controls="sidebar">
               <span></span><span></span><span></span>
             </button>
-            <h1 class="page-title" id="page-title" data-i18n="pages.areas">Áreas</h1>
+            <h1 class="page-title" id="page-title" data-i18n="pages.social">Social</h1>
           </div>
         </header>
     <!-- Áreas -->
-    <section id="areas" class="panel active">
+    <section id="areas" class="panel">
       <div class="areas-filters">
         <input type="text" id="search-areas" data-i18n-placeholder="areas.search_placeholder" placeholder="Buscar por nome..." data-i18n-aria="areas.search_placeholder" aria-label="Buscar por nome">
         <select id="filter-categoria" data-i18n-aria="areas.filter_label" aria-label="Filtrar por categoria">
@@ -603,7 +618,7 @@
     </section>
 
     <!-- Social -->
-    <section id="social" class="panel">
+    <section id="social" class="panel active">
       <div class="social-page">
         <!-- Sub-tabs -->
         <div class="social-tabs">

@@ -97,6 +97,10 @@ function getToken() {
   return localStorage.getItem("cronograma_token");
 }
 
+function isAuthenticated() {
+  return !!getToken();
+}
+
 function getAuthHeader() {
   const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -1227,7 +1231,23 @@ function switchToTab(tabName) {
     loadMissions();
   }
   if (tabName === 'social') {
-    loadSocialTab();
+    // Check if user is authenticated before loading social data
+    if (isAuthenticated()) {
+      loadSocialTab();
+    } else {
+      // Show login prompt in social panel
+      const socialPanel = document.getElementById('social');
+      if (socialPanel) {
+        socialPanel.innerHTML = `
+          <div class="social-login-prompt">
+            <span data-svg-icon="users" data-svg-size="48" style="opacity:0.5;margin-bottom:1rem;display:block;"></span>
+            <h3 data-i18n="social.login_required_title">Conecte-se para ver o Social</h3>
+            <p data-i18n="social.login_required_desc">Faça login ou crie uma conta para acessar amigos, rankings, ligas e clubes.</p>
+            <button class="btn-primary" onclick="showLoginScreen()" data-i18n="auth.login_btn">Entrar</button>
+          </div>
+        `;
+      }
+    }
   }
   if (tabName === 'perfil') {
     initProfileTab();

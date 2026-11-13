@@ -763,7 +763,7 @@ main {
 
 #lista-areas {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.5rem;
   padding: 0;
   margin: 0;
@@ -2960,6 +2960,37 @@ main {
   flex: 1;
 }
 
+.sidebar-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--text-inverse);
+  margin-left: auto;
+}
+
+.sidebar-section {
+  margin-top: 1.5rem;
+}
+
+.sidebar-section:first-child {
+  margin-top: 0.5rem;
+}
+
+.sidebar-section-title {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 0 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
 /* Sidebar Footer */
 .sidebar-footer {
   padding: 1rem 1.25rem;
@@ -4061,6 +4092,33 @@ main {
   padding: 2rem;
   color: var(--text-muted);
   font-size: 0.9rem;
+}
+
+.social-login-prompt {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.social-login-prompt h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.social-login-prompt p {
+  margin: 0 0 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.social-login-prompt .btn-primary {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
 }
 
 /* Friends */
