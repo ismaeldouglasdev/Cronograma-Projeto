@@ -37,6 +37,32 @@
 
 ---
 
+## Política de licença e monetização (open source + SaaS pago)
+
+**Posição firmada em 15/11/2026:** sim, é possível cobrar por um projeto open source. Não é contradição: o que se vende é o serviço (hosting gerenciado, dados seguros, features avançadas), não o código. Precedentes sólidos no mercado: GitLab, VS Code, WordPress.com e Ghost.
+
+**As duas promessas que sustentam a política (já comunicadas na landing):**
+
+1. **O código permanece MIT e aberto para sempre.** O repo público continua completo e auditável. Nada publicado até hoje muda de licença.
+2. **O Free do serviço hospedado é grátis para sempre.** O Pro (R$ 20/mês) cobra apenas features de profundidade (histórico 365d, analytics avançado, relatórios, subtarefas, missões premium). Nunca o básico de estudar (matérias, tarefas, pomodoro, gamificação).
+
+**Por que o MIT não quebra a venda:**
+- O usuário real (universitário) não faz self-host: paga por conveniência e confiança, não por código.
+- Open source reduz a fricção de confiança ("dá para auditar") e vira canal de aquisição (estudantes de TI).
+- Quem copia o repo não copia marca, distribuição nem velocidade de lançamento.
+
+**Risco e gatilho futuro:**
+- Risco do MIT: qualquer pessoa pode hospedar o projeto e cobrar (inclusive oferecendo as features do Pro de graça). Na prática, risco baixo neste público.
+- **Gatilho para mudar:** se surgir clonagem/comercialização real por terceiros, os *módulos Pro novos* entram com licença que protege o serviço (AGPL ou dual license), mantendo o código atual MIT. Nunca retroagir licenças já publicadas.
+- **Decisão de hoje:** manter MIT em tudo (opção A). Revisitar apenas com evidência de clonagem.
+
+**Regras de comunicação:**
+- Nunca usar "100% gratuito e sem planos pagos" (já removido da landing).
+- "Grátis para sempre" refere-se sempre ao plano Free do serviço hospedado; "open source MIT" refere-se ao código.
+- O Pro é apresentado como "ir além" (profundidade), nunca como "destravar o básico".
+
+---
+
 ## 1. Clientes ideais (ICP)
 
 ### Segmento A — Universitário de graduação (Brasil) ✅ **RECOMENDADO PARA COMEÇAR**
