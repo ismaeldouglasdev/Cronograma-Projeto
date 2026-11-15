@@ -5,6 +5,7 @@ from models.sessao import Sessoes
 from models.achievement import Achievement, UserAchievement
 from models.mission import DailyMission
 from models.password_reset import PasswordResetToken
+from models.event import FunnelEvent
 from models.social import (
     Friendship,
     FriendRequest,
@@ -26,6 +27,7 @@ __all__ = [
     "UserAchievement",
     "DailyMission",
     "PasswordResetToken",
+    "FunnelEvent",
     "Friendship",
     "FriendRequest",
     "LeaderboardEntry",

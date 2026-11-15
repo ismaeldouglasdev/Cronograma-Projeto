@@ -1,6 +1,6 @@
 # Estratégia de Conteúdo — Cronograma Pro
 
-> **Objetivo**: Gerar tráfego orgânico para a lista de espera do Cronograma Pro (versão SaaS), construir comunidade e validar demanda entre estudantes brasileiros universitários.
+> **Objetivo**: Gerar tráfego orgânico para o Cronograma (cronograma-projeto.onrender.com/app), construir comunidade e ativar usuários entre estudantes brasileiros universitários. (Atualizado em 2026-11-15: o CTA aponta direto para o app — a waitlist antiga está fora do ar.)
 
 ---
 
@@ -134,7 +134,7 @@
 | **Sex** | Produtividade | "Frase da sexta: organizar não é gastar tempo, é comprar tempo de volta" | 📸 | IG Post |
 | **Sáb** | Gamificação | "Level 20 desbloqueado. Tô virando monstro nas matérias e nem percebi" | 🎬 🎵 | IG Reels + TikTok |
 | **Sáb** | Estudo Inteligente | "Dica do fim de semana: revisa o que estudou na semana com espaçamento. 15 min bastam" | 🐦 | X/Twitter |
-| **Dom** | Rotina | "Domingo de planejamento. Cadê a lista de espera do Cronograma Pro? Link na bio" | 📸 | IG Post (CTA direto) |
+| **Dom** | Rotina | "Domingo de planejamento. Cadê o Cronograma? Link na bio — é grátis" | 📸 | IG Post (CTA direto) |
 | **Dom** | Produtividade | "Domingo é dia de descanso E de planejar. Faz as duas coisas" | 🐦 | X/Twitter |
 
 ---
@@ -160,7 +160,7 @@ Quer testar? Lista de espera aberta 👇
 
 **Hashtags**: #CronogramaPro #EstudarComGamificação #GamificacaoDeEstudos #PomodoroApp #EstudarNaFaculdade #RotinaDeEstudos #UniversitarioBR #AppDeEstudos #StreakDeEstudos #XPDeEstudo
 
-**CTA**: "Link na bio pra entrar na lista de espera"
+**CTA**: "Link na bio — o app é grátis"
 
 ---
 
@@ -181,7 +181,7 @@ Slide 4: Interleaving (misturar matérias no mesmo estudo)
 Slide 5: Elaboração (explicar em voz alta ou por escrito)
 Slide 6: Dual coding (texto + imagem juntos)
 Slide 7: "Onde o Cronograma Pro te ajuda com isso" (demo do timer + revisões)
-Slide 8: CTA — "Quer aplicar isso sem complicação? Lista de espera na bio"
+Slide 8: CTA — "Quer aplicar isso sem complicação? App grátis no link da bio"
 
 Salva esse post. Vai precisar antes da próxima prova.
 ```
@@ -249,7 +249,7 @@ ganha XP por estudar. sobe de nível. desbloqueia conquistas.
 
 a diferença é que aqui você cresce de verdade.
 
-cronogramapro.vercel.app
+https://cronograma-projeto.onrender.com/app
 ```
 
 **Hashtags** (no reply/thread): #CronogramaPro #Gamificacao #EstudarEQueSeFoda
@@ -272,7 +272,7 @@ cronogramapro.vercel.app
 
 O primeiro da lista é o que mais mudou minha rotina. E tá em fase de lista de espera ainda.
 
-Quer ser um dos primeiros? Link na bio.
+Quer começar? Link na bio — é grátis.
 ```
 
 **Hashtags**: #AppsParaEstudar #FerramentasDeEstudo #UniversitarioBR #CronogramaPro #ProdutividadeAcademica #AppRecomendado #EstudarComTech #Faculdade #OrganizarEstudos #DicaDeApp
@@ -293,7 +293,7 @@ O Pomodoro do Cronograma Pro me mostrou isso. E aí você adapta o timer: 25min 
 
 O importante é: pare de contar horas e comece a contar pomodoros completados.
 
-Quer descobrir quanto tempo você REALMENTE foca? Lista de espera na bio.
+Quer descobrir quanto tempo você REALMENTE foca? Link na bio.
 ```
 
 **Hashtags**: #FocoReal #Pomodoro #TempoDeFoco #CronogramaPro #EstudarDeVerdade #UniversitarioBR #ComoEstudar #Produtividade #MetodoDeEstudo #TempoReal
@@ -339,7 +339,7 @@ E de repente você tá estudando todo dia sem perceber.
 
 Gamificação não é brincadeira. É ciência comportamental aplicada.
 
-Quer começar? Lista de espera na bio 👇
+Quer começar? Link na bio 👇
 ```
 
 **Hashtags**: #ConquistaDesbloqueada #GamificacaoDeEstudos #CronogramaPro #Pomodoro #StreakDeEstudos #NivelDeEstudo #UniversitarioBR #MotivacaoDeEstudo #AppDeEstudos #XPEstudo
@@ -364,7 +364,7 @@ thread: 5 coisas que eu faria diferente se voltasse pro primeiro ano da faculdad
 
 5/ pediria ajuda antes de acumular 3 matérias atrasadas. o app mostra onde você tá perdendo tempo.
 
-quer começar agora? cronogramapro.vercel.app — lista de espera aberta
+quer começar agora? https://cronograma-projeto.onrender.com/app — é grátis
 ```
 
 **Hashtags**: #PrimeiroAno #DicaDeFaculdade #CronogramaPro #LiçõesAprendidas #UniversitarioBR #EstudarMelhor #HabitoDeEstudo #ProdutividadeAcademica #Organizacao #Thread
@@ -476,8 +476,9 @@ quer começar agora? cronogramapro.vercel.app — lista de espera aberta
 
 | Métrica | Meta | Como medir |
 |---------|------|------------|
-| Cliques no link da bio | 200+ | UTM params no Formspree |
-| Inscrições na waitlist | 50+ | Contagem no Formspree |
+| Cliques no link da bio | 200+ | UTM params |
+| Contas criadas no app (signups) | 50+ | GET /admin/funnel |
+| Ativação (1º pomodoro) | ≥ 30% dos signups | GET /admin/funnel |
 | Seguidores Instagram | +300 | Insights do IG |
 | Engajamento médio | >3% | (likes+comentários+salvamentos) / alcance |
 | TikTok views | 10K+ no melhor vídeo | Analytics do TikTok |
@@ -487,9 +488,9 @@ quer começar agora? cronogramapro.vercel.app — lista de espera aberta
 
 Adicionar UTM em todo link:
 ```
-cronogramapro.vercel.app?utm_source=instagram&utm_medium=stories&utm_campaign=waitlist
-cronogramapro.vercel.app?utm_source=tiktok&utm_medium=bio&utm_campaign=waitlist
-cronogramapro.vercel.app?utm_source=twitter&utm_medium=bio&utm_campaign=waitlist
+https://cronograma-projeto.onrender.com/app?utm_source=instagram&utm_medium=stories&utm_campaign=waitlist
+https://cronograma-projeto.onrender.com/app?utm_source=tiktok&utm_medium=bio&utm_campaign=waitlist
+https://cronograma-projeto.onrender.com/app?utm_source=twitter&utm_medium=bio&utm_campaign=waitlist
 ```
 
 ---

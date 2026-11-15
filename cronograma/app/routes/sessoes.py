@@ -22,6 +22,7 @@ from models.sessao import Sessoes
 from models.task import Tasks
 from models.user import User
 from services.auth_service import get_current_user
+from services.funnel_service import record_event
 from services.gamification_service import verificar_conquistas
 from services.streak_service import atualizar_streak
 
@@ -247,6 +248,8 @@ def completar_pomodoro(
     # Update streak and check achievements
     atualizar_streak(user_id, db)
     novas_conquistas = verificar_conquistas(user_id, db)
+
+    record_event(db, "pomodoro", user_id)
 
     db.refresh(sessao)
 

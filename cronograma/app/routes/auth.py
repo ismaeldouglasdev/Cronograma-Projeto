@@ -40,6 +40,7 @@ from models.schemas import (
     VerifyEmailRequest,
 )
 from services import email_service
+from services.funnel_service import record_event
 from services.auth_service import (
     create_access_token,
     create_refresh_token,
@@ -191,6 +192,8 @@ def register(
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    record_event(db, "signup", user.id)
 
     if verification_required:
         sent = email_service.send_verification_email(user.email, token)
@@ -389,6 +392,8 @@ def guest_login(
     db.commit()
     db.refresh(user)
 
+    record_event(db, "guest_start", user.id)
+
     access_token = create_access_token(
         user.id, is_guest=True, token_version=user.token_version
     )
@@ -434,6 +439,8 @@ def upgrade_guest(
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    record_event(db, "guest_upgrade", user.id)
 
     access_token = create_access_token(
         user.id, is_guest=False, token_version=user.token_version

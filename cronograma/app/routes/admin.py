@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from config import MIGRATION_SECRET, STATIC_DIR, get_db
 from logger import get_logger
 from models.schemas import ClientLogBatch, ImportData
+from models.event import FunnelEvent
 from models.sessao import Sessoes
 from models.task import Tasks
 from models.user import User
@@ -375,6 +376,81 @@ def receive_client_logs(
             client_log.info(f"[CLIENT] {message}", extra=extra)
 
     return {"received": len(body.logs)}
+
+
+# ─── Funnel Analytics ─────────────────────────────────────────────────────────
+
+
+@router.get("/admin/funnel")
+def funnel_report(
+    secret: str = "",
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Resumo de métricas do funil (protegido por MIGRATION_SECRET).
+
+    Eventos registrados: signup, guest_start, guest_upgrade, pomodoro.
+    Calcula ativação (usuários que completaram o 1º pomodoro) e conversão
+    convidado → conta, mais a série diária dos últimos 14 dias.
+    """
+    if not MIGRATION_SECRET or secret != MIGRATION_SECRET:
+        raise HTTPException(status_code=403, detail="Acesso administrativo negado")
+
+    total_signups = (
+        db.query(func.count(FunnelEvent.id))
+        .filter(FunnelEvent.event == "signup")
+        .scalar()
+        or 0
+    )
+    total_guests = (
+        db.query(func.count(FunnelEvent.id))
+        .filter(FunnelEvent.event == "guest_start")
+        .scalar()
+        or 0
+    )
+    total_upgrades = (
+        db.query(func.count(FunnelEvent.id))
+        .filter(FunnelEvent.event == "guest_upgrade")
+        .scalar()
+        or 0
+    )
+    users_activated = (
+        db.query(func.count(func.distinct(FunnelEvent.user_id)))
+        .filter(FunnelEvent.event == "pomodoro", FunnelEvent.user_id.isnot(None))
+        .scalar()
+        or 0
+    )
+
+    daily_rows = (
+        db.query(
+            func.date(FunnelEvent.created_at).label("day"),
+            FunnelEvent.event,
+            func.count(FunnelEvent.id),
+        )
+        .group_by("day", FunnelEvent.event)
+        .order_by(func.date(FunnelEvent.created_at).desc())
+        .limit(14 * 10)
+        .all()
+    )
+    daily = [{"date": str(day), "event": event, "count": count} for day, event, count in daily_rows]
+
+    return {
+        "counts": {
+            "signups": total_signups,
+            "guest_starts": total_guests,
+            "guest_upgrades": total_upgrades,
+            "users_activated_first_pomodoro": users_activated,
+        },
+        "rates": {
+            "activation_pct": round(users_activated / total_signups * 100, 1)
+            if total_signups
+            else None,
+            "guest_to_account_pct": round(total_upgrades / total_guests * 100, 1)
+            if total_guests
+            else None,
+        },
+        "daily": daily,
+    }
 
 
 # ─── Debug Endpoints ──────────────────────────────────────────────────────────
