@@ -19,3 +19,4 @@ class Areas(Base):
     bloco = Column(String(50), nullable=True)
     professor = Column(String(255), nullable=True)
     subcategoria = Column(String(100), nullable=True)
+    meta_horas_semanal = Column(Integer, nullable=True)

@@ -62,6 +62,7 @@ class AreaCreate(BaseModel):
     bloco: Optional[str] = None
     professor: Optional[str] = None
     subcategoria: Optional[str] = None
+    meta_horas_semanal: Optional[int] = None
 
 
 class AreaResponse(BaseModel):
@@ -79,6 +80,7 @@ class AreaResponse(BaseModel):
     bloco: Optional[str] = None
     professor: Optional[str] = None
     subcategoria: Optional[str] = None
+    meta_horas_semanal: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -96,6 +98,7 @@ class AreaPatch(BaseModel):
     bloco: Optional[str] = None
     professor: Optional[str] = None
     subcategoria: Optional[str] = None
+    meta_horas_semanal: Optional[int] = None
 
 
 # ─── Tasks ────────────────────────────────────────────────────────────────────

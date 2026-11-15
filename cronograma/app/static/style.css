@@ -863,6 +863,46 @@ main {
   min-width: 120px;
 }
 
+#lista-areas .area-info-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0;
+}
+#lista-areas .area-info-row svg {
+  flex-shrink: 0;
+}
+#lista-areas .area-info-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#lista-areas .area-goal {
+  margin-top: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+#lista-areas .area-goal-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+#lista-areas .area-goal-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), #f97316);
+  transition: width 0.3s ease;
+}
+#lista-areas .area-goal-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 #lista-areas .area-card .btn-del {
   position: absolute;
   top: 0.5rem;

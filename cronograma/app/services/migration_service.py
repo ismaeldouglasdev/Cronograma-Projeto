@@ -172,6 +172,7 @@ def run_sqlite_migrations(engine) -> None:
             conn.commit()
         except Exception:
             pass
+        add_column_if_not_exists(conn, "areas", "meta_horas_semanal", "INTEGER")
         try:
             conn.execute(text("ALTER TABLE tasks ADD COLUMN prioridade INTEGER"))
             conn.commit()
@@ -327,6 +328,14 @@ def run_postgres_migrations(engine) -> None:
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 0"))
         except Exception as e:
             log.warning("Migration add column failed", extra={"column": "token_version", "table": "users", "error": str(e)})
+        # Meta semanal de horas por área
+        try:
+            conn.execute(text("ALTER TABLE areas ADD COLUMN IF NOT EXISTS meta_horas_semanal INTEGER"))
+        except Exception as e:
+            log.warning(
+                "Migration add column failed",
+                extra={"column": "meta_horas_semanal", "table": "areas", "error": str(e)},
+            )
         # OAuth / Profile fields (Postgres)
         try:
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20) DEFAULT 'password'"))

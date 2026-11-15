@@ -85,6 +85,7 @@ initAnalytics();
 
 let cachedAreas = null;
 let allAreas = [];
+let weeklyProgress = {};
 let areasPage = 1;
 const AREAS_PAGE_SIZE = 10;
 
@@ -300,6 +301,18 @@ async function loadAreas() {
     document.querySelectorAll('select[name="area_id"]').forEach((sel) => (sel.innerHTML = selectHtml));
     updateAreaSelected();
 
+    try {
+      const prog = await get("/areas/weekly-progress");
+      weeklyProgress = Array.isArray(prog)
+        ? prog.reduce((m, p) => {
+            m[p.area_id] = p;
+            return m;
+          }, {})
+        : {};
+    } catch (err) {
+      weeklyProgress = {};
+    }
+
     renderAreasGrid(areas);
 
     return areas;
@@ -339,32 +352,51 @@ function renderAreasGrid(areas) {
 
   container.innerHTML = pageItems
     .map((a) => {
-      const meta = [];
-      if (a.subcategoria) meta.push(a.subcategoria);
-      let tipoLabel = a.tipo === "presencial" ? (typeof t === 'function' ? t('areas.presencial') : 'Presencial') : (typeof t === 'function' ? t('areas.online') : 'Online');
-      let tipoInfo = "";
-      if (a.tipo === "presencial") {
-        const _t_prefix = typeof t === 'function' ? t : (k => k);
-        const parts = [a.dia_semana, a.horario, a.sala ? _t_prefix('areas.sala_prefix') + a.sala : null, a.bloco ? _t_prefix('areas.bloco_prefix') + a.bloco : null].filter(Boolean);
-        if (parts.length) tipoInfo = parts.join(" - ");
-        if (a.professor) tipoInfo += ` · ${_t_prefix('areas.prof_prefix')}${a.professor}`;
-      }
+      const _t = typeof t === 'function' ? t : (k => k);
+      const tipoLabel = a.tipo === "presencial" ? _t('areas.presencial') : _t('areas.online');
+      const tipoClass = a.tipo === "presencial" ? "presencial" : "online";
       const bgColor = a.cor || "#6366f1";
+      const iconSvg = getAreaIcon(a.subcategoria, a.tipo);
+      const prog = weeklyProgress[a.id];
+
+      // Build footer metadata rows with icons
+      const metaRows = [];
+      if (a.tipo === "presencial") {
+        if (a.dia_semana) {
+          const dayName = _t(`horarios.dias.${a.dia_semana}`) || a.dia_semana;
+          metaRows.push(`<div class="area-info-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><span>${dayName}</span></div>`);
+        }
+        if (a.horario) {
+          metaRows.push(`<div class="area-info-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg><span>${escapeHtml(a.horario)}</span></div>`);
+        }
+        if (a.sala) {
+          metaRows.push(`<div class="area-info-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg><span>${_t('areas.sala_prefix')}${escapeHtml(a.sala)}</span></div>`);
+        }
+        if (a.bloco) {
+          metaRows.push(`<div class="area-info-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg><span>${_t('areas.bloco_prefix')}${escapeHtml(a.bloco)}</span></div>`);
+        }
+        if (a.professor) {
+          metaRows.push(`<div class="area-info-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg><span>${_t('areas.prof_prefix')}${escapeHtml(a.professor)}</span></div>`);
+        }
+      }
+      
       return `
         <div class="area-card" data-id="${a.id}" style="position:relative;">
           <div class="area-icon" style="background:${bgColor}20;color:${bgColor};">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            </svg>
+            ${iconSvg}
           </div>
           <div class="area-content">
             <div class="area-title">${escapeHtml(a.nome)}</div>
             ${a.subcategoria ? `<div class="area-category">${escapeHtml(a.subcategoria)}</div>` : ""}
             <div class="area-meta">
-              <span class="area-type">${tipoLabel}</span>
-              ${tipoInfo ? `<span class="area-info">${tipoInfo}</span>` : ""}
+              <span class="area-type ${tipoClass}">${tipoLabel}</span>
+              ${metaRows.length > 0 ? `<div class="area-info">${metaRows.join('')}</div>` : ""}
             </div>
+            ${prog && prog.meta_horas_semanal ? `
+            <div class="area-goal" title="${_t('areas.weekly_goal')}: ${prog.horas_estudadas}h / ${prog.meta_horas_semanal}h ${_t('areas.weekly_progress')}">
+              <div class="area-goal-bar"><div class="area-goal-fill" style="width:${prog.progresso_pct || 0}%"></div></div>
+              <span class="area-goal-label">${prog.horas_estudadas}h / ${prog.meta_horas_semanal}h</span>
+            </div>` : ""}
           </div>
           <button class="btn-del" data-id="${a.id}" data-type="area" title="Excluir">×</button>
         </div>
@@ -687,6 +719,7 @@ function openAreaModal(area) {
   form.sala.value = area.sala || "";
   form.bloco.value = area.bloco || "";
   form.professor.value = area.professor || "";
+  form.meta_horas_semanal.value = area.meta_horas_semanal || "";
 
   const editColorPreview = document.getElementById("edit-color-preview");
   if (editColorPreview) editColorPreview.style.background = area.cor || "#6366f1";
@@ -751,6 +784,28 @@ function updateAreaSelected() {
   }
 }
 
+function getAreaIcon(subcategoria, tipo) {
+  const s = (subcategoria || "").toLowerCase();
+  const paths = {
+    mat: '<circle cx="12" cy="12" r="9"></circle><path d="M9 9h6v6"></path><path d="M15 9l-6 6"></path>',
+    calc: '<path d="M7 3h10v4H7z"></path><path d="M7 10h10v4H7z"></path><path d="M7 17h10v4H7z"></path>',
+    fis: '<circle cx="12" cy="12" r="2"></circle><path d="M12 2v8"></path><path d="M12 14v8"></path><path d="M2 12h8"></path><path d="M14 12h8"></path>',
+    qui: '<path d="M10 2h4v5l3 3v12H7V10l3-3z"></path>',
+    bio: '<path d="M12 2a7 7 0 0 1 0 14a7 7 0 0 1 0-14z"></path><path d="M12 9a3 3 0 0 1 3 3"></path>',
+    prog: '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>',
+    port: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>',
+    ingl: '<path d="M4 7V5h16v2"></path><path d="M9 5v14"></path><path d="M15 5v14"></path>',
+    hist: '<path d="M12 3l10 7-10 7L2 10z"></path><path d="M2 17l10 7 10-7"></path>',
+    art: '<path d="M12 19l7-7-7-7-7 7z"></path><path d="M12 5v14"></path>',
+    geo: '<circle cx="12" cy="12" r="9"></circle><path d="M2 12h20"></path><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"></path>',
+  };
+  const key = Object.keys(paths).find((k) => s.includes(k));
+  const fallback = tipo === "presencial"
+    ? '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>'
+    : '<circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"></path>';
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">${key ? paths[key] : fallback}</svg>`;
+}
+
 function escapeHtml(s) {
   const div = document.createElement("div");
   div.textContent = s;
@@ -801,6 +856,7 @@ function initModal() {
         cor: fd.get("cor") || null,
         tipo: tipo || null,
         subcategoria: subcategoria,
+        meta_horas_semanal: fd.get("meta_horas_semanal") ? parseIntSafe(fd.get("meta_horas_semanal")) : null,
       };
       if (tipo === "presencial") {
         data.dia_semana = fd.get("dia_semana") || null;
