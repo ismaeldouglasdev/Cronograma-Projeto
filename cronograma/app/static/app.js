@@ -1070,7 +1070,7 @@ async function loadHeatmap() {
     const _t = typeof t === "function" ? t : (k) => k;
     grid.innerHTML = entries
       .map((e) => {
-        const title = `${fmtDate(e.date)} — ${e.minutes} ${_t("heatmap.min_label")}`;
+        const title = `${fmtDate(e.date)}, ${e.minutes} ${_t("heatmap.min_label")}`;
         return `<span class="heatmap-cell level-${e.level}" title="${title}" aria-label="${title}"></span>`;
       })
       .join("");
@@ -2208,7 +2208,7 @@ async function loadLeague() {
     document.getElementById('league-tier-badge').className = 'league-tier-badge tier-' + league.tier;
 
     // User stats
-    document.getElementById('league-rank').textContent = user.rank ? '#' + user.rank : '—';
+    document.getElementById('league-rank').textContent = user.rank ? '#' + user.rank : _t('social.no_rank');
     document.getElementById('league-xp-week').textContent = user.xp_this_week || 0;
 
     // Progress bar (promotion/demotion zones)
