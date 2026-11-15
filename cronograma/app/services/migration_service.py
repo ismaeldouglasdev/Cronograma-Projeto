@@ -336,6 +336,14 @@ def run_postgres_migrations(engine) -> None:
                 "Migration add column failed",
                 extra={"column": "meta_horas_semanal", "table": "areas", "error": str(e)},
             )
+        # concluida_em - data/hora que a tarefa foi marcada como concluída
+        try:
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS concluida_em VARCHAR(40)"))
+        except Exception as e:
+            log.warning(
+                "Migration add column failed",
+                extra={"column": "concluida_em", "table": "tasks", "error": str(e)},
+            )
         # OAuth / Profile fields (Postgres)
         try:
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20) DEFAULT 'password'"))
