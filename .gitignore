@@ -2,6 +2,9 @@ OpenCode.html
 
 # Environment variables
 .env
+.env.*
+!.env.example
+!.env.sample
 
 # Local SQLite databases (fallback for Neon PostgreSQL)
 *.db

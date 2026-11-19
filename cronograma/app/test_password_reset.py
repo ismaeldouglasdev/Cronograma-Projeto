@@ -65,12 +65,12 @@ def _get_user(email: str) -> User | None:
 
 async def _register(client, email="reset@example.com", password=PASSWORD):
     return await client.post(
-        "/auth/register", json={"email": email, "password": password}
+        "/api/v1/auth/register", json={"email": email, "password": password}
     )
 
 
 async def _forgot(client, email="reset@example.com"):
-    return await client.post("/auth/forgot-password", json={"email": email})
+    return await client.post("/api/v1/auth/forgot-password", json={"email": email})
 
 
 # ─── Anti-enumeração e armazenamento ─────────────────────────────────────────
@@ -129,17 +129,17 @@ async def test_fluxo_completo_redefinicao(client, resend_on, capture_sent):
     token = capture_sent[0]["token"]
 
     r = await client.post(
-        "/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
+        "/api/v1/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
     )
     assert r.status_code == 200
 
     r_old = await client.post(
-        "/auth/login", json={"email": "reset@example.com", "password": PASSWORD}
+        "/api/v1/auth/login", json={"email": "reset@example.com", "password": PASSWORD}
     )
     assert r_old.status_code == 401
 
     r_new = await client.post(
-        "/auth/login", json={"email": "reset@example.com", "password": NEW_PASSWORD}
+        "/api/v1/auth/login", json={"email": "reset@example.com", "password": NEW_PASSWORD}
     )
     assert r_new.status_code == 200
     assert r_new.json().get("access_token")
@@ -152,12 +152,12 @@ async def test_reset_token_nao_reutilizavel(client, resend_on, capture_sent):
     token = capture_sent[0]["token"]
 
     r1 = await client.post(
-        "/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
+        "/api/v1/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
     )
     assert r1.status_code == 200
 
     r2 = await client.post(
-        "/auth/reset-password", json={"token": token, "password": "OutraSenha1!"}
+        "/api/v1/auth/reset-password", json={"token": token, "password": "OutraSenha1!"}
     )
     assert r2.status_code == 400
 
@@ -171,12 +171,12 @@ async def test_segundo_forgot_invalida_token_anterior(client, resend_on, capture
     second = capture_sent[1]["token"]
 
     r_old = await client.post(
-        "/auth/reset-password", json={"token": first, "password": NEW_PASSWORD}
+        "/api/v1/auth/reset-password", json={"token": first, "password": NEW_PASSWORD}
     )
     assert r_old.status_code == 400
 
     r_new = await client.post(
-        "/auth/reset-password", json={"token": second, "password": NEW_PASSWORD}
+        "/api/v1/auth/reset-password", json={"token": second, "password": NEW_PASSWORD}
     )
     assert r_new.status_code == 200
 
@@ -197,7 +197,7 @@ async def test_reset_token_expirado_rejeitado(client, resend_on, capture_sent):
         db.close()
 
     r = await client.post(
-        "/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
+        "/api/v1/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
     )
     assert r.status_code == 400
 
@@ -205,7 +205,7 @@ async def test_reset_token_expirado_rejeitado(client, resend_on, capture_sent):
 @pytest.mark.asyncio
 async def test_reset_token_invalido_rejeitado(client):
     r = await client.post(
-        "/auth/reset-password",
+        "/api/v1/auth/reset-password",
         json={"token": "token-inexistente", "password": NEW_PASSWORD},
     )
     assert r.status_code == 400
@@ -218,7 +218,7 @@ async def test_reset_senha_fraca_rejeitada(client, resend_on, capture_sent):
     token = capture_sent[0]["token"]
 
     r = await client.post(
-        "/auth/reset-password", json={"token": token, "password": "fraca"}
+        "/api/v1/auth/reset-password", json={"token": token, "password": "fraca"}
     )
     assert r.status_code == 400
 
@@ -232,7 +232,7 @@ async def test_reset_desbloqueia_conta_nao_verificada(client, resend_on, capture
     token = capture_sent[0]["token"]
 
     r = await client.post(
-        "/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
+        "/api/v1/auth/reset-password", json={"token": token, "password": NEW_PASSWORD}
     )
     assert r.status_code == 200
 

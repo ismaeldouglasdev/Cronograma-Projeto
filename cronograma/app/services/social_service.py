@@ -140,8 +140,8 @@ def respond_friend_request(request_id: int, user_id: int, accept: bool, db: Sess
         f2 = Friendship(user_id=req.to_user_id, friend_id=req.from_user_id, created_at=_now_iso())
         db.add_all([f1, f2])
         # Feed: amizade aceita
-        add_activity(req.from_user_id, "friend_accepted", f"Você e {req.to_user.full_name or 'um usuário'} agora são amigos!", db)
-        add_activity(req.to_user_id, "friend_accepted", f"Você e {req.from_user.full_name or 'um usuário'} agora são amigos!", db)
+        add_activity(req.from_user_id, "friend_accepted", f"Você e {req.to_user.name or req.to_user.display_name or 'um usuário'} agora são amigos!", None, db)
+        add_activity(req.to_user_id, "friend_accepted", f"Você e {req.from_user.name or req.from_user.display_name or 'um usuário'} agora são amigos!", None, db)
     else:
         req.status = "rejected"
         req.responded_at = _now_iso()
@@ -166,11 +166,9 @@ def remove_friend(user_id: int, friend_id: int, db: Session) -> bool:
 
 def get_friends(user_id: int, db: Session) -> list[User]:
     """Retorna lista de amigos do usuário."""
-    friendships = db.query(Friendship).filter(Friendship.user_id == user_id).all()
-    friend_ids = [f.friend_id for f in friendships]
-    if not friend_ids:
-        return []
-    return db.query(User).filter(User.id.in_(friend_ids)).all()
+    return db.query(User).join(Friendship, User.id == Friendship.friend_id).filter(
+        Friendship.user_id == user_id
+    ).all()
 
 
 def get_friend_requests(user_id: int, db: Session) -> list[FriendRequest]:
@@ -405,7 +403,13 @@ def get_user_league_info(user_id: int, db: Session) -> dict:
         ul = assign_user_to_league(user_id, db)
 
     league = db.query(League).filter(League.id == ul.league_id).first()
-    standings = get_league_standings(ul.league_id, week, db)
+    # Use join to load users in single query
+    standings = db.query(UserLeague, User).join(
+        User, UserLeague.user_id == User.id
+    ).filter(
+        UserLeague.league_id == ul.league_id,
+        UserLeague.week_key == week,
+    ).order_by(UserLeague.rank_in_league).all()
 
     return {
         "league": {
@@ -423,11 +427,11 @@ def get_user_league_info(user_id: int, db: Session) -> dict:
         },
         "standings": [
             {
-                "user_id": s.user_id,
-                "name": s.user.name or s.user.display_name or s.user.email,
-                "avatar_url": s.user.avatar_url,
-                "xp_this_week": s.xp_this_week,
-                "rank": s.rank_in_league,
+                "user_id": s.UserLeague.user_id,
+                "name": s.User.name or s.User.display_name or s.User.email,
+                "avatar_url": s.User.avatar_url,
+                "xp_this_week": s.UserLeague.xp_this_week,
+                "rank": s.UserLeague.rank_in_league,
             }
             for s in standings
         ],
@@ -441,27 +445,37 @@ def process_weekly_league_reset(db: Session) -> dict:
 
     results = {"promoted": 0, "demoted": 0, "leagues_processed": 0}
 
-    # Para cada liga da semana passada
-    leagues = db.query(League).all()
-    for league in leagues:
-        # Buscar participantes da semana passada ordenados por rank
-        participants = db.query(UserLeague).filter(
-            UserLeague.league_id == league.id,
-            UserLeague.week_key == last_week,
-        ).order_by(UserLeague.rank_in_league).all()
+    # Single query: all participants from last week with league info
+    participants_by_league = db.query(UserLeague, League).join(
+        League, UserLeague.league_id == League.id
+    ).filter(
+        UserLeague.week_key == last_week,
+    ).order_by(League.tier, UserLeague.rank_in_league).all()
 
+    # Group by league
+    from collections import defaultdict
+    league_participants = defaultdict(list)
+    league_tiers = {}
+    for ul, league in participants_by_league:
+        league_participants[league.id].append(ul)
+        league_tiers[league.id] = league.tier
+
+    # Pre-fetch adjacent leagues
+    all_leagues = db.query(League).all()
+    league_by_tier = {l.tier: l for l in all_leagues}
+
+    for league_id, participants in league_participants.items():
         if not participants:
             continue
 
         results["leagues_processed"] += 1
+        tier = league_tiers[league_id]
 
         # Promover top N
         for i, p in enumerate(participants):
-            if i < league.promotion_spots and league.tier < 6:
-                # Encontrar liga superior
-                next_league = db.query(League).filter(League.tier == league.tier + 1).first()
+            if i < next((l.promotion_spots for l in all_leagues if l.id == league_id), 0) and tier < 6:
+                next_league = league_by_tier.get(tier + 1)
                 if next_league:
-                    # Criar entrada na nova liga para esta semana
                     new_ul = UserLeague(
                         user_id=p.user_id,
                         league_id=next_league.id,
@@ -472,13 +486,12 @@ def process_weekly_league_reset(db: Session) -> dict:
                     db.add(new_ul)
                     p.promoted = True
                     results["promoted"] += 1
-                    # Feed
-                    add_activity(p.user_id, "league_promoted", f"Promovido para {next_league.name}!", {"from_tier": league.tier, "to_tier": next_league.tier}, db)
+                    add_activity(p.user_id, "league_promoted", f"Promovido para {next_league.name}!", {"from_tier": tier, "to_tier": tier + 1}, db)
 
         # Rebaixar bottom N
         for i, p in enumerate(reversed(participants)):
-            if i < league.demotion_spots and league.tier > 1:
-                prev_league = db.query(League).filter(League.tier == league.tier - 1).first()
+            if i < next((l.demotion_spots for l in all_leagues if l.id == league_id), 0) and tier > 1:
+                prev_league = league_by_tier.get(tier - 1)
                 if prev_league:
                     new_ul = UserLeague(
                         user_id=p.user_id,
@@ -490,14 +503,14 @@ def process_weekly_league_reset(db: Session) -> dict:
                     db.add(new_ul)
                     p.demoted = True
                     results["demoted"] += 1
-                    add_activity(p.user_id, "league_demoted", f"Rebaixado para {prev_league.name}.", {"from_tier": league.tier, "to_tier": prev_league.tier}, db)
+                    add_activity(p.user_id, "league_demoted", f"Rebaixado para {prev_league.name}.", {"from_tier": tier, "to_tier": tier - 1}, db)
 
         # Manter os demais na mesma liga
         for i, p in enumerate(participants):
             if not p.promoted and not p.demoted:
                 new_ul = UserLeague(
                     user_id=p.user_id,
-                    league_id=league.id,
+                    league_id=league_id,
                     week_key=this_week,
                     xp_this_week=0,
                     created_at=_now_iso(),
@@ -631,19 +644,21 @@ def update_club_weekly_stats(db: Session) -> None:
     # Deletar stats antigos desta semana
     db.query(ClubWeeklyStats).filter(ClubWeeklyStats.week_key == week).delete(synchronize_session=False)
 
-    # Calcular por clube
-    clubs = db.query(Club).all()
-    stats_list = []
-    for club in clubs:
-        members = db.query(ClubMember).filter(ClubMember.club_id == club.id).all()
-        total_xp = sum(m.xp_contributed or 0 for m in members)
-        active = sum(1 for m in members if (m.xp_contributed or 0) > 0)
+    # Single query with aggregation: club_id, total_xp, active_members
+    from sqlalchemy import case
+    club_stats = db.query(
+        ClubMember.club_id,
+        func.sum(ClubMember.xp_contributed).label("total_xp"),
+        func.sum(case((ClubMember.xp_contributed > 0, 1), else_=0)).label("active_members"),
+    ).group_by(ClubMember.club_id).all()
 
+    stats_list = []
+    for club_id, total_xp, active_members in club_stats:
         stats = ClubWeeklyStats(
-            club_id=club.id,
+            club_id=club_id,
             week_key=week,
-            total_xp=total_xp,
-            active_members=active,
+            total_xp=int(total_xp or 0),
+            active_members=int(active_members or 0),
             created_at=_now_iso(),
         )
         stats_list.append(stats)
@@ -699,17 +714,11 @@ def add_activity(
 
 def get_friends_activity(user_id: int, db: Session, limit: int = 50, offset: int = 0) -> list[ActivityFeed]:
     """Retorna atividades dos amigos."""
-    # Buscar amigos
-    friendships = db.query(Friendship).filter(Friendship.user_id == user_id).all()
-    friend_ids = [f.friend_id for f in friendships]
-    if not friend_ids:
-        return []
-
-    # Incluir próprio usuário
-    friend_ids.append(user_id)
-
-    return db.query(ActivityFeed).filter(
-        ActivityFeed.user_id.in_(friend_ids),
+    # Single query with join: friendships -> activities
+    return db.query(ActivityFeed).join(
+        Friendship, ActivityFeed.user_id == Friendship.friend_id
+    ).filter(
+        Friendship.user_id == user_id,
         ActivityFeed.is_public == True,  # noqa: E712
     ).order_by(ActivityFeed.created_at.desc()).offset(offset).limit(limit).all()
 

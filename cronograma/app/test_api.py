@@ -34,12 +34,20 @@ async def client():
 @pytest_asyncio.fixture
 async def auth_headers(client):
     """Registra e loga um usuário, retorna headers com token."""
-    await client.post(
-        "/auth/register",
+    # Register
+    r_reg = await client.post(
+        "/api/v1/auth/register",
         json={"email": "test@example.com", "password": "Test1234!@"},
     )
+    fallback_token = r_reg.json().get("fallback_token")
+    
+    # Verify if needed
+    if fallback_token:
+        await client.post("/api/v1/auth/verify-email", json={"token": fallback_token})
+    
+    # Login
     r = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "test@example.com", "password": "Test1234!@"},
     )
     token = r.json()["access_token"]
@@ -52,7 +60,7 @@ async def auth_headers(client):
 @pytest.mark.asyncio
 async def test_register_creates_user(client):
     r = await client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={"email": "new@example.com", "password": "Test1234!@"},
     )
     assert r.status_code == 200
@@ -62,11 +70,11 @@ async def test_register_creates_user(client):
 @pytest.mark.asyncio
 async def test_register_duplicate_email(client):
     await client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={"email": "dup@example.com", "password": "Test1234!@"},
     )
     r = await client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={"email": "dup@example.com", "password": "Test1234!@"},
     )
     assert r.status_code == 400
@@ -75,7 +83,7 @@ async def test_register_duplicate_email(client):
 @pytest.mark.asyncio
 async def test_register_invalid_email(client):
     r = await client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={"email": "not-an-email", "password": "Test1234!@"},
     )
     assert r.status_code == 400
@@ -84,7 +92,7 @@ async def test_register_invalid_email(client):
 @pytest.mark.asyncio
 async def test_register_weak_password(client):
     r = await client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={"email": "weak@example.com", "password": "short"},
     )
     assert r.status_code == 400
@@ -92,12 +100,15 @@ async def test_register_weak_password(client):
 
 @pytest.mark.asyncio
 async def test_login_success(client):
-    await client.post(
-        "/auth/register",
+    r_reg = await client.post(
+        "/api/v1/auth/register",
         json={"email": "login@example.com", "password": "Test1234!@"},
     )
+    fallback_token = r_reg.json().get("fallback_token")
+    if fallback_token:
+        await client.post("/api/v1/auth/verify-email", json={"token": fallback_token})
     r = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "login@example.com", "password": "Test1234!@"},
     )
     assert r.status_code == 200
@@ -106,12 +117,15 @@ async def test_login_success(client):
 
 @pytest.mark.asyncio
 async def test_login_wrong_password(client):
-    await client.post(
-        "/auth/register",
+    r_reg = await client.post(
+        "/api/v1/auth/register",
         json={"email": "wp@example.com", "password": "Test1234!@"},
     )
+    fallback_token = r_reg.json().get("fallback_token")
+    if fallback_token:
+        await client.post("/api/v1/auth/verify-email", json={"token": fallback_token})
     r = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "wp@example.com", "password": "WrongPass1!"},
     )
     assert r.status_code == 401
@@ -119,7 +133,7 @@ async def test_login_wrong_password(client):
 
 @pytest.mark.asyncio
 async def test_auth_required_for_areas(client):
-    r = await client.get("/areas")
+    r = await client.get("/api/v1/areas")
     assert r.status_code == 401
 
 
@@ -129,7 +143,7 @@ async def test_auth_required_for_areas(client):
 @pytest.mark.asyncio
 async def test_create_area(client, auth_headers):
     r = await client.post(
-        "/areas",
+        "/api/v1/areas",
         json={"nome": "Matemática", "cor": "#ff0000"},
         headers=auth_headers,
     )
@@ -141,7 +155,7 @@ async def test_create_area(client, auth_headers):
 async def test_create_area_xss_escaped(client, auth_headers):
     """XSS no nome deve ser escapado."""
     r = await client.post(
-        "/areas",
+        "/api/v1/areas",
         json={"nome": "<script>alert(1)</script>", "cor": "#000"},
         headers=auth_headers,
     )
@@ -153,19 +167,22 @@ async def test_create_area_xss_escaped(client, auth_headers):
 @pytest.mark.asyncio
 async def test_list_areas_only_own(client, auth_headers):
     await client.post(
-        "/areas", json={"nome": "A1"}, headers=auth_headers
+        "/api/v1/areas", json={"nome": "A1"}, headers=auth_headers
     )
     # Outro user
-    await client.post(
-        "/auth/register",
+    r2_reg = await client.post(
+        "/api/v1/auth/register",
         json={"email": "other@example.com", "password": "Test1234!@"},
     )
+    fallback_token2 = r2_reg.json().get("fallback_token")
+    if fallback_token2:
+        await client.post("/api/v1/auth/verify-email", json={"token": fallback_token2})
     r2 = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "other@example.com", "password": "Test1234!@"},
     )
     other_headers = {"Authorization": f"Bearer {r2.json()['access_token']}"}
-    r = await client.get("/areas", headers=other_headers)
+    r = await client.get("/api/v1/areas", headers=other_headers)
     assert r.status_code == 200
     assert len(r.json()) == 0
 
@@ -173,11 +190,11 @@ async def test_list_areas_only_own(client, auth_headers):
 @pytest.mark.asyncio
 async def test_update_area(client, auth_headers):
     r = await client.post(
-        "/areas", json={"nome": "Original"}, headers=auth_headers
+        "/api/v1/areas", json={"nome": "Original"}, headers=auth_headers
     )
     area_id = r.json()["id"]
     r2 = await client.patch(
-        f"/areas/{area_id}",
+        f"/api/v1/areas/{area_id}",
         json={"nome": "Atualizada"},
         headers=auth_headers,
     )
@@ -188,11 +205,11 @@ async def test_update_area(client, auth_headers):
 @pytest.mark.asyncio
 async def test_delete_area_cascades_tasks_sessions(client, auth_headers):
     area = (
-        await client.post("/areas", json={"nome": "X"}, headers=auth_headers)
+        await client.post("/api/v1/areas", json={"nome": "X"}, headers=auth_headers)
     ).json()
     task = (
         await client.post(
-            "/tasks",
+            "/api/v1/tasks",
             json={
                 "area_id": area["id"],
                 "titulo": "T1",
@@ -202,14 +219,14 @@ async def test_delete_area_cascades_tasks_sessions(client, auth_headers):
         )
     ).json()
     await client.post(
-        "/sessoes",
+        "/api/v1/sessoes",
         json={"area_id": area["id"], "duracao_minutos": 30},
         headers=auth_headers,
     )
-    r = await client.delete(f"/areas/{area['id']}", headers=auth_headers)
+    r = await client.delete(f"/api/v1/areas/{area['id']}", headers=auth_headers)
     assert r.status_code == 204
     # Task foi deletada
-    r2 = await client.get("/tasks", headers=auth_headers)
+    r2 = await client.get("/api/v1/tasks", headers=auth_headers)
     assert all(t["id"] != task["id"] for t in r2.json())
 
 
@@ -219,7 +236,7 @@ async def test_delete_area_cascades_tasks_sessions(client, auth_headers):
 @pytest.mark.asyncio
 async def test_create_task_with_invalid_area(client, auth_headers):
     r = await client.post(
-        "/tasks",
+        "/api/v1/tasks",
         json={
             "area_id": 9999,
             "titulo": "T1",
@@ -238,7 +255,7 @@ async def test_create_task_persists_meta_pomodoros(client, auth_headers):
     passava para o construtor Tasks() — o valor era aceito e descartado.
     """
     r = await client.post(
-        "/tasks",
+        "/api/v1/tasks",
         json={
             "titulo": "Com meta",
             "data_entrega": str(date.today()),
@@ -249,7 +266,7 @@ async def test_create_task_persists_meta_pomodoros(client, auth_headers):
     assert r.status_code == 200, r.text
     assert r.json()["meta_pomodoros"] == 7
 
-    r2 = await client.get("/tasks", headers=auth_headers)
+    r2 = await client.get("/api/v1/tasks", headers=auth_headers)
     persisted = next(t for t in r2.json() if t["id"] == r.json()["id"])
     assert persisted["meta_pomodoros"] == 7
 
@@ -263,7 +280,7 @@ async def test_create_task_without_data_entrega(client, auth_headers):
     IntegrityError — 500 para o usuário, em vez de um 422 de validação.
     """
     r = await client.post(
-        "/tasks",
+        "/api/v1/tasks",
         json={"titulo": "Sem prazo"},
         headers=auth_headers,
     )
@@ -274,7 +291,7 @@ async def test_create_task_without_data_entrega(client, auth_headers):
 @pytest.mark.asyncio
 async def test_complete_task_awards_xp(client, auth_headers):
     r = await client.post(
-        "/tasks",
+        "/api/v1/tasks",
         json={
             "titulo": "Tarefa XP",
             "data_entrega": str(date.today()),
@@ -283,11 +300,11 @@ async def test_complete_task_awards_xp(client, auth_headers):
     )
     task_id = r.json()["id"]
     await client.patch(
-        f"/tasks/{task_id}",
+        f"/api/v1/tasks/{task_id}",
         json={"concluida": True},
         headers=auth_headers,
     )
-    r2 = await client.get("/gamification-summary", headers=auth_headers)
+    r2 = await client.get("/api/v1/gamification-summary", headers=auth_headers)
     assert r2.json()["xp_total"] >= 5
 
 
@@ -297,24 +314,24 @@ async def test_complete_task_awards_xp(client, auth_headers):
 @pytest.mark.asyncio
 async def test_create_sessao_updates_streak(client, auth_headers):
     area = (
-        await client.post("/areas", json={"nome": "A"}, headers=auth_headers)
+        await client.post("/api/v1/areas", json={"nome": "A"}, headers=auth_headers)
     ).json()
     await client.post(
-        "/sessoes",
+        "/api/v1/sessoes",
         json={"area_id": area["id"], "duracao_minutos": 25},
         headers=auth_headers,
     )
-    r = await client.get("/gamification-summary", headers=auth_headers)
+    r = await client.get("/api/v1/gamification-summary", headers=auth_headers)
     assert r.json()["current_streak"] >= 1
 
 
 @pytest.mark.asyncio
 async def test_pomodoro_awards_coins(client, auth_headers):
     area = (
-        await client.post("/areas", json={"nome": "A"}, headers=auth_headers)
+        await client.post("/api/v1/areas", json={"nome": "A"}, headers=auth_headers)
     ).json()
     r = await client.post(
-        "/pomodoro/completar",
+        "/api/v1/pomodoro/completar",
         json={"area_id": area["id"], "duracao_minutos": 25},
         headers=auth_headers,
     )
@@ -327,23 +344,23 @@ async def test_pomodoro_awards_coins(client, auth_headers):
 
 @pytest.mark.asyncio
 async def test_buy_freeze_requires_coins(client, auth_headers):
-    r = await client.post("/coins/buy-freeze", headers=auth_headers)
+    r = await client.post("/api/v1/coins/buy-freeze", headers=auth_headers)
     assert r.status_code == 400
 
 
 @pytest.mark.asyncio
 async def test_buy_freeze_success(client, auth_headers):
     area = (
-        await client.post("/areas", json={"nome": "A"}, headers=auth_headers)
+        await client.post("/api/v1/areas", json={"nome": "A"}, headers=auth_headers)
     ).json()
     # 4 pomodoros = 12 coins
     for _ in range(4):
         await client.post(
-            "/pomodoro/completar",
+            "/api/v1/pomodoro/completar",
             json={"area_id": area["id"], "duracao_minutos": 25},
             headers=auth_headers,
         )
-    r = await client.post("/coins/buy-freeze", headers=auth_headers)
+    r = await client.post("/api/v1/coins/buy-freeze", headers=auth_headers)
     assert r.status_code == 200
     assert r.json()["coins"] == 2
     assert r.json()["freezes"] == 1
@@ -352,14 +369,14 @@ async def test_buy_freeze_success(client, auth_headers):
 @pytest.mark.asyncio
 async def test_add_coins_rejects_negative(client, auth_headers, monkeypatch):
     monkeypatch.setattr(gamification_module, "MIGRATION_SECRET", "test-secret")
-    r = await client.post("/coins/add?amount=-5&secret=test-secret", headers=auth_headers)
+    r = await client.post("/api/v1/coins/add?amount=-5&secret=test-secret", headers=auth_headers)
     assert r.status_code == 400
 
 
 @pytest.mark.asyncio
 async def test_add_coins_rejects_over_100(client, auth_headers, monkeypatch):
     monkeypatch.setattr(gamification_module, "MIGRATION_SECRET", "test-secret")
-    r = await client.post("/coins/add?amount=101&secret=test-secret", headers=auth_headers)
+    r = await client.post("/api/v1/coins/add?amount=101&secret=test-secret", headers=auth_headers)
     assert r.status_code == 400
 
 
@@ -369,14 +386,14 @@ async def test_add_coins_rejects_over_100(client, auth_headers, monkeypatch):
 @pytest.mark.asyncio
 async def test_resumo_horas_por_area(client, auth_headers):
     area = (
-        await client.post("/areas", json={"nome": "X"}, headers=auth_headers)
+        await client.post("/api/v1/areas", json={"nome": "X"}, headers=auth_headers)
     ).json()
     await client.post(
-        "/sessoes",
+        "/api/v1/sessoes",
         json={"area_id": area["id"], "duracao_minutos": 60},
         headers=auth_headers,
     )
-    r = await client.get("/sessoes/resumo", headers=auth_headers)
+    r = await client.get("/api/v1/sessoes/resumo", headers=auth_headers)
     assert r.status_code == 200
     assert r.json()[0]["total_horas"] == 1.0
 
@@ -399,21 +416,23 @@ VALID_SENHA = "Ismael@2006"
 async def test_register_exige_caractere_especial(client):
     """Política vigente: senha sem caractere especial é rejeitada com 400."""
     r = await client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={"email": "sem-especial@example.com", "password": "ismael2006"},
     )
     assert r.status_code == 400, r.text
     assert "especial" in r.json()["detail"].lower()
 
     ok = await client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={"email": "com-especial@example.com", "password": VALID_SENHA},
     )
     assert ok.status_code == 200, ok.text
-    assert "access_token" in ok.json()
+    fallback_token = ok.json().get("fallback_token")
+    if fallback_token:
+        await client.post("/api/v1/auth/verify-email", json={"token": fallback_token})
 
     login = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "com-especial@example.com", "password": VALID_SENHA},
     )
     assert login.status_code == 200, "a senha aceita no registro tem que entrar no login"
@@ -428,7 +447,7 @@ async def test_register_exige_caractere_especial(client):
 async def test_register_ainda_rejeita_senha_fraca(client, senha):
     """As três regras que sobraram continuam valendo."""
     r = await client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={"email": f"fraca-{len(senha)}@example.com", "password": senha},
     )
     assert r.status_code == 400
@@ -444,14 +463,14 @@ async def test_erro_de_validacao_nao_queima_a_cota_do_rate_limit(client):
     """
     for _ in range(12):
         r = await client.post(
-            "/auth/register",
+            "/api/v1/auth/register",
             json={"email": "curto@example.com", "password": "abc"},
         )
         assert r.status_code == 400, f"esperava 400, veio {r.status_code}: {r.text}"
 
     # ...e logo depois um cadastro válido tem que passar.
     ok = await client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={"email": "depois-dos-400@example.com", "password": VALID_SENHA},
     )
     assert ok.status_code == 200, ok.text
@@ -463,7 +482,7 @@ async def test_429_traz_retry_after_e_tempo_acionavel(client):
     respostas = []
     for i in range(25):
         r = await client.post(
-            "/auth/register",
+            "/api/v1/auth/register",
             json={"email": f"enum-{i}@example.com", "password": VALID_SENHA},
         )
         respostas.append(r)
@@ -490,7 +509,7 @@ async def test_rate_limit_nao_pode_ser_burlado_com_x_forwarded_for(client):
     status_codes = []
     for i in range(12):
         r = await client.post(
-            "/auth/register",
+            "/api/v1/auth/register",
             headers={"X-Forwarded-For": f"10.0.0.{i}"},
             json={"email": f"spoof-{i}@example.com", "password": VALID_SENHA},
         )
@@ -508,7 +527,7 @@ async def test_cf_connecting_ip_tem_precedencia(client):
     status_codes = []
     for i in range(12):
         r = await client.post(
-            "/auth/register",
+            "/api/v1/auth/register",
             headers={"CF-Connecting-IP": "203.0.113.7"},
             json={"email": f"cf-{i}@example.com", "password": VALID_SENHA},
         )
@@ -523,11 +542,11 @@ async def test_cf_connecting_ip_tem_precedencia(client):
 async def test_email_ja_cadastrado_diz_para_entrar(client):
     """O 400 de duplicado precisa orientar o usuário, não só poupar."""
     await client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={"email": "dup@example.com", "password": VALID_SENHA},
     )
     r = await client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={"email": "dup@example.com", "password": VALID_SENHA},
     )
     assert r.status_code == 400
@@ -585,7 +604,7 @@ async def test_xff_nao_burla_o_limite_de_registro(client):
     status_codes = []
     for i in range(12):
         r = await client.post(
-            "/auth/register",
+            "/api/v1/auth/register",
             headers={"X-Forwarded-For": f"189.40.30.{i}"},
             json={"email": f"uvicorn-spoof-{i}@example.com", "password": VALID_SENHA},
         )
@@ -606,7 +625,7 @@ async def test_limite_geral_responde_429_e_nao_500(client):
     """
     status_codes = []
     for _ in range(130):
-        r = await client.get("/auth/check")
+        r = await client.get("/api/v1/auth/check")
         status_codes.append(r.status_code)
         if r.status_code == 429:
             break
@@ -665,7 +684,7 @@ async def test_429_no_front_usa_retry_after(client):
     """O 429 precisa ser traduzível: mensagem dinâmica com o número de segundos."""
     for i in range(25):
         r = await client.post(
-            "/auth/register",
+            "/api/v1/auth/register",
             json={"email": f"front-{i}@example.com", "password": VALID_SENHA},
         )
         if r.status_code == 429:
@@ -675,3 +694,368 @@ async def test_429_no_front_usa_retry_after(client):
     segundos = int(r.headers["Retry-After"])
     # Formato que o regex de static/i18n.js::translateBackendError espera.
     assert detalhe == f"Muitas requisições. Tente novamente em {segundos}s.", detalhe
+
+
+# ─── Social Tests ────────────────────────────────────────────────────────────────
+
+@pytest_asyncio.fixture
+async def auth_headers_two_users(client):
+    """Cria dois usuários autenticados, retorna headers para ambos."""
+    # Register user1
+    r1_reg = await client.post("/api/v1/auth/register", json={"email": "user1@test.com", "password": "Test1234!@"})
+    fallback_token1 = r1_reg.json().get("fallback_token")
+    
+    # Register user2
+    r2_reg = await client.post("/api/v1/auth/register", json={"email": "user2@test.com", "password": "Test1234!@"})
+    fallback_token2 = r2_reg.json().get("fallback_token")
+    
+    # Verify both users using fallback_token
+    if fallback_token1:
+        await client.post("/api/v1/auth/verify-email", json={"token": fallback_token1})
+    if fallback_token2:
+        await client.post("/api/v1/auth/verify-email", json={"token": fallback_token2})
+    
+    # Now login
+    r1 = await client.post("/api/v1/auth/login", json={"email": "user1@test.com", "password": "Test1234!@"})
+    token1 = r1.json()["access_token"]
+    r2 = await client.post("/api/v1/auth/login", json={"email": "user2@test.com", "password": "Test1234!@"})
+    token2 = r2.json()["access_token"]
+    
+    return {
+        "user1": {"Authorization": f"Bearer {token1}"},
+        "user2": {"Authorization": f"Bearer {token2}"},
+    }
+
+
+@pytest.mark.asyncio
+async def test_social_send_friend_request(client, auth_headers_two_users):
+    """Envia solicitação de amizade."""
+    headers1 = auth_headers_two_users["user1"]
+    headers2 = auth_headers_two_users["user2"]
+    
+    # Get user2's ID
+    me = await client.get("/api/v1/auth/me", headers=headers2)
+    user2_id = me.json()["id"]
+    
+    # Send request
+    r = await client.post("/api/v1/friends/request", json={"to_user_id": user2_id}, headers=headers1)
+    assert r.status_code == 200
+    data = r.json()
+    assert "id" in data
+    assert data["status"] == "pending"
+
+
+@pytest.mark.asyncio
+async def test_social_accept_friend_request(client, auth_headers_two_users):
+    """Aceita solicitação de amizade."""
+    headers1 = auth_headers_two_users["user1"]
+    headers2 = auth_headers_two_users["user2"]
+    
+    me = await client.get("/api/v1/auth/me", headers=headers2)
+    user2_id = me.json()["id"]
+    
+    # Send request
+    r = await client.post("/api/v1/friends/request", json={"to_user_id": user2_id}, headers=headers1)
+    request_id = r.json()["id"]
+    
+    # Accept
+    r = await client.post("/api/v1/friends/request/respond", json={"request_id": request_id, "accept": True}, headers=headers2)
+    print(f"Response: {r.status_code}, {r.json()}")
+    assert r.status_code == 200
+    assert r.json()["status"] == "accepted"
+    
+    # Verify friendship
+    r = await client.get("/api/v1/friends", headers=headers1)
+    friends = r.json()
+    assert len(friends) == 1
+
+
+@pytest.mark.asyncio
+async def test_social_leaderboard(client, auth_headers):
+    """Testa ranking semanal."""
+    r = await client.get("/api/v1/leaderboard?period=weekly", headers=auth_headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert "entries" in data
+    assert "user_rank" in data
+
+
+@pytest.mark.asyncio
+async def test_social_league(client, auth_headers):
+    """Testa liga do usuário."""
+    r = await client.get("/api/v1/league/me", headers=auth_headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert "league" in data
+    assert "user" in data
+    assert "standings" in data
+
+
+@pytest.mark.asyncio
+async def test_social_create_club(client, auth_headers):
+    """Cria clube."""
+    r = await client.post("/api/v1/clubs", json={"name": "Test Club", "description": "Test", "is_public": True}, headers=auth_headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert "id" in data
+    assert "invite_code" in data
+    assert data["name"] == "Test Club"
+
+
+@pytest.mark.asyncio
+async def test_social_join_club(client, auth_headers_two_users):
+    """Entra em clube via código de convite."""
+    headers1 = auth_headers_two_users["user1"]
+    headers2 = auth_headers_two_users["user2"]
+    
+    # User1 creates club
+    r = await client.post("/api/v1/clubs", json={"name": "Join Club", "description": "Test", "is_public": True}, headers=headers1)
+    invite_code = r.json()["invite_code"]
+    
+    # User2 joins
+    r = await client.post("/api/v1/clubs/join", json={"invite_code": invite_code}, headers=headers2)
+    assert r.status_code == 200
+    assert r.json()["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_social_activity_feed(client, auth_headers_two_users):
+    """Testa feed de atividades."""
+    headers1 = auth_headers_two_users["user1"]
+    headers2 = auth_headers_two_users["user2"]
+    
+    # Create friendship first
+    me = await client.get("/api/v1/auth/me", headers=headers2)
+    user2_id = me.json()["id"]
+    await client.post("/api/v1/friends/request", json={"to_user_id": user2_id}, headers=headers1)
+    await client.post("/api/v1/friends/request/respond", json={"request_id": 1, "accept": True}, headers=headers2)
+    
+    # Get activity
+    r = await client.get("/api/v1/activity/friends", headers=headers1)
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, list)
+
+
+# ─── Missions Tests ──────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_missions_today(client, auth_headers):
+    """Testa endpoint de missões do dia."""
+    r = await client.get("/api/v1/missions/today", headers=auth_headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert "missions" in data
+    assert "completed_count" in data
+    assert "total" in data
+    assert "all_completed" in data
+    assert "coins" in data
+    assert len(data["missions"]) == 3
+
+
+@pytest.mark.asyncio
+async def test_missions_progress_updates_on_pomodoro(client, auth_headers):
+    """Progresso de missões do tipo pomodoro atualiza ao completar pomodoro."""
+    # Get initial missions
+    r = await client.get("/api/v1/missions/today", headers=auth_headers)
+    assert r.status_code == 200
+    missions = r.json()["missions"]
+    
+    # Find a pomodoro mission
+    pomodoro_mission = next((m for m in missions if m["kind"] == "pomodoro"), None)
+    if not pomodoro_mission:
+        # If no pomodoro mission today, test passes (missions vary)
+        return
+    
+    target = pomodoro_mission["target"]
+    area = (await client.post("/api/v1/areas", json={"nome": "Test"}, headers=auth_headers)).json()
+    
+    # Complete required pomodoros
+    for _ in range(target):
+        await client.post(
+            "/api/v1/pomodoro/completar",
+            json={"area_id": area["id"], "duracao_minutos": 25},
+            headers=auth_headers,
+        )
+    
+    # Check progress updated
+    r = await client.get("/api/v1/missions/today", headers=auth_headers)
+    updated = next(m for m in r.json()["missions"] if m["key"] == pomodoro_mission["key"])
+    assert updated["progress"] == target
+    assert updated["completed"] is True
+
+
+# ─── Admin Tests ─────────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_admin_funnel_requires_secret(client, auth_headers, monkeypatch):
+    """Endpoint /admin/funnel requer MIGRATION_SECRET."""
+    # MIGRATION_SECRET is imported at module level in admin.py, so patch there
+    import routes.admin as admin_module
+    monkeypatch.setattr(admin_module, "MIGRATION_SECRET", "test-secret")
+    r = await client.get("/api/v1/admin/funnel", headers=auth_headers)
+    assert r.status_code == 403
+    
+    r = await client.get("/api/v1/admin/funnel?secret=wrong", headers=auth_headers)
+    assert r.status_code == 403
+    
+    r = await client.get("/api/v1/admin/funnel?secret=test-secret", headers=auth_headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert "counts" in data
+    assert "rates" in data
+    assert "daily" in data
+
+
+@pytest.mark.asyncio
+async def test_admin_debug_stats(client, auth_headers):
+    """Endpoint /api/v1/debug/stats retorna estatísticas brutas."""
+    r = await client.get("/api/v1/debug/stats", headers=auth_headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert "user_id" in data
+    assert "total_sessoes" in data
+    assert "minutos_total" in data
+    assert "total_tarefas" in data
+    assert "tarefas_concluidas" in data
+    assert "xp_por_sessoes" in data
+    assert "xp_por_tarefas" in data
+    assert "xp_total_calculado" in data
+
+
+# ─── Stats/Analytics Tests ───────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_heatmap_endpoint(client, auth_headers):
+    """Testa endpoint /heatmap."""
+    r = await client.get("/api/v1/heatmap?days=7", headers=auth_headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert "days" in data
+    assert "start" in data
+    assert "end" in data
+    assert "entries" in data
+    assert len(data["entries"]) == 7
+    assert "current_streak" in data
+    assert "longest_streak" in data
+    for entry in data["entries"]:
+        assert "date" in entry
+        assert "minutes" in entry
+        assert "level" in entry
+        assert 0 <= entry["level"] <= 4
+
+
+@pytest.mark.asyncio
+async def test_analytics_endpoint(client, auth_headers):
+    """Testa endpoint /analytics."""
+    r = await client.get("/api/v1/analytics?days=7", headers=auth_headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert "period" in data
+    assert "totals" in data
+    assert "trend" in data
+    assert "best_day" in data
+    assert "by_weekday" in data
+    assert "by_area" in data
+    assert len(data["trend"]) == 7
+    assert len(data["by_weekday"]) == 7
+    assert isinstance(data["by_area"], list)
+
+
+# ─── Streak Service Tests ────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_streak_service_atualizar_streak(client, auth_headers):
+    """Testa services.streak_service.atualizar_streak via API."""
+    me = await client.get("/api/v1/auth/me", headers=auth_headers)
+    user_id = me.json()["id"]
+    
+    # Create area and session via API (which calls atualizar_streak internally)
+    area = (await client.post("/api/v1/areas", json={"nome": "StreakTest"}, headers=auth_headers)).json()
+    await client.post(
+        "/api/v1/sessoes",
+        json={"area_id": area["id"], "duracao_minutos": 30},
+        headers=auth_headers,
+    )
+    
+    # Verify streak updated via gamification summary (uses same logic)
+    r = await client.get("/api/v1/gamification-summary", headers=auth_headers)
+    assert r.json()["current_streak"] >= 1
+    
+    # Also verify heatmap includes today
+    r = await client.get("/api/v1/heatmap?days=1", headers=auth_headers)
+    assert r.json()["current_streak"] >= 1
+
+
+@pytest.mark.asyncio
+async def test_streak_service_freezes(client, auth_headers):
+    """Testa concessão e uso de freezes."""
+    from services.streak_service import atualizar_freezes
+    from config import SessionLocal
+    
+    db = SessionLocal()
+    try:
+        me = await client.get("/api/v1/auth/me", headers=auth_headers)
+        user_id = me.json()["id"]
+        
+        # Grant freeze
+        freezes = atualizar_freezes(user_id, db)
+        assert freezes >= 1
+        
+        # Second call same day should not grant another
+        freezes2 = atualizar_freezes(user_id, db)
+        assert freezes2 == freezes
+        
+        # Verify in gamification summary
+        r = await client.get("/api/v1/gamification-summary", headers=auth_headers)
+        assert r.json()["streak_freezes"] >= 1
+    finally:
+        db.close()
+
+
+# ─── Email Service Tests ────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_email_service_not_configured(client, auth_headers, monkeypatch):
+    """Sem RESEND_API_KEY, is_configured() retorna False."""
+    from services import email_service
+    
+    monkeypatch.delenv("RESEND_API_KEY", raising=False)
+    assert email_service.is_configured() is False
+
+
+@pytest.mark.asyncio
+async def test_email_service_send_verification_skipped(client, auth_headers, monkeypatch):
+    """send_verification_email retorna False sem RESEND_API_KEY."""
+    from services import email_service
+    
+    monkeypatch.delenv("RESEND_API_KEY", raising=False)
+    result = email_service.send_verification_email("test@example.com", "test-token")
+    assert result is False
+
+
+# ─── Funnel Service Tests ────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_funnel_service_record_event(client, auth_headers):
+    """Testa services.funnel_service.record_event."""
+    from services.funnel_service import record_event
+    from config import SessionLocal
+    from models.event import FunnelEvent
+    
+    db = SessionLocal()
+    try:
+        me = await client.get("/api/v1/auth/me", headers=auth_headers)
+        user_id = me.json()["id"]
+        
+        # Should not raise even if table doesn't exist
+        record_event(db, "test_event", user_id)
+        record_event(db, "signup")
+        
+        # Verify events were recorded
+        events = db.query(FunnelEvent).filter(FunnelEvent.event == "test_event").all()
+        assert len(events) >= 1
+        assert events[0].user_id == user_id
+        assert events[0].event == "test_event"
+    finally:
+        db.close()

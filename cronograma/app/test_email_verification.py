@@ -74,7 +74,7 @@ def _set_token(email: str, token: str) -> None:
 
 async def _register(client, email="verify@example.com"):
     return await client.post(
-        "/auth/register", json={"email": email, "password": PASSWORD}
+        "/api/v1/auth/register", json={"email": email, "password": PASSWORD}
     )
 
 
@@ -130,7 +130,7 @@ async def test_fallback_token_quando_envio_falha(client, resend_on, monkeypatch)
 async def test_login_bloqueado_ate_verificar(client, resend_on, capture_sent):
     await _register(client)
     r = await client.post(
-        "/auth/login", json={"email": "verify@example.com", "password": PASSWORD}
+        "/api/v1/auth/login", json={"email": "verify@example.com", "password": PASSWORD}
     )
     assert r.status_code == 403
     assert "não verificada" in r.json()["detail"]
@@ -140,11 +140,11 @@ async def test_login_bloqueado_ate_verificar(client, resend_on, capture_sent):
 async def test_login_libera_apos_verificar(client, resend_on, capture_sent):
     await _register(client)
     token = capture_sent[0]["token"]
-    r = await client.get("/auth/verify-email", params={"token": token})
+    r = await client.get("/api/v1/auth/verify-email", params={"token": token})
     assert r.status_code == 200
 
     r = await client.post(
-        "/auth/login", json={"email": "verify@example.com", "password": PASSWORD}
+        "/api/v1/auth/login", json={"email": "verify@example.com", "password": PASSWORD}
     )
     assert r.status_code == 200
     assert r.json()["access_token"]
@@ -157,7 +157,7 @@ async def test_login_libera_apos_verificar(client, resend_on, capture_sent):
 async def test_link_get_verifica_conta(client, resend_on, capture_sent):
     await _register(client)
     token = capture_sent[0]["token"]
-    r = await client.get("/auth/verify-email", params={"token": token})
+    r = await client.get("/api/v1/auth/verify-email", params={"token": token})
     assert r.status_code == 200
     assert "verificado" in r.text.lower()
     assert _get_user("verify@example.com").verification_token is None
@@ -166,7 +166,7 @@ async def test_link_get_verifica_conta(client, resend_on, capture_sent):
 @pytest.mark.asyncio
 async def test_link_get_token_invalido(client, resend_on, capture_sent):
     await _register(client)
-    r = await client.get("/auth/verify-email", params={"token": "garbage"})
+    r = await client.get("/api/v1/auth/verify-email", params={"token": "garbage"})
     assert r.status_code == 400
     assert "inválido" in r.text.lower()
 
@@ -177,7 +177,7 @@ async def test_link_get_token_expirado_mostra_resend(client, resend_on, capture_
     expired = f"{uuid.uuid4()}.{int(time.time()) - 3600}"
     _set_token("verify@example.com", expired)
 
-    r = await client.get("/auth/verify-email", params={"token": expired})
+    r = await client.get("/api/v1/auth/verify-email", params={"token": expired})
     assert r.status_code == 400
     assert "expirado" in r.text.lower()
     assert "/auth/verify-email/resend?token=" in r.text
@@ -188,7 +188,7 @@ async def test_token_legado_sem_ponto_nao_expira(client, resend_on, capture_sent
     await _register(client)
     legacy = str(uuid.uuid4())
     _set_token("verify@example.com", legacy)
-    r = await client.get("/auth/verify-email", params={"token": legacy})
+    r = await client.get("/api/v1/auth/verify-email", params={"token": legacy})
     assert r.status_code == 200
 
 
@@ -199,7 +199,7 @@ async def test_token_legado_sem_ponto_nao_expira(client, resend_on, capture_sent
 async def test_post_manual_verifica(client, resend_on, capture_sent):
     await _register(client)
     r = await client.post(
-        "/auth/verify-email", json={"token": capture_sent[0]["token"]}
+        "/api/v1/auth/verify-email", json={"token": capture_sent[0]["token"]}
     )
     assert r.status_code == 200
     assert r.json()["success"] is True
@@ -210,7 +210,7 @@ async def test_post_manual_token_expirado_rejeitado(client, resend_on, capture_s
     await _register(client)
     expired = f"{uuid.uuid4()}.{int(time.time()) - 3600}"
     _set_token("verify@example.com", expired)
-    r = await client.post("/auth/verify-email", json={"token": expired})
+    r = await client.post("/api/v1/auth/verify-email", json={"token": expired})
     assert r.json()["success"] is False
 
 
@@ -218,9 +218,9 @@ async def test_post_manual_token_expirado_rejeitado(client, resend_on, capture_s
 async def test_post_manual_rate_limit(client, resend_on, capture_sent):
     await _register(client)
     for _ in range(10):
-        r = await client.post("/auth/verify-email", json={"token": "x"})
+        r = await client.post("/api/v1/auth/verify-email", json={"token": "x"})
         assert r.status_code == 200
-    r = await client.post("/auth/verify-email", json={"token": "x"})
+    r = await client.post("/api/v1/auth/verify-email", json={"token": "x"})
     assert r.status_code == 429
 
 
@@ -232,16 +232,16 @@ async def test_resend_regenera_token(client, resend_on, capture_sent):
     await _register(client)
     old_token = capture_sent[0]["token"]
 
-    r = await client.get("/auth/verify-email/resend", params={"token": old_token})
+    r = await client.get("/api/v1/auth/verify-email/resend", params={"token": old_token})
     assert r.status_code == 200
     assert len(capture_sent) == 2
     new_token = capture_sent[1]["token"]
     assert new_token != old_token
 
-    r = await client.get("/auth/verify-email", params={"token": old_token})
+    r = await client.get("/api/v1/auth/verify-email", params={"token": old_token})
     assert r.status_code == 400
 
-    r = await client.get("/auth/verify-email", params={"token": new_token})
+    r = await client.get("/api/v1/auth/verify-email", params={"token": new_token})
     assert r.status_code == 200
 
 
@@ -250,8 +250,8 @@ async def test_resend_rate_limit(client, resend_on, capture_sent):
     await _register(client)
     token = capture_sent[0]["token"]
     for _ in range(5):
-        r = await client.get("/auth/verify-email/resend", params={"token": token})
+        r = await client.get("/api/v1/auth/verify-email/resend", params={"token": token})
         assert r.status_code == 200
         token = capture_sent[-1]["token"]
-    r = await client.get("/auth/verify-email/resend", params={"token": token})
+    r = await client.get("/api/v1/auth/verify-email/resend", params={"token": token})
     assert r.status_code == 429

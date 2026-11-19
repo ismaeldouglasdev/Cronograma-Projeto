@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 
 from fastapi.security import HTTPBearer
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 # ─── Database ─────────────────────────────────────────────────────────────────
@@ -32,6 +32,17 @@ else:
     }
 
 engine = create_engine(DATABASE_URL, **engine_kwargs)
+
+# Habilita WAL mode no SQLite para melhor concorrência (leitores não bloqueiam escritores)
+if "sqlite" in DATABASE_URL:
+    @event.listens_for(engine, "connect")
+    def _set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        cursor.close()
+
 Base = declarative_base()
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
@@ -44,18 +55,19 @@ def _resolve_secret_key() -> str:
     """
     Resolve a chave de assinatura JWT.
 
-    Preferência: JWT_SECRET do ambiente. Sem ele, deriva de DATABASE_URL —
-    comportamento legado mantido para não derrubar instalações existentes,
-    mas sinalizado: derivar de DATABASE_URL faz a chave mudar toda vez que a
-    senha do banco rotaciona, o que invalida todos os tokens e derruba o
-    ambiente inteiro. Ver docs/rotacao-credenciais.md.
+    JWT_SECRET é OBRIGATÓRIO em todos os ambientes. Derivar de DATABASE_URL
+    fazia a chave mudar toda vez que a senha do banco rotaciona, o que invalida
+    todos os tokens e derruba o ambiente inteiro. Ver docs/rotacao-credenciais.md.
     """
     from_env = os.environ.get("JWT_SECRET")
     if from_env:
         return from_env
 
+    # Fallback apenas para compatibilidade com instalações antigas (dev).
+    # Em produção SEMPRE falha. Em dev, loga warning e usa derivado temporário.
     derived = hashlib.sha256(DATABASE_URL.encode()).hexdigest()
-    if os.environ.get("ENVIRONMENT", "").lower() == "production":
+    env = os.environ.get("ENVIRONMENT", "development").lower()
+    if env == "production":
         logger.error(
             "JWT_SECRET ausente em produção: chave derivada de DATABASE_URL. "
             "Rotacionar a senha do banco vai invalidar todos os tokens e deslogar "
@@ -65,6 +77,10 @@ def _resolve_secret_key() -> str:
             "JWT_SECRET environment variable is required in production. "
             "Set it to avoid session invalidation when database credentials rotate."
         )
+    logger.warning(
+        "JWT_SECRET não definido: usando chave derivada de DATABASE_URL (apenas dev). "
+        "Defina JWT_SECRET no .env para evitar invalidação de tokens ao rotacionar credenciais."
+    )
     return derived
 
 
@@ -108,6 +124,25 @@ GOOGLE_OAUTH_SCOPES: list[str] = ["openid", "email", "profile"]
 # ─── Coins ────────────────────────────────────────────────────────────────────
 
 FREEZE_COST: int = 10
+
+# ─── Rate Limiter IP Resolution ───────────────────────────────────────────────
+
+# Headers confiáveis para identificar IP real do cliente (ordem de prioridade).
+# CF-Connecting-IP: Cloudflare substitui pelo IP real do visitante.
+# X-Real-IP: nginx/proxy padrão.
+# X-Forwarded-For: primeira entrada (menos confiável, controlável pelo cliente).
+# Configure via env para adicionar/remover headers conforme sua infraestrutura.
+RATE_LIMIT_TRUSTED_HEADERS: list[str] = [
+    h.strip() for h in os.environ.get(
+        "RATE_LIMIT_TRUSTED_HEADERS",
+        "cf-connecting-ip,x-real-ip"
+    ).split(",") if h.strip()
+]
+
+# Se True, ignora IPs privados (RFC1918) nos headers confiáveis e cai no peer TCP.
+RATE_LIMIT_REJECT_PRIVATE_IPS: bool = os.environ.get(
+    "RATE_LIMIT_REJECT_PRIVATE_IPS", "true"
+).lower() == "true"
 
 
 def get_db():

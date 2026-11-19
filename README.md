@@ -1,108 +1,123 @@
-<p align="center">
-  <strong>🇧🇷 Português</strong> &nbsp;|&nbsp; <a href="README.en.md">🇺🇸 English</a>
-</p>
-
 # Cronograma de Estudos
 
-🔗 **Acesse:** [cronograma-projeto.onrender.com](https://cronograma-projeto.onrender.com/)
+Sistema de gerenciamento de estudos com timer Pomodoro, tarefas, metas por área, gamificação e estatísticas.
 
-Sistema completo de gerenciamento de estudos com timer Pomodoro integrado, tracking de horas, quadro de horários de aulas e gamificação.
+- **Produção:** https://cronograma-projeto.onrender.com/
+- **Repositório:** https://github.com/ismaeldouglasdev/Cronograma-Projeto
+- **Stack:** FastAPI + SQLAlchemy (SQLite local / PostgreSQL em produção) + frontend estático (Vanilla JS)
 
-![Cronograma](screenshots/cronograma-ptbr.png)
+## Estado atual (local verificado em 2026-11-18)
 
-## Stack
+- API versionada em `/api/v1/*` com compatibilidade para rotas legadas na raiz (transição segura).
+- Health check: `GET /health` e `GET /api/v1/health`.
+- Métricas Prometheus: `GET /metrics` e `GET /api/v1/metrics`.
+- Auth disponível em `/auth/*` e `/api/v1/auth/*` (OAuth/callbacks e cookies mantidos no fluxo raiz).
+- Melhorias recentes no código local (não commitadas): WAL no SQLite, endurecimento de JWT/rate limit, otimizações de queries sociais, ajustes de testes e alinhamento do frontend para `/api/v1`.
+- Migrações Alembic presentes em `cronograma/alembic/` (arquivos locais não rastreados no momento desta verificação).
 
-- **Backend:** FastAPI + SQLAlchemy + SQLite
-- **Frontend:** Vanilla JS + Chart.js
-- **Runtime:** Python 3.8+
+> Observação: a produção pode estar em versão anterior até novo deploy. No momento da verificação, o site respondia 200 em `/` e `/app`, mas `/health` ainda retornava 404 em produção.
 
-## Funcionalidades
+## Estrutura principal
 
-- **Modo Convidado** — Entre sem criar conta e salve o progresso depois (upgrade para conta real com mesma linha, sem perda de dados)
-- **Timer Pomodoro** — Foco de 25min com descanso de 5min, seleção de área/tarefa
-- **Áreas/Matérias** — Cadastro com cor, categoria, tipo (online/presencial)
-- **Tarefas** — CRUD com prioridade, data de entrega, meta de pomodoros
-- **Sessões de Estudo** — Registro manual de tempo por área
-- **Gamificação** — XP, coins, streak, achievements, níveis
-- **Quadro de Horários** — Grid semanal das aulas presenciais
-- **Resumo/Estatísticas** — Gráfico de pizza com horas por área (Chart.js)
-- **8 Temas** — Dark, light, ocean, purple, forest, midnight, pastel, contrast
-
-## Como Rodar
-
-### 1. Ativar ambiente virtual
-
-```bash
-source .venv/bin/activate
+```text
+cronograma/
+  app/                 # aplicação FastAPI + frontend estático
+    main.py            # entrypoint FastAPI, middlewares, roteamento
+    config.py          # env, DB, segurança, CORS, rate-limit config
+    middleware.py      # segurança, logging, rate limiting
+    routes/            # rotas (auth, areas, tasks, sessoes, gamification, stats, missions, social, admin)
+    services/          # regras de negócio
+    models/            # modelos/schemas
+    static/            # frontend (index/landing/js/css/assets)
+    test_*.py          # testes (pytest + httpx ASGI)
+  alembic/             # migrações
+  alembic.ini
+  requirements.txt
+  requirements-dev.txt
+  render.yaml          # config de deploy (Render)
 ```
 
-### 2. Iniciar servidor
+## Como rodar localmente
+
+### 1) Ambiente Python
+
+Use um virtualenv com dependências instaladas (ex.: `cronograma/venv` ou `cronograma/.venv`).
+
+```bash
+cd cronograma
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+# opcional para dev/testes extras:
+# pip install -r requirements-dev.txt pytest pytest-asyncio
+```
+
+### 2) Variáveis de ambiente
+
+Crie `cronograma/.env` (ou exporte variáveis). Exemplo mínimo:
+
+```env
+ENVIRONMENT=development
+JWT_SECRET=troque-por-uma-string-aleatoria-longa
+DATABASE_URL=sqlite:///./cronograma.db
+APP_URL=http://localhost:8000
+```
+
+Variáveis relevantes (ver `.env.example`): `GOOGLE_CLIENT_ID/SECRET/REDIRECT_URI`, `RESEND_API_KEY`, `EMAIL_FROM`, `MIGRATION_SECRET`, rate limit (`RATE_LIMIT_*`), etc.
+
+### 3) Iniciar servidor
+
+O app usa imports relativos ao diretório `app/` (padrão do deploy atual):
 
 ```bash
 cd cronograma/app
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 3. Acessar
+Acesse: http://localhost:8000/
 
-Abra http://localhost:8000 no navegador.
+## Endpoints úteis
 
-## Estrutura do Projeto
+- `GET /` landing
+- `GET /app` aplicação
+- `GET /health` (e `/api/v1/health`) status + conectividade do banco
+- `GET /metrics` (e `/api/v1/metrics`) métricas Prometheus
+- `POST /auth/register`, `POST /auth/login`, etc. (também em `/api/v1/auth/*`)
+- APIs principais em `/api/v1/*`: `areas`, `tasks`, `sessoes`, `gamification-summary`, `missions`, `stats/heatmap`, `stats/analytics`, rotas sociais etc.
 
-```
-Cronograma(Projeto)/
-├── cronograma/
-│   ├── app/
-│   │   ├── main.py              # API FastAPI + banco + gamificação
-│   │   ├── static/
-│   │   │   ├── index.html       # Interface principal
-│   │   │   ├── style.css        # Estilos + temas
-│   │   │   ├── app.js           # Lógica do frontend
-│   │   │   ├── store.js         # Estado global + gamificação
-│   │   │   ├── foco.js          # Timer Pomodoro
-│   │   │   ├── auth.js          # Autenticação
-│   │   │   └── theme.js         # Gerenciador de temas
-│   │   └── cronograma.db        # Banco SQLite
-│   ├── requirements.txt
-│   ├── docker-compose.yml
-│   └── Dockerfile
-├── icon_images/                 # Ícones do projeto
-└── README.md
+## Testes
+
+Os testes rodam a partir de `cronograma/app` (imports esperam esse contexto):
+
+```bash
+cd cronograma/app
+pytest -q
+# ou, usando venv específico:
+# ../venv/bin/python -m pytest -q
 ```
 
-## API Endpoints
+Validação rápida recomendada antes de deploy:
+- `test_security_headers.py`
+- `test_api.py`
+- `test_e2e_critical.py`
+- `test_email_verification.py`
+- `test_password_reset.py`
+- `test_token_revocation.py`
+- `test_rate_limit_persist.py`
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| POST | `/auth/register` | Registrar usuário |
-| POST | `/auth/login` | Login (retorna JWT) |
-| POST | `/auth/guest` | Login como convidado (cria guest no banco, retorna JWT com claim `guest:true`) |
-| POST | `/auth/upgrade` | Upgrade de convidado para conta real (mesma linha/user_id, email + senha reais) |
-| POST | `/auth/refresh` | Rotaciona access/refresh tokens (cookie ou body) |
-| POST | `/auth/logout-all` | Encerra todas as sessões (incrementa `token_version`) |
-| GET | `/auth/check` | Verificar autenticação atual |
-| GET | `/areas` | Listar áreas |
-| POST | `/areas` | Criar área |
-| PATCH | `/areas/{id}` | Atualizar área |
-| DELETE | `/areas/{id}` | Deletar área |
-| GET | `/tasks` | Listar tarefas |
-| POST | `/tasks` | Criar tarefa |
-| PATCH | `/tasks/{id}` | Atualizar tarefa |
-| DELETE | `/tasks/{id}` | Deletar tarefa |
-| GET | `/sessoes` | Listar sessões |
-| POST | `/sessoes` | Criar sessão |
-| GET | `/sessoes/resumo` | Resumo por período |
-| POST | `/pomodoro/completar` | Completar pomodoro |
-| GET | `/gamification-summary` | Resumo de gamificação |
-| POST | `/coins/buy-freeze` | Comprar freeze (10 coins) |
+## Deploy (Render)
 
-## Gamificação
+`render.yaml` define:
+- `rootDir: cronograma`
+- build: `pip install -r requirements.txt`
+- start: `cd app && uvicorn main:app --host 0.0.0.0 --port $PORT --forwarded-allow-ips=""`
 
-- **XP:** minutos estudados + 5 XP por tarefa concluída
-- **Level:** `XP = 100 × level^1.5`
-- **Coins:** +3 por pomodoro, +1 a cada 10min de sessão
-- **Streak:** dias consecutivos com estudo (freezes disponíveis)
-- **Achievements:** categorias XP, streak, pomodoro, tasks, level, coins
+Segredos/configurações sensíveis devem ser definidos no dashboard do Render (nunca versionados).
+
+## Organização local (nota)
+
+- **Repo de desenvolvimento ativo:** `~/projetos/cronograma` (este diretório).
+- **Pasta paralela no Desktop:** `~/Desktop/code_study/MeusProjetos/Cronograma(Projeto)` contém artefatos/backup (`cronograma.divergent.bak-*`, waitlist) e não deve ser tratada como fonte atual sem verificação; evite operações destrutivas ao reconciliar.
 
 ## Licença
 

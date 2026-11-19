@@ -45,10 +45,10 @@ def _db_user(email: str) -> User:
 
 async def _register_and_login(client, email: str = EMAIL) -> str:
     await client.post(
-        "/auth/register", json={"email": email, "password": PASSWORD}
+        "/api/v1/auth/register", json={"email": email, "password": PASSWORD}
     )
     r = await client.post(
-        "/auth/login", json={"email": email, "password": PASSWORD}
+        "/api/v1/auth/login", json={"email": email, "password": PASSWORD}
     )
     assert r.status_code == 200
     return r.json()["access_token"]
@@ -62,18 +62,18 @@ async def _reset_password(client, monkeypatch, email: str = EMAIL) -> None:
         "send_password_reset_email",
         lambda to, token: sent.append(token) or True,
     )
-    r = await client.post("/auth/forgot-password", json={"email": email})
+    r = await client.post("/api/v1/auth/forgot-password", json={"email": email})
     assert r.status_code == 200 and len(sent) == 1
 
     r = await client.post(
-        "/auth/reset-password", json={"token": sent[0], "password": NEW_PASSWORD}
+        "/api/v1/auth/reset-password", json={"token": sent[0], "password": NEW_PASSWORD}
     )
     assert r.status_code == 200
 
 
 async def _check(client, access_token: str) -> int:
     r = await client.get(
-        "/auth/check", headers={"Authorization": f"Bearer {access_token}"}
+        "/api/v1/auth/check", headers={"Authorization": f"Bearer {access_token}"}
     )
     return r.status_code
 
@@ -89,7 +89,7 @@ async def test_reset_password_revokes_old_access_token(client, monkeypatch):
     assert await _check(client, "token-invalido") == 401
 
     r = await client.post(
-        "/auth/login", json={"email": EMAIL, "password": NEW_PASSWORD}
+        "/api/v1/auth/login", json={"email": EMAIL, "password": NEW_PASSWORD}
     )
     assert r.status_code == 200
     assert await _check(client, r.json()["access_token"]) == 200
@@ -104,7 +104,7 @@ async def test_reset_password_revokes_old_refresh_token(client, monkeypatch):
     await _reset_password(client, monkeypatch)
 
     r = await client.post(
-        "/auth/refresh", json={"refresh_token": old_refresh}
+        "/api/v1/auth/refresh", json={"refresh_token": old_refresh}
     )
     assert r.status_code == 401
 
@@ -115,14 +115,14 @@ async def test_logout_all_revokes_current_and_refresh_tokens(client):
     old_refresh = client.cookies.get("refresh_token")
 
     r = await client.post(
-        "/auth/logout-all", headers={"Authorization": f"Bearer {token}"}
+        "/api/v1/auth/logout-all", headers={"Authorization": f"Bearer {token}"}
     )
     assert r.status_code == 200
 
     assert await _check(client, token) == 401
 
     r = await client.post(
-        "/auth/refresh", json={"refresh_token": old_refresh}
+        "/api/v1/auth/refresh", json={"refresh_token": old_refresh}
     )
     assert r.status_code == 401
 

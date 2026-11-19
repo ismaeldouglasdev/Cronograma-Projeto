@@ -191,8 +191,17 @@ async function fetchWithAuthRetry(url, options) {
   return r;
 }
 
+function toApiPath(url) {
+  if (typeof url !== "string") return url;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/api/") || url.startsWith("/auth/") || url.startsWith("/static/") || url.startsWith("/icon_images/") || url.startsWith("/metrics") || url.startsWith("/health")) {
+    return url;
+  }
+  return "/api/v1" + (url.startsWith("/") ? url : "/" + url);
+}
+
 async function get(url) {
-  const r = await fetchWithAuthRetry(API + url, { headers: getAuthHeader() });
+  const r = await fetchWithAuthRetry(API + toApiPath(url), { headers: getAuthHeader() });
   if (r.status === 401) { handleAuthFailure(); throw new Error("Unauthorized"); }
   if (!r.ok) {
     const text = await r.text();
@@ -204,7 +213,7 @@ async function get(url) {
 }
 
 async function post(url, body) {
-  const r = await fetchWithAuthRetry(API + url, {
+  const r = await fetchWithAuthRetry(API + toApiPath(url), {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getAuthHeader() },
     body: JSON.stringify(body),
@@ -220,7 +229,7 @@ async function post(url, body) {
 }
 
 async function patch(url, body) {
-  const r = await fetchWithAuthRetry(API + url, {
+  const r = await fetchWithAuthRetry(API + toApiPath(url), {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...getAuthHeader() },
     body: JSON.stringify(body),
@@ -236,7 +245,7 @@ async function patch(url, body) {
 }
 
 async function delReq(url) {
-  const r = await fetchWithAuthRetry(API + url, { method: "DELETE", headers: getAuthHeader() });
+  const r = await fetchWithAuthRetry(API + toApiPath(url), { method: "DELETE", headers: getAuthHeader() });
   if (r.status === 401) { handleAuthFailure(); throw new Error("Unauthorized"); }
   if (!r.ok) throw new Error(r.statusText);
   return null;

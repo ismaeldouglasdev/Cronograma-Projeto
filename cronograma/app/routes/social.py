@@ -17,6 +17,7 @@ from services.social_service import (
     get_club_members,
     get_friends,
     get_friend_requests,
+    get_friends_activity,
     get_leaderboard,
     get_sent_friend_requests,
     get_user_activity,

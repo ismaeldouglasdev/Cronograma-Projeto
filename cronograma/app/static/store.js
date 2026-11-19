@@ -99,7 +99,7 @@ const AppStore = (function() {
   async function buyFreeze() {
     try {
       const token = localStorage.getItem('cronograma_token');
-      const response = await fetch('/coins/buy-freeze', {
+      const response = await fetch('/api/v1/coins/buy-freeze', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token }
       });
@@ -256,7 +256,7 @@ const AppStore = (function() {
       const token = localStorage.getItem('cronograma_token');
       if (!token) return false;
       
-      const response = await fetch('/gamification-summary', {
+      const response = await fetch('/api/v1/gamification-summary', {
         headers: {
           'Authorization': 'Bearer ' + token
         }

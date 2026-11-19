@@ -33,12 +33,21 @@ async def client():
 
 @pytest_asyncio.fixture
 async def auth_headers(client):
-    await client.post(
-        "/auth/register",
+    """Registra, verifica e loga um usuário, retorna headers com token."""
+    # Register
+    r_reg = await client.post(
+        "/api/v1/auth/register",
         json={"email": "stress@example.com", "password": "Stress1234!@"},
     )
+    fallback_token = r_reg.json().get("fallback_token")
+
+    # Verify if needed
+    if fallback_token:
+        await client.post("/api/v1/auth/verify-email", json={"token": fallback_token})
+
+    # Login
     r = await client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         json={"email": "stress@example.com", "password": "Stress1234!@"},
     )
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
@@ -50,7 +59,7 @@ async def test_50_concurrent_creates(client, auth_headers):
 
     async def create(i):
         return await client.post(
-            "/areas",
+            "/api/v1/areas",
             json={"nome": f"Area-{i}", "cor": "#000"},
             headers=auth_headers,
         )
@@ -68,12 +77,12 @@ async def test_50_concurrent_creates(client, auth_headers):
 async def test_50_concurrent_deletes_same_resource(client, auth_headers):
     """50 DELETEs da MESMA área - deve ser idempotente (sem 500)."""
     r = await client.post(
-        "/areas", json={"nome": "RaceTarget"}, headers=auth_headers
+        "/api/v1/areas", json={"nome": "RaceTarget"}, headers=auth_headers
     )
     area_id = r.json()["id"]
 
     async def delete():
-        return await client.delete(f"/areas/{area_id}", headers=auth_headers)
+        return await client.delete(f"/api/v1/areas/{area_id}", headers=auth_headers)
 
     results = await asyncio.gather(*[delete() for _ in range(50)])
 
@@ -90,11 +99,11 @@ async def test_50_concurrent_reads(client, auth_headers):
     # Pre-populate
     for i in range(5):
         await client.post(
-            "/areas", json={"nome": f"R-{i}"}, headers=auth_headers
+            "/api/v1/areas", json={"nome": f"R-{i}"}, headers=auth_headers
         )
 
     async def read():
-        return await client.get("/areas", headers=auth_headers)
+        return await client.get("/api/v1/areas", headers=auth_headers)
 
     results = await asyncio.gather(*[read() for _ in range(50)])
 
@@ -107,13 +116,13 @@ async def test_50_concurrent_reads(client, auth_headers):
 async def test_50_concurrent_pomodoros(client, auth_headers):
     """50 pomodoros concorrentes - verifica que não há 5xx e coins contados corretamente."""
     r = await client.post(
-        "/areas", json={"nome": "P"}, headers=auth_headers
+        "/api/v1/areas", json={"nome": "P"}, headers=auth_headers
     )
     area_id = r.json()["id"]
 
     async def pom():
         return await client.post(
-            "/pomodoro/completar",
+            "/api/v1/pomodoro/completar",
             json={"area_id": area_id, "duracao_minutos": 25},
             headers=auth_headers,
         )
@@ -126,7 +135,7 @@ async def test_50_concurrent_pomodoros(client, auth_headers):
     # SQLite serializes; some will fail with 500 but our fix catches them
     assert len(success) >= 25, f"Too many failures: {len(success)}/50 succeeded"
 
-    r2 = await client.get("/gamification-summary", headers=auth_headers)
+    r2 = await client.get("/api/v1/gamification-summary", headers=auth_headers)
     coins = r2.json()["coins"]
     # Each successful pomodoro = 3 coins
     assert coins == len(success) * 3, f"Coins mismatch: {coins} vs {len(success)*3}"
@@ -138,7 +147,7 @@ async def test_50_concurrent_registers(client):
     """50 registros em paralelo (rate limit 5/min será atingido)."""
     async def reg(i):
         return await client.post(
-            "/auth/register",
+            "/api/v1/auth/register",
             json={"email": f"r{i}@example.com", "password": "Test1234!@"},
         )
 
@@ -161,7 +170,7 @@ async def test_mixed_workload_50(client, auth_headers):
     ids = []
     for i in range(10):
         r = await client.post(
-            "/areas", json={"nome": f"Base-{i}"}, headers=auth_headers
+            "/api/v1/areas", json={"nome": f"Base-{i}"}, headers=auth_headers
         )
         ids.append(r.json()["id"])
 
@@ -169,18 +178,18 @@ async def test_mixed_workload_50(client, auth_headers):
         op = i % 4
         if op == 0:
             return await client.post(
-                "/areas", json={"nome": f"M-{i}"}, headers=auth_headers
+                "/api/v1/areas", json={"nome": f"M-{i}"}, headers=auth_headers
             )
         if op == 1:
-            return await client.get("/areas", headers=auth_headers)
+            return await client.get("/api/v1/areas", headers=auth_headers)
         if op == 2:
             return await client.patch(
-                f"/areas/{ids[i % 10]}",
+f"/api/v1/areas/{ids[i % 10]}",
                 json={"nome": f"U-{i}"},
                 headers=auth_headers,
             )
         return await client.delete(
-            f"/areas/{ids[i % 10]}", headers=auth_headers
+            f"/api/v1/areas/{ids[i % 10]}", headers=auth_headers
         )
 
     results = await asyncio.gather(*[mixed(i) for i in range(50)])

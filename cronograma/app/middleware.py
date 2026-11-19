@@ -17,7 +17,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
-from config import CORS_ORIGINS
+from config import CORS_ORIGINS, RATE_LIMIT_TRUSTED_HEADERS, RATE_LIMIT_REJECT_PRIVATE_IPS
 from logger import get_logger, log_request
 
 log = get_logger("cronograma.main")
@@ -314,25 +314,31 @@ def get_client_ip(request) -> str:
     produção, 8 requests com `X-Forwarded-For` variando passaram todos, com
     limite de 5/min.
 
-    Ordem de confiança:
+    Ordem de confiança (configurável via RATE_LIMIT_TRUSTED_HEADERS):
       1. CF-Connecting-IP — a Cloudflare SUBSTITUI esse header pelo IP real do
          visitante (nunca anexa o valor do cliente). Confirmado que a Cloudflare
          esta na frente: todo response volta com `server: cloudflare` + `cf-ray`.
-      2. Peer TCP — nunca falsificavel. O startCommand desliga a confiança em
+      2. X-Real-IP — nginx/proxy padrão.
+      3. Peer TCP — nunca falsificável. O startCommand desliga a confiança em
          X-Forwarded-For (`--forwarded-allow-ips=""`) justamente para que
-         `request.client.host` seja o peer de verdade e nao um header.
+         `request.client.host` seja o peer de verdade e não um header.
 
-    X-Forwarded-For e ignorado de proposito: nenhuma das entradas dele e
-    confiavel quando o cliente pode escolher o proprio header.
+    X-Forwarded-For é ignorado de propósito: nenhuma das entradas dele é
+    confiável quando o cliente pode escolher o próprio header.
 
-    Ressalva: se a Cloudflare um dia sair de frente, todo mundo cai no peer TCP
+    Ressalva: se a Cloudflare sair da frente, todo mundo cai no peer TCP
     (compartilhado no Render) e o limite volta a ser global em vez de por IP.
-    Nesse caso o certo e apontar um proxy proprio ou trocar a estrategia.
+    Nesse caso o certo é apontar um proxy próprio ou trocar a estratégia.
+    Configurável via RATE_LIMIT_REJECT_PRIVATE_IPS (default: true).
     """
-    connecting_ip = request.headers.get("cf-connecting-ip")
-    if connecting_ip and not _is_private(connecting_ip):
-        return connecting_ip
+    # Tenta headers confiáveis em ordem de prioridade
+    for header in RATE_LIMIT_TRUSTED_HEADERS:
+        header_lower = header.lower()
+        ip = request.headers.get(header_lower)
+        if ip and not (RATE_LIMIT_REJECT_PRIVATE_IPS and _is_private(ip)):
+            return ip
 
+    # Fallback: peer TCP (request.client.host)
     return request.client.host if request.client else "unknown"
 
 
