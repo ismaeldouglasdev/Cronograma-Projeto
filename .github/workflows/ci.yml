@@ -31,4 +31,13 @@ jobs:
       - name: Run tests
         working-directory: cronograma/app
         run: |
-          python -m pytest test_api.py test_stress.py -v --timeout=60
+          python -m pytest \
+            test_security_headers.py \
+            test_e2e_critical.py \
+            test_token_revocation.py \
+            test_email_verification.py \
+            test_password_reset.py \
+            test_api.py \
+            test_rate_limit_persist.py \
+            test_stress.py \
+            -v --timeout=120
