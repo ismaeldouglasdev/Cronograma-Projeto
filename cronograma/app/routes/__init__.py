@@ -1,4 +1,4 @@
-"""Pacote de rotas do Cronograma."""
+"""Pacote de rotas do Ritmo Exato."""
 
 from routes.auth import router as auth_router
 from routes.areas import router as areas_router

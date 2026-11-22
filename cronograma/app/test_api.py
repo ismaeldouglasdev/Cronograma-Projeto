@@ -1,4 +1,4 @@
-"""Testes automatizados da API do Cronograma de Estudos.
+"""Testes automatizados da API do Ritmo Exato.
 
 Cobre: auth, areas, tasks, sessoes, gamificacao, coins, rate limit.
 """

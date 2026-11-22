@@ -17,7 +17,7 @@ from logger import get_logger
 email_log = get_logger("cronograma.email")
 
 RESEND_API_URL = "https://api.resend.com/emails"
-DEFAULT_FROM = "Cronograma <onboarding@resend.dev>"
+DEFAULT_FROM = "Ritmo Exato <onboarding@resend.dev>"
 
 
 def is_configured() -> bool:
@@ -72,7 +72,7 @@ def send_verification_email(to: str, token: str) -> bool:
     html = (
         "<div style='font-family:sans-serif;max-width:480px;margin:0 auto;'>"
         "<h2>Confirme seu e-mail</h2>"
-        "<p>Olá! Criei sua conta no Cronograma de Estudos. "
+        "<p>Olá! Criei sua conta no Ritmo Exato. "
         "Para ativar, confirme este e-mail clicando no botão abaixo:</p>"
         f"<p style='text-align:center;margin:28px 0;'>"
         f"<a href='{link}' style='background:#4f46e5;color:#fff;"
@@ -82,7 +82,7 @@ def send_verification_email(to: str, token: str) -> bool:
         "ignore esta mensagem.</p></div>"
     )
     text_body = f"Confirme seu e-mail acessando: {link}"
-    ok = _send(to, "Confirme seu e-mail — Cronograma", html, text_body)
+    ok = _send(to, "Confirme seu e-mail — Ritmo Exato", html, text_body)
     if ok:
         # Só o preview do token (8 chars) — o token cru jamais entra em log.
         email_log.info(
@@ -107,7 +107,7 @@ def send_password_reset_email(to: str, token: str) -> bool:
         "Se você não pediu esta redefinição, ignore esta mensagem.</p></div>"
     )
     text_body = f"Redefina sua senha acessando: {link}"
-    ok = _send(to, "Redefinição de senha — Cronograma", html, text_body)
+    ok = _send(to, "Redefinição de senha — Ritmo Exato", html, text_body)
     if ok:
         email_log.info(
             "Password reset email sent",

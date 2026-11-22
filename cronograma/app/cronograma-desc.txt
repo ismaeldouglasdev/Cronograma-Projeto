@@ -1,8 +1,8 @@
-# Cronograma - Sistema de Gerenciamento de Estudos
+# Ritmo Exato - Sistema de Gerenciamento de Estudos
 
 ## Visão Geral
 
-O Cronograma é um sistema web completo para gerenciamento de estudos, desenvolvido com FastAPI (backend) e Vanilla JS (frontend). O aplicativo permite gerenciar áreas de estudo, tarefas com prioridades, quadro de horários presenciais, sessões de estudo e um timer Pomodoro integrado.
+O Ritmo Exato é um sistema web completo para gerenciamento de estudos, desenvolvido com FastAPI (backend) e Vanilla JS (frontend). O aplicativo permite gerenciar áreas de estudo, tarefas com prioridades, quadro de horários presenciais, sessões de estudo e um timer Pomodoro integrado.
 
 ---
 
@@ -53,12 +53,12 @@ O sistema utiliza um tema escuro moderno com as seguintes cores:
 └─────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────┐
-│              Cronograma                     │
+│             Ritmo Exato                     │
 │         Organize seus estudos                │
 └─────────────────────────────────────────────┘
 ```
 
-- Título "Cronograma" centralizado
+- Título "Ritmo Exato" centralizado
 - Subtítulo "Organize seus estudos"
 - Widget Pomodoro integrado no header
 

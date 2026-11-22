@@ -1,5 +1,5 @@
 """
-Configurações centralizadas do Cronograma App.
+Configurações centralizadas do Ritmo Exato App.
 
 Exporta engine, session, Base, dependências HTTP, constantes JWT,
 e diretórios estáticos. Substitui as variáveis globais espalhadas

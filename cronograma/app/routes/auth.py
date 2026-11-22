@@ -114,7 +114,7 @@ def _verify_page(
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
         "<title>"
         + escape(title)
-        + " — Cronograma</title><style>"
+        + " — Ritmo Exato</title><style>"
         "body{font-family:system-ui,sans-serif;background:#0f172a;color:#e2e8f0;"
         "display:flex;justify-content:center;align-items:center;min-height:100vh;"
         "margin:0}.card{background:#1e293b;border-radius:12px;padding:2rem;"

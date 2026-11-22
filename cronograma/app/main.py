@@ -1,5 +1,5 @@
 """
-Cronograma App — Entry Point.
+Ritmo Exato App — Entry Point.
 
 FastAPI setup, startup, middleware, routers.
 A lógica de negócio ficou em services/, models/, routes/.

@@ -1,5 +1,5 @@
 """
-Sistema de Logging Estruturado para Cronograma App.
+Sistema de Logging Estruturado para Ritmo Exato App.
 
 Recursos:
 - Logs em formato JSON para fácil parse

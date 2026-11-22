@@ -1,1 +1,1 @@
-"""Pacote de serviços do Cronograma."""
+"""Pacote de serviços do Ritmo Exato."""
