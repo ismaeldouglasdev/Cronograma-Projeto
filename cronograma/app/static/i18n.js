@@ -1,5 +1,5 @@
 /**
- * i18n - Internationalization System for Cronograma
+ * i18n - Internationalization System for Ritmo Exato
  * Supports pt-BR (default) and English
  * Auto-detects browser language and falls back to localStorage 'app_lang'
  */
@@ -8,8 +8,8 @@ const i18n = {
   'pt-BR': {
     // Landing page
     landing: {
-      page_title: 'Cronograma: seu plano de estudos gamificado',
-      nav_acessar: 'Acessar Cronograma',
+      page_title: 'Ritmo Exato: seu plano de estudos gamificado',
+      nav_acessar: 'Acessar Ritmo Exato',
       hero_title: 'Seus estudos,',
       hero_title_highlight: 'com disciplina e prova disso',
       hero_desc: 'Organize mat\u00e9rias e prazos, estude com Pomodoro e evolua com XP, conquistas e competi\u00e7\u00e3o com amigos. Gr\u00e1tis para sempre. Sem an\u00fancios.',
@@ -26,7 +26,7 @@ const i18n = {
       feature5_desc: 'Monte sua grade semanal com aulas presenciais e online, com sala, hor\u00e1rio e professor.',
       feature6_title: 'Streak & Moedas',
       feature6_desc: 'Mantenha a sequ\u00eancia de estudos, ganhe moedas, compre freezes e n\u00e3o perca o ritmo.',
-      footer: 'Cronograma \u00b7 Gr\u00e1tis para sempre \u00b7 C\u00f3digo aberto (MIT)',
+      footer: 'Ritmo Exato \u00b7 Gr\u00e1tis para sempre \u00b7 C\u00f3digo aberto (MIT)',
       nav_recursos: 'Recursos',
       nav_como: 'Como funciona',
       nav_faq: 'FAQ',
@@ -46,7 +46,7 @@ const i18n = {
       cta_desc: 'Comece em 1 minuto, sem cadastro. Salve seu progresso quando quiser.',
       cta_btn: 'Experimentar sem cadastro',
       faq_title: 'Perguntas frequentes',
-      faq1_q: 'O Cronograma \u00e9 gratuito?',
+      faq1_q: 'O Ritmo Exato \u00e9 gratuito?',
       faq1_a: 'Sim, o plano Free \u00e9 gr\u00e1tis para sempre e sem an\u00fancios. O Pro (R$ 20/m\u00eas) est\u00e1 em fase final de prepara\u00e7\u00e3o, com recursos avan\u00e7ados de dados e produtividade.',
       faq2_q: 'Preciso criar uma conta para usar?',
       faq2_a: 'N\u00e3o para come\u00e7ar: use o modo convidado e, quando quiser salvar seu progresso, crie a conta em 1 clique (Google) e nada se perde.',
@@ -74,9 +74,9 @@ const i18n = {
 
     // Auth forms
     auth: {
-      page_title: 'Cronograma - Meus Estudos',
-      cronograma_title: 'Cronograma',
-      cronograma_subtitle: 'Organize seus estudos',
+      page_title: 'Ritmo Exato - Meus Estudos',
+      cronograma_title: 'Ritmo Exato',
+      cronograma_subtitle: 'O ritmo certo para cada fase do seu estudo.',
       login_title: 'Entrar',
       register_title: 'Criar conta',
       verify_title: 'Verificar Email',
@@ -601,8 +601,8 @@ btn_iniciar: 'Iniciar',
 
   'en': {
     landing: {
-      page_title: 'Cronograma: your gamified study planner',
-      nav_acessar: 'Access Cronograma',
+      page_title: 'Ritmo Exato: your gamified study planner',
+      nav_acessar: 'Access Ritmo Exato',
       hero_title: 'Your studies,',
       hero_title_highlight: 'with discipline and proof',
       hero_desc: 'Organize subjects and deadlines, focus with Pomodoro, and level up with XP, achievements, and friendly competition. Free forever. No ads.',
@@ -619,7 +619,7 @@ btn_iniciar: 'Iniciar',
       feature5_desc: 'Build your weekly schedule with in-person and online classes, room, time, and professor.',
       feature6_title: 'Streak & Coins',
       feature6_desc: 'Keep your study streak, earn coins, buy freezes, and never lose your rhythm.',
-      footer: 'Cronograma \u00b7 Free forever \u00b7 Open source (MIT)',
+      footer: 'Ritmo Exato \u00b7 Free forever \u00b7 Open source (MIT)',
       nav_recursos: 'Features',
       nav_como: 'How it works',
       nav_faq: 'FAQ',
@@ -639,7 +639,7 @@ btn_iniciar: 'Iniciar',
       cta_desc: 'Start in 1 minute, no signup. Save your progress whenever you want.',
       cta_btn: 'Try without signup',
       faq_title: 'Frequently asked questions',
-      faq1_q: 'Is Cronograma free?',
+      faq1_q: 'Is Ritmo Exato free?',
       faq1_a: 'Yes, the Free plan is free forever and has no ads. Pro (R$ 20/month) is in its final preparation, with advanced data and productivity features.',
       faq2_q: 'Do I need to create an account to use it?',
       faq2_a: 'Not to start: use guest mode and, when you want to save your progress, create an account in one click (Google) and nothing is lost.',
@@ -666,9 +666,9 @@ btn_iniciar: 'Iniciar',
     },
 
     auth: {
-      page_title: 'Cronograma - My Studies',
-      cronograma_title: 'Cronograma',
-      cronograma_subtitle: 'Organize your studies',
+      page_title: 'Ritmo Exato - My Studies',
+      cronograma_title: 'Ritmo Exato',
+      cronograma_subtitle: 'The right pace for every stage of your study.',
       login_title: 'Sign In',
       register_title: 'Create Account',
       verify_title: 'Verify Email',

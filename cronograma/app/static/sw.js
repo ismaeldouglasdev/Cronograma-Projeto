@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cronograma-v2';
+const CACHE_NAME = 'ritmoexato-v1';
 const STATIC_ASSETS = [
   '/app',
   '/static/index.html',
