@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Gerador de Conteudo - Cronograma Pro
+Gerador de Conteudo - Ritmo Exato Pro
 Gera posts prontos para redes sociais (Instagram, TikTok, Twitter/X).
 Uso: python content_generator.py --type tip --platform instagram
 """
@@ -55,7 +55,7 @@ TIPS = [
             "1. Revisa so os pontos-chave\n"
             "2. Faz simulados dos ultimos anos\n"
             "3. Dorme bem (de verdade)\n\n"
-            "Metodo comprovado: revisao espacada. O Cronograma Pro faz isso "
+            "Metodo comprovado: revisao espacada. O Ritmo Exato Pro faz isso "
             "por voce automaticamente."
         ),
         "hashtags": ["estudo", "estudante_br", "cronograma_pro"],
@@ -67,7 +67,7 @@ TIPS = [
             "VAZIO MENTAL? Quando a cabeca travar, muda de materia.\n\n"
             "Estudar a mesma coisa por horas gera fadiga cognitiva. "
             "Alterne entre materias diferentes pra manter o cerebro ativo.\n\n"
-            "O Cronograma Pro alterna automaticamente pra voce."
+            "O Ritmo Exato Pro alterna automaticamente pra voce."
         ),
         "hashtags": ["produtividade", "estudo"],
         "horario": "12:00 - 13:00",
@@ -100,7 +100,7 @@ TIPS = [
             "ERREU A PROVA? O erro e seu MELHOR professor.\n\n"
             "Cada erro revela uma lacuna. Anota o erro, entende o por que errou, "
             "e revisa esse ponto em 1 dia, 7 dias e 30 dias.\n\n"
-            "Isso se chama revisao espacada. O Cronograma Pro faz isso "
+            "Isso se chama revisao espacada. O Ritmo Exato Pro faz isso "
             "automaticamente."
         ),
         "hashtags": ["estudo", "estudante_br", "cronograma_pro"],
@@ -210,7 +210,7 @@ ANNOUNCEMENTS = [
     },
     {
         "caption": (
-            "NOVIDADE: o Cronograma Pro sera GAMIFICADO.\n\n"
+            "NOVIDADE: o Ritmo Exato Pro sera GAMIFICADO.\n\n"
             "XP por materia, niveis de estudo, conquistas desbloqueaveis.\n"
             "Estudar nunca mais vai ser a mesma coisa.\n\n"
             "Garanta vaga na waitlist"
@@ -232,7 +232,7 @@ ANNOUNCEMENTS = [
     },
     {
         "caption": (
-            "PRIMEIRO PASSO: o Cronograma Pro vai sugerir materias com base "
+            "PRIMEIRO PASSO: o Ritmo Exato Pro vai sugerir materias com base "
             "no tempo restante ate sua prova.\n\n"
             "Mais tempo = mais materias. Menos tempo = foco no que mais cai.\n\n"
             "Simple. Effective. Automatizado."
@@ -312,7 +312,7 @@ TESTIMONIALS = [
         "caption": (
             "EXEMPLO DE DEPOIMENTO (criado para demonstracao)\n\n"
             "Nunca tinha conseguido manter um cronograma por mais de 2 semanas. "
-            "Com o Cronograma Pro, nao preciso pensar - ele monta e eu so sigo. "
+            "Com o Ritmo Exato Pro, nao preciso pensar - ele monta e eu so sigo. "
             "Me sinto muito mais organizada.\n"
             "  Maria, 22 anos, estudando para concursos\n\n"
             "#depoimento #cronogramapro #estudantebr"
@@ -325,7 +325,7 @@ TESTIMONIALS = [
         "caption": (
             "EXEMPLO DE DEPOIMENTO (criado para demonstracao)\n\n"
             "Eu tentava montar cronograma no notion e no excel. Nada funcionava. "
-            "O Cronograma Pro fez em 2 minutos o que eu nao consegui em 2 anos. "
+            "O Ritmo Exato Pro fez em 2 minutos o que eu nao consegui em 2 anos. "
             "Simples assim.\n"
             "  Pedro, 20 anos, vestibulando\n\n"
             "#depoimento #cronogramapro"
@@ -492,7 +492,7 @@ def gerar_calendario(dias: int = 7, plataforma: str = "instagram") -> str:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Gerador de conteudo para redes sociais - Cronograma Pro",
+        description="Gerador de conteudo para redes sociais - Ritmo Exato Pro",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent("""\
             Exemplos de uso:

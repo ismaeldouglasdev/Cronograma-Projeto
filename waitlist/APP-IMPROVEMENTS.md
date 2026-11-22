@@ -1,4 +1,4 @@
-# Melhorias para o Cronograma Pro - Priorizadas por Impacto
+# Melhorias para o Ritmo Exato Pro - Priorizadas por Impacto
 
 > **Objetivo:** Identificar melhorias que aumentam o valor percebido do app, geram engajamento diario e justificam a conversao de waitlist para SaaS pago.
 >
@@ -10,13 +10,13 @@
 
 ## Resumo Executivo
 
-O Cronograma tem uma base solida (Pomodoro, gamificacao, organizacao por areas), mas **faltam features que facam o usuario voltar todo dia** e **elementos de "wow factor"** que justifiquem o posicionamento premium. Os concorrentes mais bem-sucedidos (Duolingo, Forest, Study-Track) investem pesado em: (1) visualizacao de progresso, (2) competicao social, (3) analytics que geram insight, e (4) automacao inteligente.
+O Ritmo Exato tem uma base solida (Pomodoro, gamificacao, organizacao por areas), mas **faltam features que facam o usuario voltar todo dia** e **elementos de "wow factor"** que justifiquem o posicionamento premium. Os concorrentes mais bem-sucedidos (Duolingo, Forest, Study-Track) investem pesado em: (1) visualizacao de progresso, (2) competicao social, (3) analytics que geram insight, e (4) automacao inteligente.
 
 A prioridade maxima deve ser: **heatmap de atividade + missoes diarias + leaderboard** — juntos, esses 3 recursos transformam o app de "ferramenta passiva" em "companheiro ativo de estudo".
 
 ### Gaps Criticos Identificados no App Atual
 
-| O que o Cronograma tem | O que falta (vs. concorrentes) |
+| O que o Ritmo Exato tem | O que falta (vs. concorrentes) |
 |---|---|
 | Timer Pomodoro basico | Sons ambiente, modo floresta (Forest) |
 | Streak numerico | Calendario visual de atividade (heatmap) |

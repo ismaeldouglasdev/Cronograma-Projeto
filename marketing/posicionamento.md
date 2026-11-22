@@ -1,4 +1,4 @@
-# Posicionamento — Cronograma (cronograma-projeto.onrender.com)
+# Posicionamento — Ritmo Exato (cronograma-projeto.onrender.com)
 
 > Estratégia de posicionamento para venda do SaaS. Documento de marketing — **não altera código.**
 > Data: 2026-11-14 · Baseado em: app público (/app), landing (onrender.com/), README.md/README.en.md, AGENTS.md, render.yaml, `waitlist/CONTENT-STRATEGY.md`, `waitlist/APP-IMPROVEMENTS.md`, repo GitHub `ismaeldouglasdev/Cronograma-Projeto`.
@@ -8,7 +8,7 @@
 
 ## O que o produto é (fatos verificados)
 
-**Cronograma** é um sistema web de gerenciamento de estudos (FastAPI + PostgreSQL em produção, frontend Vanilla JS + Chart.js) com:
+**Ritmo Exato** é um sistema web de gerenciamento de estudos (FastAPI + PostgreSQL em produção, frontend Vanilla JS + Chart.js) com:
 
 - **Organização:** áreas/matérias (cor, categoria, tipo online/presencial, com sala/bloco/professor/horário para aulas presenciais), tarefas com prioridade, data de entrega e meta de pomodoros, quadro de horários semanal.
 - **Foco:** timer Pomodoro configurável (foco/descanso), som ambiente, descanso automático, meta de pomodoros por tarefa.
@@ -155,7 +155,7 @@
 ## 4. Declaração de posicionamento
 
 > Para **universitários brasileiros** que precisam conciliar muitas matérias, aulas presenciais, estágio e prazos — e que já tentaram se organizar sozinhos e não mantiveram a rotina —
-> o **Cronograma** é um **plano de estudos gamificado (web)** que **organiza matérias, tarefas e horários e usa XP, streaks, missões diárias e competição entre amigos para manter a consistência de estudo**.
+> o **Ritmo Exato** é um **plano de estudos gamificado (web)** que **organiza matérias, tarefas e horários e usa XP, streaks, missões diárias e competição entre amigos para manter a consistência de estudo**.
 > Diferente de **planilhas e cadernos** (que não medem tempo nem motivam) e de **apps de pomodoro isolados** (que não enxergam o semestre inteiro), ele **junta organização, foco e motivação em um único lugar — grátis e open source**.
 
 ---
@@ -169,7 +169,7 @@
 
 | Ângulo | Variação |
 |---|---|
-| Dor | "Chega de noite de prova em cima do prazo: o Cronograma te mostra o que estudar e quando — antes do desespero." |
+| Dor | "Chega de noite de prova em cima do prazo: o Ritmo Exato te mostra o que estudar e quando — antes do desespero." |
 | Resultado | "Passe o semestre sabendo exatamente quantas horas cada matéria te consumiu — e por que sua rotina funcionou (ou não)." |
 | Velocidade | "Da primeira sessão de foco em menos de 1 minuto, sem criar conta — e quando quiser, o progresso vira conta salva." |
 | Custo | "O que planilha + caderno + 4 apps separados tentam fazer, em um só lugar: grátis e sem anúncios." |
@@ -197,7 +197,7 @@
 ### 8 objeções prováveis + respostas honestas
 
 1. **"Já uso planilha / Google Calendar."**
-   *"Planilha organiza, mas não registra o tempo que você realmente estuda, não te mostra onde está atrasado e não te faz voltar amanhã. O Cronograma mede e motiva — que é o que falha na planilha."*
+   *"Planilha organiza, mas não registra o tempo que você realmente estuda, não te mostra onde está atrasado e não te faz voltar amanhã. O Ritmo Exato mede e motiva — que é o que falha na planilha."*
 
 2. **"Não vou manter mais um app."**
    *"Não precisa. Você entra como convidado, faz um pomodoro em 1 minuto e sai. Se voltar, o progresso continua lá — e só vira conta quando você quiser."*
@@ -218,7 +218,7 @@
    *"Senha com hash, tokens JWT com revogação de sessão, login Google, verificação de email e recuperação de senha. E por ser open source, o tratamento de dados é auditável."*
 
 8. **"Já uso Forest / Focus To-Do."**
-   *"Eles resolvem o foco de uma sessão. O Cronograma faz isso **e** organiza o semestre: matérias, prazos, horas por área e competição com amigos. Uma peça em vez de quatro."*
+   *"Eles resolvem o foco de uma sessão. O Ritmo Exato faz isso **e** organiza o semestre: matérias, prazos, horas por área e competição com amigos. Uma peça em vez de quatro."*
 
 ---
 

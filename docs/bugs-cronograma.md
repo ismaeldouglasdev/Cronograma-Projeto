@@ -1,8 +1,8 @@
-# Relatório de Bugs e Inconsistências - Cronograma
+# Relatório de Bugs e Inconsistências - Ritmo Exato
 
 **Data:** 2026-10-30  
 **Analisado por:** Devin AI  
-**Projeto:** Cronograma - Sistema de gerenciamento de estudos com gamificação
+**Projeto:** Ritmo Exato - Sistema de gerenciamento de estudos com gamificação
 
 ---
 

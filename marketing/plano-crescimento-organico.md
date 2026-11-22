@@ -1,4 +1,4 @@
-# Plano de Crescimento Orgânico — Cronograma
+# Plano de Crescimento Orgânico — Ritmo Exato
 
 > Como vender o SaaS com marketing 100% orgânico. Complementa `marketing/posicionamento.md` (o "o quê" e "para quem").
 > Data: 2026-11-14 · **Regra:** nada de números, clientes ou features inventados; o que não existe está marcado **«a validar»**.
@@ -162,7 +162,7 @@ Pro — R$ 20/mês · em breve
 ```
 
 **FAQ (atualizar respostas):**
-- "O Cronograma é gratuito?" → *"Sim — o plano Free é grátis para sempre e sem anúncios. Existe o Pro (R$ 20/mês), em fase final de preparação, com recursos avançados de dados e produtividade."*
+- "O Ritmo Exato é gratuito?" → *"Sim — o plano Free é grátis para sempre e sem anúncios. Existe o Pro (R$ 20/mês), em fase final de preparação, com recursos avançados de dados e produtividade."*
 - "Preciso criar conta?" → *"Não para começar: use o modo convidado e, quando quiser salvar seu progresso, crie a conta em 1 clique (Google) — nada se perde."*
 - "Como funciona a gamificação?" → manter resposta atual.
 - "O que é o streak?" → manter resposta atual.

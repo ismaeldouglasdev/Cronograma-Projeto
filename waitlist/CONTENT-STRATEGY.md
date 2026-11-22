@@ -1,6 +1,6 @@
-# Estratégia de Conteúdo — Cronograma Pro
+# Estratégia de Conteúdo — Ritmo Exato Pro
 
-> **Objetivo**: Gerar tráfego orgânico para o Cronograma (cronograma-projeto.onrender.com/app), construir comunidade e ativar usuários entre estudantes brasileiros universitários. (Atualizado em 2026-11-15: o CTA aponta direto para o app — a waitlist antiga está fora do ar.)
+> **Objetivo**: Gerar tráfego orgânico para o Ritmo Exato (cronograma-projeto.onrender.com/app), construir comunidade e ativar usuários entre estudantes brasileiros universitários. (Atualizado em 2026-11-15: o CTA aponta direto para o app — a waitlist antiga está fora do ar.)
 
 ---
 
@@ -12,7 +12,7 @@
 - Empatia primeiro, dica depois
 - Nunca prometer milagre ("seus 4 semestres atrasados vão se resolver")
 - Humor leve sobre a bagunça que é a vida universitária
-- Dados e funcionalidades reais do Cronograma como prova social
+- Dados e funcionalidades reais do Ritmo Exato como prova social
 
 ---
 
@@ -22,10 +22,10 @@
 
 **O que**: Técnicas comprovadas de estudo aplicadas à rotina real de universitário brasileiro.
 
-**Por que funciona**: Studants pesquisam "como estudar" o tempo inteiro. Se você entrega valor genuíno + mostra como o Cronograma facilita, ganha confiança antes de vender.
+**Por que funciona**: Studants pesquisam "como estudar" o tempo inteiro. Se você entrega valor genuíno + mostra como o Ritmo Exato facilita, ganha confiança antes de vender.
 
 **Exemplos de posts**:
-- "Pomodoro não é bala de prata, mas funciona se você adaptar" (Reels mostrando timer configurável do Cronograma)
+- "Pomodoro não é bala de prata, mas funciona se você adaptar" (Reels mostrando timer configurável do Ritmo Exato)
 - "Espaçamento de revisões: como não esquecer tudo antes da prova" (Carrossel com cronograma visual)
 - "Ativação ativa vs. releitura passiva: qual produz resultado de verdade?" (Reels comparativo)
 - "Como organizar revisões pra FUVEST/ENEM/ENAP com espaçamento" (Carrossel seasonal)
@@ -38,7 +38,7 @@
 
 **O que**: Transformar estudo em jogo — XP, streaks, conquistas, coins. Mostrar que focar pode ser viciante do mesmo jeito que um jogo.
 
-**Por que funciona**: Universitário de 18-25 anos cresceu com gamificação. O Cronograma já tem XP, levels, streaks, coins, achievements, freezes. Isso é conteúdo puro.
+**Por que funciona**: Universitário de 18-25 anos cresceu com gamificação. O Ritmo Exato já tem XP, levels, streaks, coins, achievements, freezes. Isso é conteúdo puro.
 
 **Exemplos de posts**:
 - "Fiz um sistema onde você ganha XP por estudar. Meu nível subiu pra 12 e agora tô viciado" (Reels com tela do app)
@@ -52,13 +52,13 @@
 
 ### Pilar 3: Rotina de Estudos 📋
 
-**O que**: Mostrar rotinas reais (ou realistas) de estudantes e como o Cronograma encaixa nelas.
+**O que**: Mostrar rotinas reais (ou realistas) de estudantes e como o Ritmo Exato encaixa nelas.
 
 **Por que funciona**: Universitário quer ver gente como ele funcionando. Não modelo perfeito, não coach de produtividade. Alguém que tem aula às 7h, estágio à tarde e ainda precisa estudar.
 
 **Exemplos de posts**:
 - "Rotina de quem faz período integral + estágio e ainda precisa passar em 6 matérias" (Reels tipo "um dia na minha vida")
-- "Como eu organizo minhas provas da semana no Cronograma" (Reels screencast)
+- "Como eu organizo minhas provas da semana no Ritmo Exato" (Reels screencast)
 - "Horário de aula + tempo de deslocamento + estudo + vida = como encaixar?" (Carrossel com quadro de horários do app)
 - "Pra quem tá no noturno e só tem manhã: como otimizar" (Reels com dicas práticas)
 
@@ -68,12 +68,12 @@
 
 ### Pilar 4: Dicas de Produtividade 🚀
 
-**O que**: Dicas gerais de organização, produtividade e bem-estar acadêmico, com encaixe natural do Cronograma como ferramenta.
+**O que**: Dicas gerais de organização, produtividade e bem-estar acadêmico, com encaixe natural do Ritmo Exato como ferramenta.
 
 **Por que funciona**: Alcance mais amplo. Quem não tá na faculdade mas tá estudando pra concurso também curte. Serve como porta de entrada pra audiência que depois converte.
 
 **Exemplos de posts**:
-- "5 app que todo universitário deveria ter no celular" (Carrossel com Cronograma como destaque)
+- "5 app que todo universitário deveria ter no celular" (Carrossel com Ritmo Exato como destaque)
 - "Não é preguiça, é overwhelmed: como lidar com sobrecarga de matérias" (Post de texto empático)
 - "A técnica do '2 minutos': se dá pra começar agora, começa" (Reels curto com demo)
 - "Como eu parei de procrastinar na tese (dica: não é motivação)" (Reels storytelling)
@@ -101,7 +101,7 @@
 
 | Dia | Pilar | Conteúdo | Formato | Plataforma |
 |-----|-------|----------|---------|------------|
-| **Seg** | Estudo Inteligente | "Pomodoro não funciona pra todo mundo. Mas se você adaptar o tempo, muda tudo." + demo do timer configurável do Cronograma | 🎬 🎵 | IG Reels + TikTok |
+| **Seg** | Estudo Inteligente | "Pomodoro não funciona pra todo mundo. Mas se você adaptar o tempo, muda tudo." + demo do timer configurável do Ritmo Exato | 🎬 🎵 | IG Reels + TikTok |
 | **Seg** | Produtividade | "Amanhã começa a semana. Qual matéria mais te assusta?" | 🐦 | X/Twitter |
 | **Ter** | Gamificação | "Ganhei 47 coins ontem só de fazer pomodoro. Pra quê servem? Coins compram freezes pra manter seu streak vivo" | 📑 | IG Carrossel |
 | **Ter** | Rotina | "Enquete: você estuda melhor de manhã, à tarde ou de noite?" | 📖 | IG Stories |
@@ -109,11 +109,11 @@
 | **Qua** | Estudo Inteligente | "Releitura é o menor dos métodos de estudo. Ativação ativa rende 2x mais em menos tempo" | 🐦 | X/Twitter |
 | **Qui** | Gamificação | "Subi do nível 5 pro 8 numa semana de provas. O app transforma desespero em XP" | 📸 | IG Post |
 | **Qui** | Produtividade | "O app que todo universitário precisa e não sabe que existe (spoiler: é grátis)" | 🐦 | X/Twitter |
-| **Sex** | Estudo Inteligente | "Espaçamento de revisões: como não esquecer tudo antes da prova. Template incluso no Cronograma" | 📑 | IG Carrossel |
+| **Sex** | Estudo Inteligente | "Espaçamento de revisões: como não esquecer tudo antes da prova. Template incluso no Ritmo Exato" | 📑 | IG Carrossel |
 | **Sex** | Rotina | "Caixinha: me mande como tá sua rotina de estudos essa semana" | 📖 | IG Stories |
 | **Sáb** | Gamificação | "Streak de 14 dias. Se eu quebrar amanhã, perco tudo. É assim que o app te mantém na hedonia" | 🎬 🎵 | IG Reels + TikTok |
-| **Sáb** | Produtividade | "Prova da semana que vem + projeto + monitoria = overwhelmd. Respira e abre o Cronograma" | 🐦 | X/Twitter |
-| **Dom** | Rotina | "Domingo é dia de planejar a semana no Cronograma. Sério, 10 minutos mudam tudo" | 📸 | IG Post |
+| **Sáb** | Produtividade | "Prova da semana que vem + projeto + monitoria = overwhelmd. Respira e abre o Ritmo Exato" | 🐦 | X/Twitter |
+| **Dom** | Rotina | "Domingo é dia de planejar a semana no Ritmo Exato. Sério, 10 minutos mudam tudo" | 📸 | IG Post |
 | **Dom** | Estudo Inteligente | "Quem já tentou estudar 8h seguidas e lembra de 0.5h? Pomodoro existe por motivo" | 🐦 | X/Twitter |
 
 ---
@@ -122,7 +122,7 @@
 
 | Dia | Pilar | Conteúdo | Formato | Plataforma |
 |-----|-------|----------|---------|------------|
-| **Seg** | Rotina | "Playlist do estudo + Cronograma = combo que me salvou na reta final. Manda a playlist que você usa" | 🎬 🎵 | IG Reels + TikTok |
+| **Seg** | Rotina | "Playlist do estudo + Ritmo Exato = combo que me salvou na reta final. Manda a playlist que você usa" | 🎬 🎵 | IG Reels + TikTok |
 | **Seg** | Gamificação | "Conquista desbloqueada: 'Primeiro Pomodoro'. A partir daí é vício" | 🐦 | X/Twitter |
 | **Ter** | Estudo Inteligente | "Como usar o quadro de horários pra não perder nenhuma entrega" | 🎬 🎵 | TikTok (demo tela) |
 | **Ter** | Produtividade | "Enquete: quantas matérias você tá cursando esse semestre?" | 📖 | IG Stories |
@@ -130,11 +130,11 @@
 | **Qua** | Rotina | "Matérias do noturno + resumo da manhã = como organizar quando o dia tem 25 horas" | 🐦 | X/Twitter |
 | **Qui** | Estudo Inteligente | "5 técnicas de estudo que funcionam de verdade, sem papinho de coach" | 📑 | IG Carrossel |
 | **Qui** | Gamificação | "Se o Instagram gamifica likes, por que não gamificar seus estudos?" | 🐦 | X/Twitter |
-| **Sex** | Rotina | "Chegou a prova. De quanto eu estudei? Olho no dashboard do Cronograma e sei exatamente" | 🎬 🎵 | IG Reels + TikTok |
+| **Sex** | Rotina | "Chegou a prova. De quanto eu estudei? Olho no dashboard do Ritmo Exato e sei exatamente" | 🎬 🎵 | IG Reels + TikTok |
 | **Sex** | Produtividade | "Frase da sexta: organizar não é gastar tempo, é comprar tempo de volta" | 📸 | IG Post |
 | **Sáb** | Gamificação | "Level 20 desbloqueado. Tô virando monstro nas matérias e nem percebi" | 🎬 🎵 | IG Reels + TikTok |
 | **Sáb** | Estudo Inteligente | "Dica do fim de semana: revisa o que estudou na semana com espaçamento. 15 min bastam" | 🐦 | X/Twitter |
-| **Dom** | Rotina | "Domingo de planejamento. Cadê o Cronograma? Link na bio — é grátis" | 📸 | IG Post (CTA direto) |
+| **Dom** | Rotina | "Domingo de planejamento. Cadê o Ritmo Exato? Link na bio — é grátis" | 📸 | IG Post (CTA direto) |
 | **Dom** | Produtividade | "Domingo é dia de descanso E de planejar. Faz as duas coisas" | 🐦 | X/Twitter |
 
 ---
@@ -158,7 +158,7 @@ Tô no nível 12. Meu amigo tá no 7. A competição tá real.
 Quer testar? Lista de espera aberta 👇
 ```
 
-**Hashtags**: #CronogramaPro #EstudarComGamificação #GamificacaoDeEstudos #PomodoroApp #EstudarNaFaculdade #RotinaDeEstudos #UniversitarioBR #AppDeEstudos #StreakDeEstudos #XPDeEstudo
+**Hashtags**: #RitmoExatoPro #EstudarComGamificação #GamificacaoDeEstudos #PomodoroApp #EstudarNaFaculdade #RotinaDeEstudos #UniversitarioBR #AppDeEstudos #StreakDeEstudos #XPDeEstudo
 
 **CTA**: "Link na bio — o app é grátis"
 
@@ -180,13 +180,13 @@ Slide 3: Repetição espaçada (revisar em intervalos crescentes)
 Slide 4: Interleaving (misturar matérias no mesmo estudo)
 Slide 5: Elaboração (explicar em voz alta ou por escrito)
 Slide 6: Dual coding (texto + imagem juntos)
-Slide 7: "Onde o Cronograma Pro te ajuda com isso" (demo do timer + revisões)
+Slide 7: "Onde o Ritmo Exato Pro te ajuda com isso" (demo do timer + revisões)
 Slide 8: CTA — "Quer aplicar isso sem complicação? App grátis no link da bio"
 
 Salva esse post. Vai precisar antes da próxima prova.
 ```
 
-**Hashtags**: #MetodoDeEstudo #AtivacaoAtiva #RepeticaoEspacada #EstudarMelhor #CronogramaPro #ComoEstudar #DicaDeEstudo #UniversitarioBR #ProvaFacul #TecnicaDeEstudo
+**Hashtags**: #MetodoDeEstudo #AtivacaoAtiva #RepeticaoEspacada #EstudarMelhor #RitmoExatoPro #ComoEstudar #DicaDeEstudo #UniversitarioBR #ProvaFacul #TecnicaDeEstudo
 
 ---
 
@@ -198,7 +198,7 @@ Salva esse post. Vai precisar antes da próxima prova.
 ```
 Domingo de planejamento.
 
-10 minutos com o Cronograma Pro e eu sei exatamente:
+10 minutos com o Ritmo Exato Pro e eu sei exatamente:
 - Quais provas vêm semana que vem
 - Quanto tempo tenho pra cada matéria
 - Onde tô atrasado e onde tô em dia
@@ -208,7 +208,7 @@ Quem não planeja, planeja pra falhar (e eu já falhei o suficiente pra saber di
 Planeja a tua semana. É grátis e funciona.
 ```
 
-**Hashtags**: #DomingoDeEstudo #PlanejamentoSemanal #CronogramaPro #OrganizacaoAcademica #UniversitarioOrganizado #RotinaDeEstudos #EstudarNaoEAlternativa #ProvaProxima #AppDeEstudos #SundayStudy
+**Hashtags**: #DomingoDeEstudo #PlanejamentoSemanal #RitmoExatoPro #OrganizacaoAcademica #UniversitarioOrganizado #RotinaDeEstudos #EstudarNaoEAlternativa #ProvaProxima #AppDeEstudos #SundayStudy
 
 ---
 
@@ -220,7 +220,7 @@ Planeja a tua semana. É grátis e funciona.
 ```
 Um dia na minha vida: período integral + estágio à tarde + prova de Cálculo na sexta.
 
-6h30 — acordo, café, revisão rápida no Cronograma
+6h30 — acordo, café, revisão rápida no Ritmo Exato
 7h00 — aula de Cálculo (o bicho papão)
 10h00 — intervalo, pomodoro de 25 min no celular
 12h00 — almoço + mais um pomodoro
@@ -233,7 +233,7 @@ Não é perfeito. Mas pelo menos agora eu sei onde tô gastando meu tempo.
 Quer ver quanto tempo você REALMENTE estuda? Lista de espera na bio.
 ```
 
-**Hashtags**: #DiaNaMinhaVida #UniversitarioBR #RotinaDeEstudos #PeriodoIntegral #CronogramaPro #EstudarTrabalhando #PomodoroNaPratica #VidaUniversitaria #ProvaDeCalculo #OrganizarTempo
+**Hashtags**: #DiaNaMinhaVida #UniversitarioBR #RotinaDeEstudos #PeriodoIntegral #RitmoExatoPro #EstudarTrabalhando #PomodoroNaPratica #VidaUniversitaria #ProvaDeCalculo #OrganizarTempo
 
 ---
 
@@ -252,7 +252,7 @@ a diferença é que aqui você cresce de verdade.
 https://cronograma-projeto.onrender.com/app
 ```
 
-**Hashtags** (no reply/thread): #CronogramaPro #Gamificacao #EstudarEQueSeFoda
+**Hashtags** (no reply/thread): #RitmoExatoPro #Gamificacao #EstudarEQueSeFoda
 
 ---
 
@@ -264,7 +264,7 @@ https://cronograma-projeto.onrender.com/app
 ```
 5 apps que todo universitário deveria ter no celular (e nenhum é rede social)
 
-1. Cronograma Pro — organizar horários, tarefas e estudos com gamificação
+1. Ritmo Exato Pro — organizar horários, tarefas e estudos com gamificação
 2. Google Calendar — compromissos que não podem escapar
 3. Notion ou Obsidian — anotações e resumos
 4. Forest ou Focus To-Do — Pomodoro com bloqueio de app
@@ -275,7 +275,7 @@ O primeiro da lista é o que mais mudou minha rotina. E tá em fase de lista de 
 Quer começar? Link na bio — é grátis.
 ```
 
-**Hashtags**: #AppsParaEstudar #FerramentasDeEstudo #UniversitarioBR #CronogramaPro #ProdutividadeAcademica #AppRecomendado #EstudarComTech #Faculdade #OrganizarEstudos #DicaDeApp
+**Hashtags**: #AppsParaEstudar #FerramentasDeEstudo #UniversitarioBR #RitmoExatoPro #ProdutividadeAcademica #AppRecomendado #EstudarComTech #Faculdade #OrganizarEstudos #DicaDeApp
 
 ---
 
@@ -289,14 +289,14 @@ VOCÊ NÃO SABE QUANTO TEMPO REALMENTE ESTUDA.
 
 Eu achava que estudava 4h por dia. Cronometrei. Eram 1h40 de foco real e 2h20 no celular.
 
-O Pomodoro do Cronograma Pro me mostrou isso. E aí você adapta o timer: 25min foco, 5min pausa. Ou 20/5. Ou 45/10. Cada um tem seu ritmo.
+O Pomodoro do Ritmo Exato Pro me mostrou isso. E aí você adapta o timer: 25min foco, 5min pausa. Ou 20/5. Ou 45/10. Cada um tem seu ritmo.
 
 O importante é: pare de contar horas e comece a contar pomodoros completados.
 
 Quer descobrir quanto tempo você REALMENTE foca? Link na bio.
 ```
 
-**Hashtags**: #FocoReal #Pomodoro #TempoDeFoco #CronogramaPro #EstudarDeVerdade #UniversitarioBR #ComoEstudar #Produtividade #MetodoDeEstudo #TempoReal
+**Hashtags**: #FocoReal #Pomodoro #TempoDeFoco #RitmoExatoPro #EstudarDeVerdade #UniversitarioBR #ComoEstudar #Produtividade #MetodoDeEstudo #TempoReal
 
 ---
 
@@ -306,7 +306,7 @@ Quer descobrir quanto tempo você REALMENTE foca? Link na bio.
 
 **Legenda**:
 ```
-Meu quadro de horários no Cronograma Pro.
+Meu quadro de horários no Ritmo Exato Pro.
 
 Cada cor é uma matéria. Cada slot é um compromisso. E entre as aulas? Pomodoros.
 
@@ -318,7 +318,7 @@ Agora eu vejo tudo no mesmo lugar.
 Planeja a tua semana. É grátis.
 ```
 
-**Hashtags**: #QuadroDeHorarios #OrganizacaoAcademica #CronogramaPro #HorarioDeAula #UniversitarioBR #MatériasDaFaculdade #RotinaDeEstudos #AppDeOrganizacao #Faculdade #EstudarOrganizado
+**Hashtags**: #QuadroDeHorarios #OrganizacaoAcademica #RitmoExatoPro #HorarioDeAula #UniversitarioBR #MatériasDaFaculdade #RotinaDeEstudos #AppDeOrganizacao #Faculdade #EstudarOrganizado
 
 ---
 
@@ -330,7 +330,7 @@ Planeja a tua semana. É grátis.
 ```
 CONQUISTA DESBLOQUEADA: "Primeiro Pomodoro" 🏆
 
-Quando você completa seu primeiro pomodoro no Cronograma Pro, ganha uma conquista.
+Quando você completa seu primeiro pomodoro no Ritmo Exato Pro, ganha uma conquista.
 
 Parece bobagem. Mas aquela sensação de "desbloquear" algo... você quer o próximo.
 
@@ -342,7 +342,7 @@ Gamificação não é brincadeira. É ciência comportamental aplicada.
 Quer começar? Link na bio 👇
 ```
 
-**Hashtags**: #ConquistaDesbloqueada #GamificacaoDeEstudos #CronogramaPro #Pomodoro #StreakDeEstudos #NivelDeEstudo #UniversitarioBR #MotivacaoDeEstudo #AppDeEstudos #XPEstudo
+**Hashtags**: #ConquistaDesbloqueada #GamificacaoDeEstudos #RitmoExatoPro #Pomodoro #StreakDeEstudos #NivelDeEstudo #UniversitarioBR #MotivacaoDeEstudo #AppDeEstudos #XPEstudo
 
 ---
 
@@ -367,7 +367,7 @@ thread: 5 coisas que eu faria diferente se voltasse pro primeiro ano da faculdad
 quer começar agora? https://cronograma-projeto.onrender.com/app — é grátis
 ```
 
-**Hashtags**: #PrimeiroAno #DicaDeFaculdade #CronogramaPro #LiçõesAprendidas #UniversitarioBR #EstudarMelhor #HabitoDeEstudo #ProdutividadeAcademica #Organizacao #Thread
+**Hashtags**: #PrimeiroAno #DicaDeFaculdade #RitmoExatoPro #LiçõesAprendidas #UniversitarioBR #EstudarMelhor #HabitoDeEstudo #ProdutividadeAcademica #Organizacao #Thread
 
 ---
 
@@ -375,8 +375,8 @@ quer começar agora? https://cronograma-projeto.onrender.com/app — é grátis
 
 ### Hashtags de Marca (usar em TODOS os posts)
 ```
-#CronogramaPro
-#CronogramaProApp
+#RitmoExatoPro
+#RitmoExatoProApp
 ```
 
 ### Hashtags de Nicho (Rotacionar, 5-8 por post)
@@ -390,7 +390,7 @@ quer começar agora? https://cronograma-projeto.onrender.com/app — é grátis
 #ProvaFacul               #RettaFinalFaculdade
 #EstudarMelhor            #TempoDeFoco
 #ProdutividadeAcademica   #FocoNosEstudos
-#CronogramaDeEstudos      #QuadroDeHorarios
+#RitmoExato      #QuadroDeHorarios
 ```
 
 ### Hashtags de Alcance (usar 3-5 por post pra reach orgânico)
@@ -431,9 +431,9 @@ quer começar agora? https://cronograma-projeto.onrender.com/app — é grátis
 
 ### Desafios e Campanhas
 
-11. **#Desafio7DiasDeEstudo**: 7 dias seguidos estudando com pomodoro, print do streak, marca o Cronograma
-12. **#MeuNívelNoCronograma**: quem postar print do nível ganha destaque nos stories
-13. **#ProvouNoCronograma**: compartilhar resultado de prova depois de usar o app pra estudar
+11. **#Desafio7DiasDeEstudo**: 7 dias seguidos estudando com pomodoro, print do streak, marca o Ritmo Exato
+12. **#MeuNívelNoRitmoExato**: quem postar print do nível ganha destaque nos stories
+13. **#ProvouNoRitmoExato**: compartilhar resultado de prova depois de usar o app pra estudar
 
 ---
 
@@ -511,5 +511,5 @@ https://cronograma-projeto.onrender.com/app?utm_source=twitter&utm_medium=bio&ut
 
 ---
 
-*Documento criado em 11/09/2026 para o projeto Cronograma Pro — Lista de Espera.*
+*Documento criado em 11/09/2026 para o projeto Ritmo Exato Pro — Lista de Espera.*
 *Foco: conteúdo orgânico para validar demanda do SaaS.*

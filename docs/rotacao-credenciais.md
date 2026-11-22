@@ -82,7 +82,7 @@ Render → serviço `cronograma-projeto` → **Environment**:
 
 ### 3. Supabase
 
-1. <https://supabase.com> → o projeto de destino dos dados do Cronograma
+1. <https://supabase.com> → o projeto de destino dos dados do Ritmo Exato
 2. **Project Settings → Database → Reset database password**
 3. Copie a connection string nova.
 

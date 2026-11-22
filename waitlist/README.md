@@ -1,6 +1,6 @@
-# Cronograma Pro — Lista de Espera
+# Ritmo Exato Pro — Lista de Espera
 
-Landing page para validar demanda do Cronograma Pro (versão SaaS).
+Landing page para validar demanda do Ritmo Exato Pro (versão SaaS).
 
 ## Setup do Formspree
 

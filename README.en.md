@@ -2,13 +2,13 @@
   <a href="README.md">🇧🇷 Português</a> &nbsp;|&nbsp; <strong>🇺🇸 English</strong>
 </p>
 
-# Study Schedule
+# Ritmo Exato
 
 🔗 **Live site:** [cronograma-projeto.onrender.com](https://cronograma-projeto.onrender.com/)
 
 Complete study management system with integrated Pomodoro timer, hour tracking, class timetable, and gamification.
 
-![Cronograma](screenshots/cronograma-en.png)
+![Ritmo Exato](screenshots/cronograma-en.png)
 
 ## Stack
 

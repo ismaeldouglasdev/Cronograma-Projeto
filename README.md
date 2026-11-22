@@ -1,4 +1,4 @@
-# Cronograma de Estudos
+# Ritmo Exato
 
 Sistema de gerenciamento de estudos com timer Pomodoro, tarefas, metas por área, gamificação e estatísticas.
 

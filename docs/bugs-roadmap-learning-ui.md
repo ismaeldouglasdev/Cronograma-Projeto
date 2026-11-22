@@ -1,6 +1,6 @@
 # Relatório de Bugs - roadmap-learning-ui (Projeto Incorreto)
 
-> **Nota:** Este relatório foi gerado para o projeto `roadmap-learning-ui` por engano. O projeto correto é `cronograma`. Este arquivo foi preservado para referência, mas não deve ser usado para o projeto Cronograma.
+> **Nota:** Este relatório foi gerado para o projeto `roadmap-learning-ui` por engano. O projeto correto é `cronograma`. Este arquivo foi preservado para referência, mas não deve ser usado para o projeto Ritmo Exato.
 
 ---
 

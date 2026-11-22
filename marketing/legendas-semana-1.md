@@ -1,6 +1,6 @@
 # Legendas — Semana 1 (prontas para publicar)
 
-> Lote 1 de conteúdo orgânico para o Cronograma (cronograma-projeto.onrender.com/app).
+> Lote 1 de conteúdo orgânico para o Ritmo Exato (cronograma-projeto.onrender.com/app).
 > Data: 2026-11-15 · Complementa `waitlist/CONTENT-STRATEGY.md` (que já tem o calendário de 2 semanas).
 
 ## Regras desta semana
@@ -29,7 +29,7 @@ tô competindo na liga com a galera da minha sala. a disputa tá real.
 e o melhor: é grátis e sem anúncio. testa em 1 minuto, sem nem criar conta 👇
 ```
 
-**Hashtags:** #CronogramaPro #EstudarComGamificacao #PomodoroApp #StreakDeEstudos #UniversitarioBR #AppDeEstudos #XPDeEstudo #RotinaDeEstudos
+**Hashtags:** #RitmoExatoPro #EstudarComGamificacao #PomodoroApp #StreakDeEstudos #UniversitarioBR #AppDeEstudos #XPDeEstudo #RotinaDeEstudos
 
 ---
 
@@ -44,7 +44,7 @@ e o melhor: é grátis e sem anúncio. testa em 1 minuto, sem nem criar conta �
 4. Interleaving — misturar matérias na mesma sessão
 5. Elaboração — explicar em voz alta ou por escrito
 6. Dual coding — texto + imagem juntos
-7. "Onde o Cronograma te ajuda": timer pomodoro com meta por tarefa + registro de horas por matéria (tela real)
+7. "Onde o Ritmo Exato te ajuda": timer pomodoro com meta por tarefa + registro de horas por matéria (tela real)
 8. "Quer aplicar sem complicação? O app é grátis — link na bio"
 
 **Legenda:**

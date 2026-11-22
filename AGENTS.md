@@ -1,4 +1,4 @@
-# Cronograma Project
+# Ritmo Exato Project
 
 ## Visão Geral
 Sistema de gerenciamento de tarefas e estudos com timer Pomodoro integrado, tracking de horas de estudo, quadro de horários de aulas e sistema completo de gamificação (XP, coins, achievements, streak).
