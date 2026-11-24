@@ -4,7 +4,7 @@
 
 # Ritmo Exato
 
-🔗 **Live site:** [cronograma-projeto.onrender.com](https://cronograma-projeto.onrender.com/)
+🔗 **Live site:** [ritmo-exato.onrender.com](https://ritmo-exato.onrender.com/)
 
 Complete study management system with integrated Pomodoro timer, hour tracking, class timetable, and gamification.
 

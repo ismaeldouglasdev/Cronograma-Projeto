@@ -49,7 +49,7 @@ boca a boca (liga)     (zero fricção)                   reengajamento (email)
 
 ### TOPO — aquisição (100% orgânico)
 
-1. **Conteúdo social (IG + TikTok + X).** A estratégia de 2 semanas já está pronta em `waitlist/CONTENT-STRATEGY.md`. **Ajuste necessário:** o CTA dos posts deve apontar para o app (`cronograma-projeto.onrender.com/app`), não para a waitlist morta. Pilares que mais vendem aqui: gamificação (tela do app como prova) e rotina real.
+1. **Conteúdo social (IG + TikTok + X).** A estratégia de 2 semanas já está pronta em `waitlist/CONTENT-STRATEGY.md`. **Ajuste necessário:** o CTA dos posts deve apontar para o app (`ritmo-exato.onrender.com/app`), não para a waitlist morta. Pilares que mais vendem aqui: gamificação (tela do app como prova) e rotina real.
 2. **SEO via blog próprio.** O usuário tem um blog bilíngue ativo (Hugo, ismaeltech.com) com tráfego e postagem automática diária. Propor posts-alvo: "como montar um cronograma de estudos", "app de estudos com pomodoro", "técnica pomodoro adaptada", com link natural para o produto. **«a validar»**: posição atual do blog no Google.
 3. **GitHub / open source.** O repo público (`ismaeldouglasdev/Cronograma-Projeto`, MIT) é um canal: estudante de TI encontra, usa, estrela e indica. Manter README com screenshot e link ao vivo; abrir issues boas para contribuidores = engajamento de comunidade (e conteúdo).
 4. **Boca a boca por loop viral (já construído).** Amigos, clubes e ligas fazem o convite competitivo: "entra na minha liga, bora ver quem estuda mais". É o motor de crescimento mais barato e já funciona no produto. Pedir o convite no momento em que o usuário sobe de liga/streak.

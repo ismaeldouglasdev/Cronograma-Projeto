@@ -2,7 +2,7 @@
 
 Sistema de gerenciamento de estudos com timer Pomodoro, tarefas, metas por área, gamificação e estatísticas.
 
-- **Produção:** https://cronograma-projeto.onrender.com/
+- **Produção:** https://ritmo-exato.onrender.com/
 - **Repositório:** https://github.com/ismaeldouglasdev/Cronograma-Projeto
 - **Stack:** FastAPI + SQLAlchemy (SQLite local / PostgreSQL em produção) + frontend estático (Vanilla JS)
 

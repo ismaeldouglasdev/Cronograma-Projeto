@@ -1,6 +1,6 @@
 # Estratégia de Conteúdo — Ritmo Exato Pro
 
-> **Objetivo**: Gerar tráfego orgânico para o Ritmo Exato (cronograma-projeto.onrender.com/app), construir comunidade e ativar usuários entre estudantes brasileiros universitários. (Atualizado em 2026-11-15: o CTA aponta direto para o app — a waitlist antiga está fora do ar.)
+> **Objetivo**: Gerar tráfego orgânico para o Ritmo Exato (ritmo-exato.onrender.com/app), construir comunidade e ativar usuários entre estudantes brasileiros universitários. (Atualizado em 2026-11-15: o CTA aponta direto para o app — a waitlist antiga está fora do ar.)
 
 ---
 
@@ -249,7 +249,7 @@ ganha XP por estudar. sobe de nível. desbloqueia conquistas.
 
 a diferença é que aqui você cresce de verdade.
 
-https://cronograma-projeto.onrender.com/app
+https://ritmo-exato.onrender.com/app
 ```
 
 **Hashtags** (no reply/thread): #RitmoExatoPro #Gamificacao #EstudarEQueSeFoda
@@ -364,7 +364,7 @@ thread: 5 coisas que eu faria diferente se voltasse pro primeiro ano da faculdad
 
 5/ pediria ajuda antes de acumular 3 matérias atrasadas. o app mostra onde você tá perdendo tempo.
 
-quer começar agora? https://cronograma-projeto.onrender.com/app — é grátis
+quer começar agora? https://ritmo-exato.onrender.com/app — é grátis
 ```
 
 **Hashtags**: #PrimeiroAno #DicaDeFaculdade #RitmoExatoPro #LiçõesAprendidas #UniversitarioBR #EstudarMelhor #HabitoDeEstudo #ProdutividadeAcademica #Organizacao #Thread
@@ -488,9 +488,9 @@ quer começar agora? https://cronograma-projeto.onrender.com/app — é grátis
 
 Adicionar UTM em todo link:
 ```
-https://cronograma-projeto.onrender.com/app?utm_source=instagram&utm_medium=stories&utm_campaign=waitlist
-https://cronograma-projeto.onrender.com/app?utm_source=tiktok&utm_medium=bio&utm_campaign=waitlist
-https://cronograma-projeto.onrender.com/app?utm_source=twitter&utm_medium=bio&utm_campaign=waitlist
+https://ritmo-exato.onrender.com/app?utm_source=instagram&utm_medium=stories&utm_campaign=waitlist
+https://ritmo-exato.onrender.com/app?utm_source=tiktok&utm_medium=bio&utm_campaign=waitlist
+https://ritmo-exato.onrender.com/app?utm_source=twitter&utm_medium=bio&utm_campaign=waitlist
 ```
 
 ---

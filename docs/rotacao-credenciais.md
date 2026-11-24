@@ -98,7 +98,7 @@ Se o app também usa o Supabase, crie/atualize a variável correspondente que o
 
 ```bash
 # app responde
-curl -sI https://cronograma-projeto.onrender.com/ | head -1
+curl -sI https://ritmo-exato.onrender.com/ | head -1
 
 # nenhum warning de JWT_SECRET nos logs
 # Render -> Logs -> procurar "JWT_SECRET ausente"

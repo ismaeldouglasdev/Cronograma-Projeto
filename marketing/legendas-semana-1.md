@@ -1,11 +1,11 @@
 # Legendas — Semana 1 (prontas para publicar)
 
-> Lote 1 de conteúdo orgânico para o Ritmo Exato (cronograma-projeto.onrender.com/app).
+> Lote 1 de conteúdo orgânico para o Ritmo Exato (ritmo-exato.onrender.com/app).
 > Data: 2026-11-15 · Complementa `waitlist/CONTENT-STRATEGY.md` (que já tem o calendário de 2 semanas).
 
 ## Regras desta semana
 
-1. **CTA sempre para o app:** `cronograma-projeto.onrender.com/app` — nada de waitlist.
+1. **CTA sempre para o app:** `ritmo-exato.onrender.com/app` — nada de waitlist.
 2. **Prova real:** todo vídeo mostra a tela do app em ação (screencast). Tela real > mockup. Nunca foto stock de "aluno sorrindo".
 3. **Honestidade:** as falas em 1ª pessoa são **cenas de demonstração** (o que um usuário faz no app), não depoimentos de terceiros. Não usar números de usuários, métricas ou resultados acadêmicos inventados.
 4. **Tom:** o colega de faculdade que sabe se organizar. Não é professor, não é coach. Humor leve sobre a bagunça da vida universitária.
@@ -118,7 +118,7 @@ ganha XP por estudar. sobe de nível. desbloqueia conquistas.
 
 a diferença é que aqui você cresce de verdade.
 
-cronograma-projeto.onrender.com/app — grátis, sem anúncio e open source
+ritmo-exato.onrender.com/app — grátis, sem anúncio e open source
 ```
 
 ---

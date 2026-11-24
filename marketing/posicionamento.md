@@ -1,4 +1,4 @@
-# Posicionamento — Ritmo Exato (cronograma-projeto.onrender.com)
+# Posicionamento — Ritmo Exato (ritmo-exato.onrender.com)
 
 > Estratégia de posicionamento para venda do SaaS. Documento de marketing — **não altera código.**
 > Data: 2026-11-14 · Baseado em: app público (/app), landing (onrender.com/), README.md/README.en.md, AGENTS.md, render.yaml, `waitlist/CONTENT-STRATEGY.md`, `waitlist/APP-IMPROVEMENTS.md`, repo GitHub `ismaeldouglasdev/Cronograma-Projeto`.

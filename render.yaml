@@ -39,7 +39,7 @@ services:
       - key: GOOGLE_CLIENT_SECRET
         sync: false
       - key: GOOGLE_REDIRECT_URI
-        value: https://cronograma-projeto.onrender.com/auth/google/callback
+        value: https://ritmo-exato.onrender.com/auth/google/callback
       # Resend — verificação de e-mail e reset de senha. Sem a chave, o
       # register cai no auto-verify legado. Preencher no dashboard do Render.
       - key: RESEND_API_KEY
@@ -47,4 +47,4 @@ services:
       - key: EMAIL_FROM
         sync: false
       - key: APP_URL
-        value: https://cronograma-projeto.onrender.com
+        value: https://ritmo-exato.onrender.com
