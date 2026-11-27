@@ -1,6 +1,6 @@
 """Rotas de sessões de estudo: CRUD + resumo de horas + pomodoro."""
 
-from datetime import date, datetime
+from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -29,6 +29,31 @@ from services.streak_service import atualizar_streak
 log = get_logger("cronograma.sessoes")
 
 router = APIRouter(tags=["sessoes"])
+
+
+def _validate_task_reference(
+    db: Session,
+    user_id: int,
+    task_id: Optional[int],
+    area_id: Optional[int],
+) -> None:
+    """Garante que a tarefa existe, pertence ao usuário e combina com a área."""
+    if task_id is None:
+        return
+
+    task = (
+        db.query(Tasks)
+        .filter(Tasks.id == task_id, Tasks.user_id == user_id)
+        .first()
+    )
+    if not task:
+        raise HTTPException(
+            status_code=404, detail="Tarefa não encontrada ou não pertence ao usuário"
+        )
+    if task.area_id is not None and area_id is not None and task.area_id != area_id:
+        raise HTTPException(
+            status_code=400, detail="A tarefa não pertence à área informada"
+        )
 
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
@@ -66,12 +91,15 @@ def criar_sessao(
             detail="Duração mínima de 5 minutos por sessão"
         )
 
+    _validate_task_reference(db, user_id, body.task_id, body.area_id)
+
     data_sessao = body.data or date.today()
     sessao = Sessoes(
         user_id=user_id,
         area_id=body.area_id,
         duracao_minutos=body.duracao_minutos,
         data=data_sessao,
+        task_id=body.task_id,
     )
     db.add(sessao)
     audit(
@@ -95,12 +123,14 @@ def criar_sessao(
 
 @router.get("/sessoes/resumo", response_model=List[HorasPorArea])
 def resumo_horas(
-    start: Optional[str] = None,
-    end: Optional[str] = None,
+    start: Optional[date] = None,
+    end: Optional[date] = None,
     user_id: int = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Retorna total de minutos/horas de estudo por área. Pode filtrar por período."""
+    if start is not None and end is not None and start > end:
+        raise HTTPException(status_code=422, detail="start não pode ser maior que end")
     query = (
         db.query(
             Sessoes.area_id,
@@ -113,19 +143,11 @@ def resumo_horas(
     )
 
     # Apply date filtering if provided
-    if start:
-        try:
-            start_date = datetime.strptime(start, "%Y-%m-%d").date()
-            query = query.filter(Sessoes.data >= start_date)
-        except ValueError:
-            log.warning("Invalid start date format", extra={"start": start})
+    if start is not None:
+        query = query.filter(Sessoes.data >= start)
 
-    if end:
-        try:
-            end_date = datetime.strptime(end, "%Y-%m-%d").date()
-            query = query.filter(Sessoes.data <= end_date)
-        except ValueError:
-            log.warning("Invalid end date format", extra={"end": end})
+    if end is not None:
+        query = query.filter(Sessoes.data <= end)
 
     rows = query.group_by(Sessoes.area_id, Areas.nome, Areas.cor).all()
     return [
@@ -159,23 +181,32 @@ def atualizar_sessao(
     fields_set = body.model_fields_set
 
     if "area_id" in fields_set:
-        if body.area_id is not None:
-            area = (
-                db.query(Areas)
-                .filter(Areas.id == body.area_id, Areas.user_id == user_id)
-                .first()
+        if body.area_id is None:
+            raise HTTPException(status_code=422, detail="area_id não pode ser nulo")
+        area = (
+            db.query(Areas)
+            .filter(Areas.id == body.area_id, Areas.user_id == user_id)
+            .first()
+        )
+        if not area:
+            raise HTTPException(
+                status_code=404, detail="Área não encontrada ou não pertence ao usuário"
             )
-            if not area:
-                raise HTTPException(
-                    status_code=404, detail="Área não encontrada ou não pertence ao usuário"
-                )
         setattr(sessao, "area_id", body.area_id)
     if "duracao_minutos" in fields_set:
+        if body.duracao_minutos is None:
+            raise HTTPException(status_code=422, detail="duracao_minutos não pode ser nulo")
         setattr(sessao, "duracao_minutos", body.duracao_minutos)
     if "data" in fields_set:
+        if body.data is None:
+            raise HTTPException(status_code=422, detail="data não pode ser nula")
         setattr(sessao, "data", body.data)
     if "task_id" in fields_set:
         setattr(sessao, "task_id", body.task_id)
+
+    effective_area_id = sessao.area_id
+    effective_task_id = sessao.task_id
+    _validate_task_reference(db, user_id, effective_task_id, effective_area_id)
 
     db.commit()
     db.refresh(sessao)
@@ -199,9 +230,13 @@ def excluir_sessao(
     try:
         db.delete(sessao)
         db.commit()
-    except Exception:
+    except Exception as e:
         db.rollback()
-        pass
+        log.exception(
+            "Sessao delete failed",
+            extra={"sessao_id": sessao_id, "user_id": user_id, "action": "sessao_delete"},
+        )
+        raise HTTPException(status_code=500, detail="Erro ao excluir sessão") from e
     return None
 
 
@@ -219,6 +254,8 @@ def completar_pomodoro(
     )
     if not area:
         raise HTTPException(status_code=404, detail="Área não encontrada")
+
+    _validate_task_reference(db, user_id, body.task_id, body.area_id)
 
     sessao = Sessoes(
         user_id=user_id,
@@ -238,9 +275,10 @@ def completar_pomodoro(
     if body.task_id:
         db.execute(
             text(
-                "UPDATE tasks SET pomodoros_concluidos = pomodoros_concluidos + 1 WHERE id = :id"
+                "UPDATE tasks SET pomodoros_concluidos = COALESCE(pomodoros_concluidos, 0) + 1 "
+                "WHERE id = :id AND user_id = :user_id"
             ),
-            {"id": body.task_id},
+            {"id": body.task_id, "user_id": user_id},
         )
 
     db.commit()
