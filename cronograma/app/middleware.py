@@ -249,7 +249,14 @@ async def security_headers_middleware(request, call_next):
 
 
 async def log_requests_middleware(request, call_next):
-    """Loga todas as requisições HTTP com duração."""
+    """Loga todas as requisições HTTP com duração e correlaciona com X-Request-ID."""
+    incoming_request_id = request.headers.get("x-request-id", "")
+    if re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", incoming_request_id):
+        request_id = incoming_request_id
+    else:
+        request_id = secrets.token_hex(16)
+    request.state.request_id = request_id
+
     # General rate limit: 120 req/min por IP (pula para /static/)
     ip = get_client_ip(request)
     if not request.url.path.startswith("/static"):
@@ -259,10 +266,12 @@ async def log_requests_middleware(request, call_next):
             # JSONResponse, não Response: content tem de ser str/bytes. Passar
             # o dict direto fazia o limiter geral estourado responder 500 em
             # vez de 429 ("'dict' object has no attribute 'encode'").
+            response_headers = getattr(e, "headers", None) or {}
+            response_headers["X-Request-ID"] = request_id
             return JSONResponse(
                 status_code=e.status_code,
                 content={"detail": e.detail},
-                headers=getattr(e, "headers", None) or {},
+                headers=response_headers,
             )
 
     start_time = time.time()
@@ -288,7 +297,9 @@ async def log_requests_middleware(request, call_next):
         duration_ms=duration_ms,
         user_id=user_id,
         ip=ip,
+        request_id=request_id,
     )
+    response.headers["X-Request-ID"] = request_id
     return response
 
 
@@ -410,5 +421,6 @@ def setup_cors(app):
         allow_origins=CORS_ORIGINS,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH", "DELETE", "PUT", "HEAD", "OPTIONS"],
-        allow_headers=["Content-Type", "Authorization"],
+        allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
+        expose_headers=["X-Request-ID"],
     )

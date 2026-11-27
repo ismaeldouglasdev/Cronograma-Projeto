@@ -162,6 +162,7 @@ def log_request(
     duration_ms: float,
     user_id: Optional[int] = None,
     ip: Optional[str] = None,
+    request_id: Optional[str] = None,
 ):
     """Log de requisição HTTP."""
     logger = _loggers_cache.get("request")
@@ -176,6 +177,7 @@ def log_request(
         "duration_ms": round(duration_ms, 1),
         "user_id": user_id,
         "ip": ip,
+        "request_id": request_id,
     }
     level = logging.ERROR if status_code >= 500 else (
         logging.WARNING if status_code >= 400 else logging.INFO

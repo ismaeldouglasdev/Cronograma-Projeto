@@ -129,11 +129,20 @@ async def metrics():
 
 # ─── Health Check ──────────────────────────────────────────────────────────────
 
+APP_VERSION = "1.0.0"
 
-@app.get("/health")
-@app.get("/api/v1/health")
-async def health_check():
-    """Health check endpoint for load balancers and monitoring."""
+
+@app.get("/health/live")
+@app.get("/api/v1/health/live")
+async def health_live():
+    """Liveness check: processo está respondendo, sem dependência externa."""
+    return {"status": "ok", "version": APP_VERSION}
+
+
+@app.get("/health/ready")
+@app.get("/api/v1/health/ready")
+async def health_ready():
+    """Readiness check: processo está pronto e o banco responde."""
     from sqlalchemy import text
 
     from config import SessionLocal
@@ -141,17 +150,24 @@ async def health_check():
     db = SessionLocal()
     try:
         db.execute(text("SELECT 1"))
-        db_status = "healthy"
     except Exception as e:
-        db_status = f"unhealthy: {e}"
+        log.warning("Database readiness check failed", extra={"error_type": type(e).__name__})
+        return Response(
+            content='{"status":"degraded","database":"unhealthy","version":"1.0.0"}',
+            status_code=503,
+            media_type="application/json",
+        )
     finally:
         db.close()
 
-    return {
-        "status": "ok" if db_status == "healthy" else "degraded",
-        "database": db_status,
-        "version": "1.0.0",
-    }
+    return {"status": "ok", "database": "healthy", "version": APP_VERSION}
+
+
+@app.get("/health")
+@app.get("/api/v1/health")
+async def health_check():
+    """Compatibility health check for load balancers and monitoring."""
+    return await health_ready()
 
 
 # ─── CORS ─────────────────────────────────────────────────────────────────────
