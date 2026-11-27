@@ -1,4 +1,5 @@
-const CACHE_NAME = 'ritmoexato-v1';
+const CACHE_NAME = 'ritmoexato-v2';
+const OFFLINE_URL = '/static/offline.html';
 const STATIC_ASSETS = [
   '/app',
   '/static/index.html',
@@ -8,12 +9,15 @@ const STATIC_ASSETS = [
   '/static/store.js',
   '/static/foco.js',
   '/static/theme.js',
+  '/static/theme-init.js',
   '/static/i18n.js',
   '/static/svg.js',
   '/static/logger.js',
   '/static/boot.js',
   '/static/landing.html',
-  '/static/theme-init.js',
+  '/static/landing-tilt.js',
+  '/static/manifest.json',
+  OFFLINE_URL,
   'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap',
   'https://cdn.jsdelivr.net/npm/chart.js'
 ];
@@ -27,11 +31,9 @@ const CACHE_STRATEGIES = {
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('[SW] Caching static assets');
-        return cache.addAll(STATIC_ASSETS.map(url => new Request(url, { credentials: 'same-origin' })))
-          .catch(err => console.warn('[SW] Some assets failed to cache:', err));
-      })
+      .then((cache) => Promise.allSettled(
+        STATIC_ASSETS.map((url) => cache.add(new Request(url, { credentials: 'same-origin' })))
+      ))
       .then(() => self.skipWaiting())
   );
 });
@@ -39,16 +41,11 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames
-            .filter((name) => name !== CACHE_NAME)
-            .map((name) => {
-              console.log('[SW] Deleting old cache:', name);
-              return caches.delete(name);
-            })
-        );
-      })
+      .then((cacheNames) => Promise.all(
+        cacheNames
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      ))
       .then(() => self.clients.claim())
   );
 });
@@ -58,6 +55,11 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   if (request.method !== 'GET') {
+    return;
+  }
+
+  if (isAuthRequest(url)) {
+    event.respondWith(networkOnlyStrategy(request));
     return;
   }
 
@@ -76,13 +78,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (url.pathname === '/app' || url.pathname === '/') {
-    event.respondWith(networkFirstStrategy(request));
-    return;
-  }
-
   event.respondWith(networkFirstStrategy(request));
 });
+
+function isAuthRequest(url) {
+  return url.pathname === '/auth' ||
+    url.pathname.startsWith('/auth/') ||
+    url.pathname.includes('/auth/');
+}
+
+async function networkOnlyStrategy(request) {
+  try {
+    return await fetch(request);
+  } catch (error) {
+    return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+  }
+}
 
 async function cacheFirstStrategy(request) {
   const cached = await caches.match(request);
@@ -97,7 +108,6 @@ async function cacheFirstStrategy(request) {
     }
     return response;
   } catch (error) {
-    console.warn('[SW] Cache-first failed:', error);
     return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
   }
 }
@@ -105,7 +115,7 @@ async function cacheFirstStrategy(request) {
 async function networkFirstStrategy(request) {
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    if (response.ok && !isAuthRequest(new URL(request.url))) {
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, response.clone());
     }
@@ -116,7 +126,7 @@ async function networkFirstStrategy(request) {
       return cached;
     }
     if (request.mode === 'navigate') {
-      const offlinePage = await caches.match('/static/index.html');
+      const offlinePage = await caches.match(OFFLINE_URL);
       if (offlinePage) return offlinePage;
     }
     return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
@@ -141,9 +151,7 @@ self.addEventListener('message', (event) => {
   if (event.data === 'skipWaiting') {
     self.skipWaiting();
   }
-  if (event.data === 'getVersion') {
+  if (event.data === 'getVersion' && event.ports[0]) {
     event.ports[0].postMessage({ version: CACHE_NAME });
   }
 });
-
-console.log('[SW] Service Worker loaded:', CACHE_NAME);
