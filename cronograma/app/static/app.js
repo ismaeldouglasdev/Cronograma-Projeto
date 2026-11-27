@@ -111,12 +111,17 @@ function showToast(message, type) {
   const container = document.getElementById("toast-container") || (() => {
     const el = document.createElement("div");
     el.id = "toast-container";
+    el.setAttribute("aria-live", "polite");
+    el.setAttribute("aria-atomic", "true");
     el.style.cssText = "position:fixed;top:1rem;right:1rem;z-index:9999;display:flex;flex-direction:column;gap:0.5rem;max-width:400px";
     document.body.appendChild(el);
     return el;
   })();
   const toast = document.createElement("div");
   toast.textContent = message;
+  toast.setAttribute("role", type === "error" ? "alert" : "status");
+  toast.setAttribute("aria-live", type === "error" ? "assertive" : "polite");
+  toast.setAttribute("aria-atomic", "true");
   toast.style.cssText = "padding:0.75rem 1.25rem;border-radius:8px;color:#fff;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.3);animation:slideIn 0.3s ease;transition:opacity 0.3s;cursor:pointer";
   toast.style.background = type === "error" ? "#ef4444" : type === "success" ? "#22c55e" : "#3b82f6";
   toast.addEventListener("click", () => { toast.style.opacity = "0"; setTimeout(() => toast.remove(), 300); });

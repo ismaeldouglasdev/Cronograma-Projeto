@@ -121,6 +121,7 @@
   <script src="/static/theme-init.js?v=20261020a"></script>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
   <!-- Login Screen -->
   <div id="login-screen" class="login-screen">
     <div class="login-container">
@@ -231,7 +232,7 @@
           </div>
         </div>
         
-        <nav class="sidebar-nav">
+        <nav class="sidebar-nav" aria-label="Navegação principal">
           <!-- Estudo Section -->
           <div class="sidebar-section">
             <span class="sidebar-section-title" data-i18n="sidebar.study">Estudo</span>
@@ -308,7 +309,7 @@
       </aside>
       
       <!-- Main Content -->
-      <main class="dashboard-main">
+      <main class="dashboard-main" id="main-content" tabindex="-1" aria-label="Conteúdo principal">
         <header class="dashboard-header">
           <div class="header-left">
             <button id="menu-toggle" class="menu-toggle" aria-label="Menu" aria-expanded="false" aria-controls="sidebar">

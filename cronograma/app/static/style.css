@@ -4885,3 +4885,37 @@ main {
     min-width: 100%.
   }
 }
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 10000;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--bg-card, #1f2937);
+  color: var(--text, #f9fafb);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+*:focus-visible {
+  outline: 3px solid var(--accent, #6366f1);
+  outline-offset: 3px;
+}
+
+#main-content:focus {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
