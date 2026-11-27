@@ -14,6 +14,7 @@ from models.area import Areas
 from models.schemas import TaskCreate, TaskPatch, TaskResponse
 from models.task import Tasks
 from services.auth_service import get_current_user
+from services.gamification_service import verificar_conquistas
 
 log = get_logger("cronograma.main")
 
@@ -77,6 +78,14 @@ def atualizar_task(
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
 
     fields_set = body.model_fields_set
+    was_concluida = bool(task.concluida)
+
+    if "titulo" in fields_set and body.titulo is None:
+        raise HTTPException(status_code=422, detail="titulo não pode ser nulo")
+    if "data_entrega" in fields_set and body.data_entrega is None:
+        raise HTTPException(status_code=422, detail="data_entrega não pode ser nula")
+    if "concluida" in fields_set and body.concluida is None:
+        raise HTTPException(status_code=422, detail="concluida não pode ser nula")
 
     if "area_id" in fields_set:
         if body.area_id is not None:
@@ -113,6 +122,8 @@ def atualizar_task(
 
     db.commit()
     db.refresh(task)
+    if "concluida" in fields_set and task.concluida and not was_concluida:
+        verificar_conquistas(user_id, db)
     audit("task.update", user_id=user_id, task_id=task_id)
     return task
 
@@ -139,8 +150,12 @@ def excluir_task(
         ).delete(synchronize_session="fetch")
         db.delete(task)
         db.commit()
-    except Exception:
+    except Exception as e:
         db.rollback()
-        pass
+        log.exception(
+            "Task delete failed",
+            extra={"task_id": task_id, "user_id": user_id, "action": "task_delete"},
+        )
+        raise HTTPException(status_code=500, detail="Erro ao excluir tarefa") from e
     audit("task.delete", user_id=user_id, task_id=task_id)
     return None
